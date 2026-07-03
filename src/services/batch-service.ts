@@ -1,0 +1,266 @@
+/**
+ * Batch operations service for bulk create/update operations
+ */
+
+import { InstanceManager } from '../client/instance-manager.js';
+import { TableService } from './table-service.js';
+import { logger } from '../utils/logger.js';
+import { validateWriteAccess } from '../utils/validators.js';
+import type { BatchOperationResult } from '../schemas/batch-schemas.js';
+import type { RecordData, ServiceNowRecord } from '../types/servicenow.js';
+
+/**
+ * Configuration for batch operations
+ */
+const BATCH_CONFIG = {
+  MAX_CONCURRENT: 25, // Maximum concurrent requests
+  DELAY_BETWEEN_BATCHES: 100, // Milliseconds to wait between batches
+};
+
+export class BatchService {
+  private tableService: TableService;
+  private instanceManager: InstanceManager;
+
+  constructor(instanceManager: InstanceManager) {
+    this.instanceManager = instanceManager;
+    this.tableService = new TableService(instanceManager);
+  }
+
+  /**
+   * Create multiple records in parallel with controlled concurrency
+   * @param tableName Name of the table
+   * @param records Array of record data objects
+   * @param continueOnError Whether to continue on individual failures
+   * @param instance Optional instance name
+   */
+  async batchCreate(
+    tableName: string,
+    records: RecordData[],
+    continueOnError: boolean = true,
+    instance?: string,
+  ): Promise<BatchOperationResult> {
+    validateWriteAccess(this.instanceManager, instance);
+
+    logger.info(`Batch creating ${records.length} records in ${tableName}`, {
+      instance: instance || 'default',
+      continueOnError,
+    });
+
+    const results: BatchOperationResult['results'] = [];
+    let successCount = 0;
+    let failureCount = 0;
+
+    // Process in batches to avoid overwhelming the server
+    for (let i = 0; i < records.length; i += BATCH_CONFIG.MAX_CONCURRENT) {
+      const batch = records.slice(i, i + BATCH_CONFIG.MAX_CONCURRENT);
+      const batchStartIndex = i;
+
+      logger.debug(`Processing batch ${Math.floor(i / BATCH_CONFIG.MAX_CONCURRENT) + 1}`, {
+        batchSize: batch.length,
+        startIndex: i,
+      });
+
+      // Create promises for all records in this batch
+      const batchPromises = batch.map(async (recordData, batchIndex) => {
+        const globalIndex = batchStartIndex + batchIndex;
+
+        try {
+          const record = await this.tableService.createRecord<ServiceNowRecord>(
+            tableName,
+            recordData,
+            instance,
+          );
+
+          // Echo only the sys_id, not the full row. On a 50-record batch the
+          // full rows are a large payload that persists in context; the sys_id
+          // is the actionable handle — re-read specific rows with query_records.
+          results[globalIndex] = {
+            index: globalIndex,
+            success: true,
+            sysId: record.sys_id,
+          };
+
+          successCount++;
+          return { success: true };
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+
+          results[globalIndex] = {
+            index: globalIndex,
+            success: false,
+            error: errorMessage,
+          };
+
+          failureCount++;
+
+          logger.warn(`Failed to create record at index ${globalIndex}`, {
+            error: errorMessage,
+            tableName,
+          });
+
+          if (!continueOnError) {
+            throw error;
+          }
+
+          return { success: false };
+        }
+      });
+
+      // Wait for all promises in this batch to complete. The records in THIS
+      // batch were already dispatched concurrently and can't be recalled; with
+      // continueOnError=false we stop *before scheduling the next batch* so the
+      // blast radius is bounded to the in-flight batch rather than every record.
+      await Promise.allSettled(batchPromises);
+
+      if (!continueOnError && failureCount > 0) {
+        logger.warn(`Batch create stopping after failure (continueOnError=false)`, {
+          processed: i + batch.length,
+          total: records.length,
+        });
+        break;
+      }
+
+      // Small delay between batches to avoid rate limiting
+      if (i + BATCH_CONFIG.MAX_CONCURRENT < records.length) {
+        await this.sleep(BATCH_CONFIG.DELAY_BETWEEN_BATCHES);
+      }
+    }
+
+    logger.info(`Batch create completed: ${successCount} succeeded, ${failureCount} failed`, {
+      tableName,
+      instance: instance || 'default',
+    });
+
+    return {
+      success: failureCount === 0,
+      successCount,
+      failureCount,
+      results,
+    };
+  }
+
+  /**
+   * Update multiple records in parallel with controlled concurrency
+   * @param tableName Name of the table
+   * @param updates Array of update objects with sysId and fields
+   * @param updateType Type of update (partial or full)
+   * @param continueOnError Whether to continue on individual failures
+   * @param instance Optional instance name
+   */
+  async batchUpdate(
+    tableName: string,
+    updates: Array<{ sysId: string; fields: RecordData }>,
+    updateType: 'partial' | 'full' = 'partial',
+    continueOnError: boolean = true,
+    instance?: string,
+  ): Promise<BatchOperationResult> {
+    validateWriteAccess(this.instanceManager, instance);
+
+    logger.info(`Batch updating ${updates.length} records in ${tableName}`, {
+      instance: instance || 'default',
+      updateType,
+      continueOnError,
+    });
+
+    const results: BatchOperationResult['results'] = [];
+    let successCount = 0;
+    let failureCount = 0;
+
+    // Process in batches to avoid overwhelming the server
+    for (let i = 0; i < updates.length; i += BATCH_CONFIG.MAX_CONCURRENT) {
+      const batch = updates.slice(i, i + BATCH_CONFIG.MAX_CONCURRENT);
+      const batchStartIndex = i;
+
+      logger.debug(`Processing batch ${Math.floor(i / BATCH_CONFIG.MAX_CONCURRENT) + 1}`, {
+        batchSize: batch.length,
+        startIndex: i,
+      });
+
+      // Create promises for all updates in this batch
+      const batchPromises = batch.map(async (update, batchIndex) => {
+        const globalIndex = batchStartIndex + batchIndex;
+
+        try {
+          const record = await this.tableService.updateRecord<ServiceNowRecord>(
+            tableName,
+            update.sysId,
+            update.fields,
+            updateType === 'full',
+            instance,
+          );
+
+          // Echo only the sys_id, not the full row (see batchCreate) — keeps a
+          // 50-record batch result small in context.
+          results[globalIndex] = {
+            index: globalIndex,
+            success: true,
+            sysId: record.sys_id,
+          };
+
+          successCount++;
+          return { success: true };
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+
+          results[globalIndex] = {
+            index: globalIndex,
+            success: false,
+            sysId: update.sysId,
+            error: errorMessage,
+          };
+
+          failureCount++;
+
+          logger.warn(`Failed to update record at index ${globalIndex}`, {
+            error: errorMessage,
+            sysId: update.sysId,
+            tableName,
+          });
+
+          if (!continueOnError) {
+            throw error;
+          }
+
+          return { success: false };
+        }
+      });
+
+      // Wait for all promises in this batch to complete. See batchCreate: with
+      // continueOnError=false we stop before the next batch (the in-flight batch
+      // can't be recalled), bounding the blast radius.
+      await Promise.allSettled(batchPromises);
+
+      if (!continueOnError && failureCount > 0) {
+        logger.warn(`Batch update stopping after failure (continueOnError=false)`, {
+          processed: i + batch.length,
+          total: updates.length,
+        });
+        break;
+      }
+
+      // Small delay between batches to avoid rate limiting
+      if (i + BATCH_CONFIG.MAX_CONCURRENT < updates.length) {
+        await this.sleep(BATCH_CONFIG.DELAY_BETWEEN_BATCHES);
+      }
+    }
+
+    logger.info(`Batch update completed: ${successCount} succeeded, ${failureCount} failed`, {
+      tableName,
+      instance: instance || 'default',
+    });
+
+    return {
+      success: failureCount === 0,
+      successCount,
+      failureCount,
+      results,
+    };
+  }
+
+  /**
+   * Sleep utility for delays between batches
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+}

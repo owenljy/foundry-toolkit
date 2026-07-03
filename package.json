@@ -1,0 +1,51 @@
+{
+  "name": "now-mcp",
+  "version": "1.0.0",
+  "description": "now-mcp — Fluent-native Model Context Protocol server for ServiceNow. Gives Claude live read/observe + data tools; pairs with the ServiceNow Fluent SDK CLI (now-sdk) driven by Claude Code.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://code.devsnc.com/owen-liang/now-mcp.git"
+  },
+  "main": "./build/index.js",
+  "packageManager": "pnpm@10.33.2",
+  "bin": {
+    "now-mcp": "./build/index.js"
+  },
+  "preferGlobal": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node build/index.js",
+    "test": "tsc && node --test test/*.test.js",
+    "test:watch": "node --test --watch test/*.test.js",
+    "format": "prettier --write 'src/**/*.ts'",
+    "prepare": "tsc"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "servicenow",
+    "fluent",
+    "now-sdk",
+    "claude",
+    "ai",
+    "integration"
+  ],
+  "author": "Owen Liang",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "js-yaml": "^4.2.0",
+    "zod": "^3.25.1"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.17.10",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

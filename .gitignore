@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# This project uses pnpm; keep npm's lockfile out of the repo so the two don't drift.
+package-lock.json
+
+# Build output
+build/
+dist/
+
+# Environment variables
+.env
+.env.local
+
+# Configuration files with credentials (keep the example template tracked)
+config/servicenow-instances.*
+!config/servicenow-instances.example.*
+config/*.bak*
+config/NOTES.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.tsbuildinfo
+.cache/
+
+# Auto Claude data directory
+.auto-claude/
+.claude/scheduled_tasks.lock
+
+CLAUDE.md
+
+# Local reference docs (not part of the plugin)
+plugin-doc.md

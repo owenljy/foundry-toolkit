@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "now-mcp",
+  "displayName": "now-mcp — ServiceNow Fluent",
+  "description": "Fluent-native MCP server for ServiceNow: live read/observe + data tools for Claude, paired with the now-sdk Fluent workflow skill.",
+  "author": {
+    "name": "Owen Liang"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "servicenow",
+    "fluent",
+    "now-sdk",
+    "claude"
+  ],
+  "mcpServers": "./.mcp.json",
+  "userConfig": {
+    "instance_url": {
+      "type": "string",
+      "title": "ServiceNow instance URL",
+      "description": "Your instance URL, e.g. https://dev123456.service-now.com — this is all most people need. Fill this + Username + Password and leave 'Config file' empty. (Only skip these three if you use a Config file instead, for OAuth / multiple instances.)"
+    },
+    "username": {
+      "type": "string",
+      "title": "Username",
+      "description": "ServiceNow username (basic auth) for the instance URL above."
+    },
+    "password": {
+      "type": "string",
+      "title": "Password",
+      "description": "ServiceNow password. Masked here and saved to your OS keychain, never written to disk in plaintext.",
+      "sensitive": true
+    },
+    "read_only": {
+      "type": "string",
+      "title": "Read-only (type false to allow writes)",
+      "description": "Type exactly false to allow create/update/delete. Leave empty or type true to stay read-only (the safe default — blocks all writes). Only false/no/off/0 enable writes; anything unrecognized stays read-only for safety.",
+      "default": "true"
+    },
+    "config_path": {
+      "type": "file",
+      "title": "Config file (OPTIONAL — leave empty for a single instance)",
+      "description": "Leave EMPTY if you filled in URL + Username + Password above. Only for OAuth / multiple instances / now-sdk pairing: create a YAML file anywhere on your machine and put its absolute path here (it then overrides the fields above). A ready-to-copy annotated template ships with the plugin at config/servicenow-instances.example.yaml (also viewable at https://github.com/owenljy/foundry-toolkit/blob/main/config/servicenow-instances.example.yaml) — copy it, fill in your instance(s), and point this field at your copy."
+    }
+  }
+}

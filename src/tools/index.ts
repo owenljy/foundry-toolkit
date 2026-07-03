@@ -1,0 +1,242 @@
+/**
+ * Tool registration for MCP server
+ *
+ * v4 "senses, not hands": this server is the live-instance observation +
+ * data layer. Authoring app metadata (business rules, ACLs, UI policies,
+ * flows, PA, portal, AI agents, AWA, ...) is the job of the ServiceNow Fluent
+ * SDK driven by Claude Code — not blind table POSTs from here. The surface is
+ * intentionally small: data CRUD, schema discovery, script execution,
+ * attachments, update sets, and test-data seeding.
+ */
+
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import { InstanceManager } from '../client/instance-manager.js';
+import { TableService } from '../services/table-service.js';
+import { AttachmentService } from '../services/attachment-service.js';
+import { ScriptService } from '../services/script-service.js';
+import { BatchService } from '../services/batch-service.js';
+import { SchemaService } from '../services/schema-service.js';
+import { createQueryRecordsTool } from './query-records-tool.js';
+import { createAggregateRecordsTool } from './aggregate-records-tool.js';
+import { createCreateRecordTool } from './create-record-tool.js';
+import { createUpdateRecordTool } from './update-record-tool.js';
+import { createDeleteRecordTool } from './delete-record-tool.js';
+import { createUploadAttachmentTool } from './upload-attachment-tool.js';
+import { createDownloadAttachmentTool } from './download-attachment-tool.js';
+import { createBatchCreateTool } from './batch-create-tool.js';
+import { createBatchUpdateTool } from './batch-update-tool.js';
+import { createGetTableSchemaTool } from './get-table-schema-tool.js';
+import { createListTablesTool } from './list-tables-tool.js';
+import { createGetChoiceListTool } from './get-choice-list-tool.js';
+import { createExecuteBackgroundScriptTool } from './execute-background-script-tool.js';
+import { createSdkStatusTool } from './sdk-status-tool.js';
+import { TOOL_ANNOTATIONS } from './annotations.js';
+import { isNowSdkAvailable } from '../utils/now-sdk-cli.js';
+import { logger } from '../utils/logger.js';
+import { formatToolCall } from '../utils/tool-log.js';
+
+/**
+ * Shape every createXTool factory returns. `inputSchema` / `outputSchema` are
+ * Zod schemas passed straight to `registerTool` (the SDK builds the advertised
+ * JSON Schema itself). The handler returns an MCP `CallToolResult`-shaped
+ * object: success carries `structuredContent`, errors set `isError: true`.
+ */
+export interface ToolDescriptor {
+  name: string;
+  title?: string;
+  description: string;
+  inputSchema: z.ZodTypeAny;
+  outputSchema: z.ZodTypeAny;
+  handler: (args: unknown) => Promise<ToolResult> | ToolResult;
+}
+
+interface ToolResult {
+  content: { type: 'text'; text: string }[];
+  structuredContent?: Record<string, unknown>;
+  /**
+   * Result-level metadata (MCP `_meta`): structured, outside the text body and
+   * outside `structuredContent`. Query/aggregate carry `{ instance, durationMs,
+   * rowCount? }` here (WS-B §4.2).
+   */
+  _meta?: Record<string, unknown>;
+  isError?: boolean;
+}
+
+/**
+ * Decorator that preserves the per-call tool logging the old
+ * `CallToolRequestSchema` wrapper performed: extract the target `instance` from
+ * args, time the call, derive `ok` from `result.isError`, and emit
+ * `formatToolCall(...)`. On throw, log `ok:false` then rethrow so `McpServer`
+ * converts the error into an `isError` tool result.
+ */
+function withLogging(
+  name: string,
+  handler: ToolDescriptor['handler'],
+): (args: unknown, extra: unknown) => Promise<ToolResult> {
+  return async (args: unknown): Promise<ToolResult> => {
+    logger.debug(`Tool called: ${name}`, { arguments: args });
+
+    // Best-effort extraction of the target instance for the structured log.
+    const instance =
+      args &&
+      typeof args === 'object' &&
+      typeof (args as Record<string, unknown>).instance === 'string'
+        ? ((args as Record<string, unknown>).instance as string)
+        : undefined;
+
+    const start = Date.now();
+    try {
+      const result = await handler(args);
+      const durationMs = Date.now() - start;
+      const ok = !(result && result.isError === true);
+      const { msg, data } = formatToolCall({
+        tool: name,
+        durationMs,
+        ok,
+        instance,
+      });
+      logger.info(msg, data);
+      return result;
+    } catch (error) {
+      const durationMs = Date.now() - start;
+      const message = error instanceof Error ? error.message : String(error);
+      const { msg, data } = formatToolCall({
+        tool: name,
+        durationMs,
+        ok: false,
+        instance,
+        error: message,
+      });
+      logger.info(msg, data);
+      throw error;
+    }
+  };
+}
+
+/**
+ * Register all ServiceNow tools with the MCP server
+ * @param server MCP server instance
+ * @param instanceManager Instance manager for multi-instance support
+ */
+export async function registerTools(
+  server: McpServer,
+  instanceManager: InstanceManager,
+): Promise<void> {
+  // Initialize services with instance manager
+  const tableService = new TableService(instanceManager);
+  const attachmentService = new AttachmentService(instanceManager);
+  const scriptService = new ScriptService(instanceManager);
+  const batchService = new BatchService(instanceManager);
+  const schemaService = new SchemaService(instanceManager);
+
+  const tools: ToolDescriptor[] = [
+    // Table operations (runtime data)
+    createQueryRecordsTool(tableService),
+    createAggregateRecordsTool(tableService),
+    createCreateRecordTool(tableService, schemaService),
+    createUpdateRecordTool(tableService, schemaService),
+    createDeleteRecordTool(tableService),
+
+    // Batch operations
+    createBatchCreateTool(batchService, schemaService),
+    createBatchUpdateTool(batchService, schemaService),
+
+    // Schema discovery
+    createGetTableSchemaTool(schemaService),
+    createListTablesTool(schemaService),
+    createGetChoiceListTool(schemaService),
+
+    // Script execution (with advisory schema pre-flight on referenced fields)
+    createExecuteBackgroundScriptTool(scriptService, schemaService),
+
+    // Attachments
+    createUploadAttachmentTool(attachmentService),
+    createDownloadAttachmentTool(attachmentService),
+  ];
+
+  // Fluent SDK bridge: only expose when the now-sdk CLI is actually installed.
+  if (isNowSdkAvailable()) {
+    tools.push(createSdkStatusTool(instanceManager));
+    logger.info('now-sdk detected — servicenow_sdk_status tool enabled');
+  } else {
+    logger.info('now-sdk not on PATH — servicenow_sdk_status tool disabled');
+  }
+
+  // Register every tool on the high-level McpServer. The Zod input/output
+  // schemas are passed directly — the SDK advertises the JSON Schema, validates
+  // input (bad input → self-correctable tool error, not a protocol throw), and
+  // validates that a success result carries `structuredContent`.
+  for (const tool of tools) {
+    server.registerTool(
+      tool.name,
+      {
+        title: tool.title,
+        description: tool.description,
+        inputSchema: tool.inputSchema as never,
+        outputSchema: tool.outputSchema as never,
+        annotations: TOOL_ANNOTATIONS[tool.name],
+      },
+      withLogging(tool.name, tool.handler) as never,
+    );
+    logger.info(`Registered tool: ${tool.name}`);
+  }
+
+  logger.info(`Registered ${tools.length} ServiceNow tools`);
+  logger.info(`Managing ${instanceManager.getInstanceCount()} ServiceNow instance(s)`);
+}
+
+/**
+ * Register a degraded handler set used when configuration failed to load.
+ *
+ * The server still completes the MCP handshake (so Claude Code stays connected
+ * and the user isn't left with an opaque "Failed to connect"), but every tool
+ * call returns the configuration error so the cause is visible in the client.
+ */
+export async function registerDegradedTools(
+  server: McpServer,
+  configError: Error | null,
+): Promise<void> {
+  const reason = configError?.message || 'now-mcp is not configured.';
+
+  const message =
+    'now-mcp is connected but not usable — configuration error:\n\n' +
+    reason +
+    `\n\n(server working directory: ${process.cwd()})` +
+    '\n\nFix the config (plugin settings, or config/servicenow-instances.yaml, ' +
+    'or the file at SERVICENOW_CONFIG_PATH) and reconnect the MCP server.';
+
+  // Degraded mode still completes the handshake, but every capability is a
+  // single status tool that reports the configuration error. Registering it via
+  // the high-level `registerTool` keeps handshake, schema advertisement, and the
+  // error path all on the supported McpServer API (rather than dropping to the
+  // low-level request handlers, which is brittle across SDK upgrades).
+  server.registerTool(
+    'servicenow_status',
+    {
+      title: 'ServiceNow status',
+      description:
+        'Report the now-mcp status. In this session the server started in ' +
+        'degraded mode because configuration failed to load; calling it returns ' +
+        'the configuration error and how to fix it.',
+      inputSchema: z.object({}).shape,
+      outputSchema: z.object({ status: z.string(), error: z.string() }).shape,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    // outputSchema is declared, but an error result (isError:true, text only)
+    // is allowed to omit structuredContent — same idiom the other tools use.
+    async () => ({
+      content: [{ type: 'text' as const, text: message }],
+      isError: true as const,
+    }),
+  );
+
+  logger.warn(
+    'Registered DEGRADED handlers (configuration error). Tools will report the error until the config is fixed.',
+  );
+}

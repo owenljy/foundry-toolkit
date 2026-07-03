@@ -1,0 +1,82 @@
+# now-mcp configuration — copy this file to:
+#     config/servicenow-instances.yaml
+# then edit the values. That copy is git-ignored (this .example is not), so your
+# credentials never get committed:
+#
+#     cp config/servicenow-instances.example.yaml config/servicenow-instances.yaml
+#
+# NOTE: single-instance plugin users can skip this file entirely — fill in the
+# instance URL, username, and password in the plugin settings form instead (the
+# password is kept in your system keychain). Use this YAML for multi-instance,
+# OAuth, or now-sdk pairing, which the form doesn't cover.
+#
+# One file is the whole config, single instance OR many — same format.
+# ---------------------------------------------------------------------------
+# MINIMAL SINGLE INSTANCE — the common case. This one block is all you need;
+# everything below `instances:` is optional and can be deleted.
+# ---------------------------------------------------------------------------
+
+instances:
+  - name: dev # any short id: letters, numbers, _ and - only
+    url: https://dev123456.service-now.com # your instance's HTTPS URL
+    auth:
+      type: basic
+      username: api.user
+      password: change-me
+    default: true # exactly ONE instance must have default: true
+    readOnly: false # false = allow writes. Omit or true = read-only (safe default).
+
+# ---------------------------------------------------------------------------
+# EVERYTHING BELOW IS OPTIONAL — add only what you need.
+# ---------------------------------------------------------------------------
+#
+# A SECOND INSTANCE (e.g. read-only prod, using OAuth instead of basic auth).
+# Uncomment and edit. Across all instances, only one may be `default: true`.
+#
+# OAuth supports two grant types (grantType defaults to client_credentials):
+#
+#   client_credentials — app-level token, no user context:
+#   - name: prod
+#     url: https://prod123456.service-now.com
+#     auth:
+#       type: oauth
+#       grantType: client_credentials   # optional; this is the default
+#       clientId: your-client-id
+#       clientSecret: your-client-secret
+#       tokenUrl: https://prod123456.service-now.com/oauth_token.do
+#     # readOnly omitted -> defaults to true (read-only) — safe for prod
+#
+#   password — user-level token (ServiceNow's most common OAuth setup);
+#   username/password are exchanged once for a token, then refreshed via the
+#   returned refresh_token:
+#   - name: prod
+#     url: https://prod123456.service-now.com
+#     auth:
+#       type: oauth
+#       grantType: password
+#       clientId: your-client-id
+#       clientSecret: your-client-secret
+#       tokenUrl: https://prod123456.service-now.com/oauth_token.do
+#       username: api.user
+#       password: change-me
+#       # scope: useraccount        # optional
+#
+# PER-INSTANCE OPTIONAL FIELDS:
+#   timeout: 30            # request timeout in seconds (default 30, max 120)
+#   scriptApiPath: /api/x_custom/script_runner/execute
+#                          # a custom Scripted REST API that runs background
+#                          # scripts synchronously (bypasses the ServiceNow
+#                          # scheduler, which is paused on many demo instances).
+#                          # Without it, execute_background_script needs the
+#                          # scheduler running.
+#
+# NOTES:
+#   - Tool calls without an `instance` argument hit the `default` instance;
+#     pass instance: "<name>" to target a specific one.
+#   - Numeric PDI names (123456) are fine unquoted.
+#   - YAML is a JSON superset: comments are allowed and old JSON still parses.
+#   - now-sdk pairing (auto, when now-sdk is on PATH): the active instance
+#     follows whichever profile you select via `now-sdk auth --use` (matched by
+#     host), so the MCP and Fluent stay on the same instance. List every
+#     instance you might switch to here, each with its credentials. Set
+#     SERVICENOW_FOLLOW_NOW_SDK=false to pin the `default` above instead.
