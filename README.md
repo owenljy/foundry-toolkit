@@ -153,20 +153,29 @@ call, so you can fix it without a crash loop.
 | `servicenow_create_record` | Insert a record (with schema field validation + typo hints) |
 | `servicenow_update_record` | Patch/replace a record by sys_id |
 | `servicenow_delete_record` | Delete a record by sys_id (destructive) |
-| `servicenow_batch_create` / `servicenow_batch_update` | Create/update up to 50 records in parallel |
+| `servicenow_batch_create` / `servicenow_batch_update` | Create/update many records in concurrency-limited waves (default 50/call, rate-limited; not transactional) |
+| `servicenow_diff_records` | Compare two records on a table field-by-field; returns only what differs |
 
 ### Schema discovery
 | Tool | What it does |
 |---|---|
 | `servicenow_get_table_schema` | Fields, types, references, mandatory/read-only (cached) |
+| `servicenow_get_table_structure_from_data` | Infer structure by **sampling real rows** — fallback when `sys_dictionary` is thin/incomplete |
 | `servicenow_list_tables` | List/filter tables |
 | `servicenow_get_choice_list` | Valid choice values for a field |
+| `servicenow_get_security_info` | Consolidated table security posture — ACLs (table + field), role requirements, data policies, security business rules |
 
 ### Execution & files
 | Tool | What it does |
 |---|---|
 | `servicenow_execute_background_script` | Run server-side JavaScript (exercise deployed logic; read results from logs) |
 | `servicenow_upload_attachment` / `servicenow_download_attachment` | Attach / fetch files (base64) |
+| `servicenow_get_attachment_metadata` | List attachments on a record (name, type, size) **without** downloading content |
+
+### Instances *(only when more than one instance is configured)*
+| Tool | What it does |
+|---|---|
+| `servicenow_switch_default_instance` | Repoint the session default instance (for calls that omit `instance`) + connectivity probe; in-memory only, no YAML write |
 
 ### Fluent SDK bridge *(only when `now-sdk` is installed)*
 | Tool | What it does |
@@ -258,7 +267,9 @@ to pin the YAML's own `default` instead.
   retrying into a wall.
 - **Write audit log.** Every POST/PUT/PATCH/DELETE is recorded (stderr, and to a
   JSON-lines file if `SERVICENOW_AUDIT_LOG` is set), and every tool call logs a
-  structured `{tool, durationMs, ok}` line.
+  structured `{tool, durationMs, ok}` line. The file is size-capped and rotated
+  to `<path>.1` at 10 MiB (override with `SERVICENOW_AUDIT_LOG_MAX_BYTES`; set to
+  `0` to disable rotation).
 - **No credential magic.** Credentials live in your YAML / env, never read from
   now-sdk's keychain. Keep config files out of git (the provided `.gitignore`
   already excludes them).

@@ -175,6 +175,9 @@ test('detectWriteOperations: detects insert on a data table', () => {
   assert.equal(r.writeCalls[0].method, 'insert()');
   assert.equal(r.writeCalls[0].table, 'incident');
   assert.deepEqual(r.metadataTables, []);
+  // Resolved literal table => high confidence.
+  assert.equal(r.lowConfidence, false);
+  assert.equal(r.unresolvedWrites, 0);
 });
 
 test('detectWriteOperations: flags metadata table write separately', () => {
@@ -212,6 +215,38 @@ test('detectWriteOperations: write detected but table unknown for truly dynamic 
   // Table is unknown (undefined) — we know a write happened but not which table.
   assert.equal(r.writeCalls[0].table, undefined);
   assert.deepEqual(r.metadataTables, []);
+  // Unresolved table => low confidence, so callers can warn instead of
+  // silently reporting a clean (empty metadataTables) result.
+  assert.equal(r.lowConfidence, true);
+  assert.equal(r.unresolvedWrites, 1);
+});
+
+test('detectWriteOperations: mixed resolved + unresolved writes are counted correctly', () => {
+  const script = `
+    var known = new GlideRecord('incident');
+    known.insert();
+    var dyn = new GlideRecord(computeTable());
+    dyn.update();
+    dyn.deleteRecord();
+  `;
+  const r = detectWriteOperations(script);
+  assert.equal(r.hasWrites, true);
+  assert.equal(r.writeCalls.length, 3);
+  assert.equal(r.lowConfidence, true);
+  // The two writes on the function-returned table are unresolved; the insert is not.
+  assert.equal(r.unresolvedWrites, 2);
+});
+
+test('detectWriteOperations: all-literal writes stay high confidence', () => {
+  const script = `
+    var a = new GlideRecord('incident');
+    a.insert();
+    var b = new GlideRecord('problem');
+    b.update();
+  `;
+  const r = detectWriteOperations(script);
+  assert.equal(r.lowConfidence, false);
+  assert.equal(r.unresolvedWrites, 0);
 });
 
 test('parseEncodedQueryFields strips operators, sort, and logical prefixes', () => {

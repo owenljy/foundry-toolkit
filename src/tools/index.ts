@@ -31,6 +31,11 @@ import { createListTablesTool } from './list-tables-tool.js';
 import { createGetChoiceListTool } from './get-choice-list-tool.js';
 import { createExecuteBackgroundScriptTool } from './execute-background-script-tool.js';
 import { createSdkStatusTool } from './sdk-status-tool.js';
+import { createDiffRecordsTool } from './diff-records-tool.js';
+import { createGetAttachmentMetadataTool } from './get-attachment-metadata-tool.js';
+import { createGetTableStructureFromDataTool } from './get-table-structure-from-data-tool.js';
+import { createGetSecurityInfoTool } from './get-security-info-tool.js';
+import { createSwitchDefaultInstanceTool } from './switch-default-instance-tool.js';
 import { TOOL_ANNOTATIONS } from './annotations.js';
 import { isNowSdkAvailable } from '../utils/now-sdk-cli.js';
 import { logger } from '../utils/logger.js';
@@ -146,6 +151,12 @@ export async function registerTools(
     createGetTableSchemaTool(schemaService),
     createListTablesTool(schemaService),
     createGetChoiceListTool(schemaService),
+    // Data-inference fallback for tables whose sys_dictionary is thin/incomplete.
+    createGetTableStructureFromDataTool(tableService),
+
+    // Comparison & security posture (read-only observation)
+    createDiffRecordsTool(tableService),
+    createGetSecurityInfoTool(tableService),
 
     // Script execution (with advisory schema pre-flight on referenced fields)
     createExecuteBackgroundScriptTool(scriptService, schemaService),
@@ -153,7 +164,21 @@ export async function registerTools(
     // Attachments
     createUploadAttachmentTool(attachmentService),
     createDownloadAttachmentTool(attachmentService),
+    // Lightweight "what attachments exist" — no content download.
+    createGetAttachmentMetadataTool(attachmentService),
   ];
+
+  // Session instance switching only makes sense when there's more than one
+  // instance to switch between. A single-instance setup (env-based config always
+  // yields exactly one; a one-entry YAML likewise) has nothing to switch to, so
+  // the tool would just be noise — only expose it for a multi-instance config.
+  if (instanceManager.getInstanceCount() > 1) {
+    // Mutates the in-memory default only; no writes to any instance.
+    tools.push(createSwitchDefaultInstanceTool(instanceManager, tableService));
+    logger.info('Multi-instance config — servicenow_switch_default_instance tool enabled');
+  } else {
+    logger.info('Single instance — servicenow_switch_default_instance tool disabled');
+  }
 
   // Fluent SDK bridge: only expose when the now-sdk CLI is actually installed.
   if (isNowSdkAvailable()) {

@@ -39,9 +39,7 @@ interface CacheEntry<T> {
 }
 
 function schemaCacheDir(): string {
-  return (
-    process.env.SERVICENOW_SCHEMA_CACHE_DIR || join(homedir(), '.now-mcp', 'schema-cache')
-  );
+  return process.env.SERVICENOW_SCHEMA_CACHE_DIR || join(homedir(), '.now-mcp', 'schema-cache');
 }
 
 export class SchemaService {

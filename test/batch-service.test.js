@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { BatchService } from '../build/services/batch-service.js';
 
-const MAX_CONCURRENT = 25; // mirrors BATCH_CONFIG.MAX_CONCURRENT in batch-service.ts
+const MAX_CONCURRENT = 25; // mirrors DEFAULT_BATCH_CONCURRENCY in config/batch-config.ts
 
 /**
  * Stub client whose post/patch/put track concurrent in-flight calls so we can

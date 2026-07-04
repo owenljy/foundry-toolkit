@@ -49,6 +49,17 @@ const SDK_STATUS: ToolAnnotations = {
   idempotentHint: true,
   openWorldHint: false,
 };
+// servicenow_switch_default_instance changes the in-memory session default and
+// runs a cheap connectivity probe against the instance — so it is not read-only
+// and touches the live instance (openWorldHint). But re-switching to the same
+// instance is a no-op, so it IS idempotent (unlike WRITE). Distinct constant so
+// this nuance isn't lost by reusing WRITE.
+const SESSION_MUTATION: ToolAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+};
 
 export const TOOL_ANNOTATIONS: Record<string, ToolAnnotations> = {
   // Reads
@@ -57,8 +68,15 @@ export const TOOL_ANNOTATIONS: Record<string, ToolAnnotations> = {
   servicenow_get_table_schema: RO,
   servicenow_list_tables: RO,
   servicenow_get_choice_list: RO,
+  servicenow_get_table_structure_from_data: RO,
+  servicenow_diff_records: RO,
+  servicenow_get_security_info: RO,
   servicenow_download_attachment: RO,
+  servicenow_get_attachment_metadata: RO,
   servicenow_sdk_status: SDK_STATUS,
+
+  // Session mutation (not a write to the instance, but not read-only either)
+  servicenow_switch_default_instance: SESSION_MUTATION,
 
   // Writes (create new state)
   servicenow_create_record: WRITE,

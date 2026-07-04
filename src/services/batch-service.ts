@@ -6,16 +6,9 @@ import { InstanceManager } from '../client/instance-manager.js';
 import { TableService } from './table-service.js';
 import { logger } from '../utils/logger.js';
 import { validateWriteAccess } from '../utils/validators.js';
+import { batchConcurrency, batchDelayMs } from '../config/batch-config.js';
 import type { BatchOperationResult } from '../schemas/batch-schemas.js';
 import type { RecordData, ServiceNowRecord } from '../types/servicenow.js';
-
-/**
- * Configuration for batch operations
- */
-const BATCH_CONFIG = {
-  MAX_CONCURRENT: 25, // Maximum concurrent requests
-  DELAY_BETWEEN_BATCHES: 100, // Milliseconds to wait between batches
-};
 
 export class BatchService {
   private tableService: TableService;
@@ -49,13 +42,15 @@ export class BatchService {
     const results: BatchOperationResult['results'] = [];
     let successCount = 0;
     let failureCount = 0;
+    const concurrency = batchConcurrency();
+    const delayMs = batchDelayMs();
 
     // Process in batches to avoid overwhelming the server
-    for (let i = 0; i < records.length; i += BATCH_CONFIG.MAX_CONCURRENT) {
-      const batch = records.slice(i, i + BATCH_CONFIG.MAX_CONCURRENT);
+    for (let i = 0; i < records.length; i += concurrency) {
+      const batch = records.slice(i, i + concurrency);
       const batchStartIndex = i;
 
-      logger.debug(`Processing batch ${Math.floor(i / BATCH_CONFIG.MAX_CONCURRENT) + 1}`, {
+      logger.debug(`Processing batch ${Math.floor(i / concurrency) + 1}`, {
         batchSize: batch.length,
         startIndex: i,
       });
@@ -71,9 +66,9 @@ export class BatchService {
             instance,
           );
 
-          // Echo only the sys_id, not the full row. On a 50-record batch the
-          // full rows are a large payload that persists in context; the sys_id
-          // is the actionable handle — re-read specific rows with query_records.
+          // Echo only the sys_id, not the full row. On a large batch the full
+          // rows are a big payload that persists in context; the sys_id is the
+          // actionable handle — re-read specific rows with query_records.
           results[globalIndex] = {
             index: globalIndex,
             success: true,
@@ -121,8 +116,8 @@ export class BatchService {
       }
 
       // Small delay between batches to avoid rate limiting
-      if (i + BATCH_CONFIG.MAX_CONCURRENT < records.length) {
-        await this.sleep(BATCH_CONFIG.DELAY_BETWEEN_BATCHES);
+      if (delayMs > 0 && i + concurrency < records.length) {
+        await this.sleep(delayMs);
       }
     }
 
@@ -165,13 +160,15 @@ export class BatchService {
     const results: BatchOperationResult['results'] = [];
     let successCount = 0;
     let failureCount = 0;
+    const concurrency = batchConcurrency();
+    const delayMs = batchDelayMs();
 
     // Process in batches to avoid overwhelming the server
-    for (let i = 0; i < updates.length; i += BATCH_CONFIG.MAX_CONCURRENT) {
-      const batch = updates.slice(i, i + BATCH_CONFIG.MAX_CONCURRENT);
+    for (let i = 0; i < updates.length; i += concurrency) {
+      const batch = updates.slice(i, i + concurrency);
       const batchStartIndex = i;
 
-      logger.debug(`Processing batch ${Math.floor(i / BATCH_CONFIG.MAX_CONCURRENT) + 1}`, {
+      logger.debug(`Processing batch ${Math.floor(i / concurrency) + 1}`, {
         batchSize: batch.length,
         startIndex: i,
       });
@@ -190,7 +187,7 @@ export class BatchService {
           );
 
           // Echo only the sys_id, not the full row (see batchCreate) — keeps a
-          // 50-record batch result small in context.
+          // large batch result small in context.
           results[globalIndex] = {
             index: globalIndex,
             success: true,
@@ -239,8 +236,8 @@ export class BatchService {
       }
 
       // Small delay between batches to avoid rate limiting
-      if (i + BATCH_CONFIG.MAX_CONCURRENT < updates.length) {
-        await this.sleep(BATCH_CONFIG.DELAY_BETWEEN_BATCHES);
+      if (delayMs > 0 && i + concurrency < updates.length) {
+        await this.sleep(delayMs);
       }
     }
 

@@ -158,6 +158,7 @@ export const ExecuteScriptOutputSchema = z.object({
     .object({
       calls: z.array(z.string()),
       metadataWarning: z.string().optional(),
+      lowConfidenceWarning: z.string().optional(),
     })
     .optional(),
   warning: z.string().optional(),

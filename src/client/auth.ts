@@ -172,9 +172,7 @@ export async function getOAuthToken(config: OAuthConfig): Promise<string> {
   const grantType = config.grantType ?? 'client_credentials';
 
   if (grantType === 'password' && (!config.username || !config.password)) {
-    throw new ValidationError(
-      'OAuth password grant requires both username and password',
-    );
+    throw new ValidationError('OAuth password grant requires both username and password');
   }
 
   const cacheKey = cacheKeyFor(config);
