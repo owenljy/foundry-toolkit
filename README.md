@@ -7,13 +7,17 @@ bundles two kinds of thing, distributed together and growing over time:
   [Model Context Protocol](https://modelcontextprotocol.io) server that lets
   Claude **operate a running ServiceNow instance**: read and write runtime data,
   inspect schema, run scripts, manage attachments.
-- **Skills** — a growing set of workflow skills (starting with
-  `servicenow-fluent-dev`) that **orchestrate** the MCP and the **ServiceNow
-  Fluent SDK (`now-sdk`)** into end-to-end tasks, all driven by Claude Code.
+- **Skills** — a growing set of on-demand workflow skills (e.g. `sn-docs-search`)
+  that Claude Code picks up when the task matches.
+- **A SessionStart hook** — when a project is a Fluent app (`now.config.json`
+  present), it injects a standing "Fluent workflow" block into that project's
+  `CLAUDE.md`: the always-on rules for splitting work between **`now-sdk`** (author
+  metadata, capture, reads) and **`now-mcp`** (aggregate, write data, run scripts),
+  plus "always `now-sdk explain` before writing Fluent."
 
 Everything here is designed to pair with `now-sdk`: config-as-code is Fluent's
-job; operating the live instance is the MCP's; combining the two is what the
-skills do.
+job; operating the live instance is the MCP's; the injected workflow rules keep
+Claude splitting the two correctly every session.
 
 ## The idea in one paragraph
 
@@ -219,11 +223,20 @@ once; `now-sdk` is the single switch (reconnect the MCP after switching).
 credentials. Set `SERVICENOW_FOLLOW_NOW_SDK=false` to pin the YAML `default`, and
 use `servicenow_sdk_status` to check alignment.
 
-### The bundled skill
-`.claude/skills/servicenow-fluent-dev/` encodes the full loop —
-**read schema → write Fluent → deploy → verify → drift** — and the division of
-labour above. It activates when a `now.config.json` is present. It also includes
-a copy-paste block for your Fluent project's `CLAUDE.md`.
+### Fluent workflow rules (auto-injected)
+When a project is a Fluent app (`now.config.json` at its root), a SessionStart
+hook (`scripts/bootstrap-fluent-claudemd.mjs`) appends a standing **Fluent
+workflow** block to that project's `CLAUDE.md`. Because `CLAUDE.md` is loaded
+into every session's system prompt, these rules are always in force — no skill
+trigger to miss. The block covers the division of labour above (author metadata &
+capture & reads → `now-sdk`; aggregation, data writes, script execution → the
+MCP) and the "always `now-sdk explain` before writing Fluent" rule. It's
+idempotent (won't stomp your edits) and opt-out via `FLUENT_BOOTSTRAP_CLAUDEMD=off`.
+The injected text is not hardcoded — it lives in an editable file
+(`scripts/claude-md-template.md`), or point `FLUENT_WORKFLOW_TEMPLATE` at your own
+markdown to maintain your team's rules.
+The `verify_fluent_deploy` / `diagnose_deploy_failure` MCP **prompts** package the
+post-deploy verify and failure-diagnosis steps on demand.
 
 
 ---

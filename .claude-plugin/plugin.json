@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "now-mcp",
   "displayName": "now-mcp — ServiceNow Fluent",
-  "description": "Fluent-native MCP server for ServiceNow: live read/observe + data tools for Claude, paired with the now-sdk Fluent workflow skill.",
+  "description": "Fluent-native MCP server for ServiceNow: live read/observe + data tools for Claude, paired with auto-injected now-sdk/now-mcp workflow rules.",
   "author": {
     "name": "Owen Liang"
   },

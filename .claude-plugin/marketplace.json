@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-marketplace.json",
   "name": "foundry-toolkit",
-  "description": "ServiceNow toolkit for Claude, built around Fluent (now-sdk) — the Fluent-native now-mcp server plus skills that orchestrate domain workflows. More to come.",
+  "description": "ServiceNow toolkit for Claude, built around Fluent (now-sdk) — the Fluent-native now-mcp server, on-demand skills, and auto-injected Fluent workflow rules. More to come.",
   "owner": {
     "name": "Owen Liang"
   },
@@ -9,7 +9,7 @@
     {
       "name": "now-mcp",
       "source": "./",
-      "description": "Fluent-native MCP server for ServiceNow + the now-sdk Fluent workflow skill."
+      "description": "Fluent-native MCP server for ServiceNow, paired with auto-injected now-sdk/now-mcp workflow rules."
     }
   ]
 }
