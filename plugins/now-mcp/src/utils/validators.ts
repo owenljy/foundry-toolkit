@@ -3,6 +3,7 @@
  */
 
 import type { InstanceManager } from '../client/instance-manager.js';
+import { readOnlyRemediation } from '../config/environment.js';
 import { AccessDeniedError, ValidationError } from '../types/errors.js';
 import { assertTableAllowed } from './table-access.js';
 
@@ -139,15 +140,18 @@ export function validateWriteAccess(instanceManager: InstanceManager, instanceNa
 	const isReadOnly = config.readOnly !== false;
 
 	if (isReadOnly) {
+		// Point at the EXACT place to flip read-only, based on where this config
+		// came from (plugin form / env vs a specific YAML file) — so the caller
+		// doesn't have to go hunting for a config that may not even be a YAML.
+		const suggestion = readOnlyRemediation(instanceManager.getConfigSource(), config.name);
 		throw new AccessDeniedError(
-			`Write operations are not permitted on read-only instance '${config.name}'.`,
+			`Write operations are not permitted on read-only instance '${config.name}'. ${suggestion}`,
 			{
 				instance: config.name,
 				operationType: 'write',
 				readOnlyExplicit: config.readOnly === true,
 				readOnlyDefault: config.readOnly === undefined,
-				suggestion:
-					'Set "readOnly": false in the instance configuration to enable write operations.',
+				suggestion,
 			},
 		);
 	}

@@ -16,7 +16,7 @@
 console.log = (...args: unknown[]) => console.error(...args);
 
 import { InstanceManager } from './client/instance-manager.js';
-import { loadConfig, resolveNowSdkFollow } from './config/environment.js';
+import { exampleConfigPath, loadConfig, resolveNowSdkFollow } from './config/environment.js';
 import { createServer, startServer } from './server.js';
 import { initializeLogger, logger } from './utils/logger.js';
 
@@ -32,8 +32,16 @@ async function main() {
 		logger.info('Configuration loaded', {
 			instanceCount: config.instances.length,
 			defaultInstance: config.instances.find((i) => i.default)?.name,
+			source: config.source.kind === 'yaml' ? config.source.path : 'env/plugin-form',
 		});
-		instanceManager = new InstanceManager(config.instances);
+		// Plugin-form / env installs have no YAML. Point at the annotated template
+		// once, so anyone who later needs OAuth or multiple instances knows it exists.
+		if (config.source.kind === 'env') {
+			logger.info(
+				`For OAuth / multiple instances, copy the YAML template and set SERVICENOW_CONFIG_PATH: ${exampleConfigPath()}`,
+			);
+		}
+		instanceManager = new InstanceManager(config.instances, config.source);
 	} catch (error) {
 		initializeLogger('info');
 		configError = error instanceof Error ? error : new Error(String(error));

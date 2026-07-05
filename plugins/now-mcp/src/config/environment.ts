@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { z } from 'zod';
 import type { InstanceConfig } from '../types/instance.js';
@@ -130,13 +131,54 @@ const MultiInstanceConfigSchema = z
 		{ message: 'Instance names must be unique' },
 	);
 
+/**
+ * Where the resolved config came from. Kept on the Environment so a runtime
+ * error (e.g. a read-only write block) can point the user at the EXACT place to
+ * change — the plugin form / env vars, or a specific YAML file — instead of
+ * assuming a YAML that a plugin-form install doesn't have.
+ */
+export type ConfigSource =
+	| { kind: 'env' } // single-instance fast path (plugin form / SERVICENOW_* env vars)
+	| { kind: 'yaml'; path: string }; // a YAML file (explicit path or cwd default)
+
+/**
+ * Human-facing, source-specific instruction for flipping an instance out of
+ * read-only. Shared by validateWriteAccess and the 403 hint so the guidance is
+ * identical wherever a write is blocked.
+ */
+export function readOnlyRemediation(
+	source: ConfigSource | undefined,
+	instanceName: string,
+): string {
+	if (source?.kind === 'yaml') {
+		return `Set readOnly: false on instance '${instanceName}' in ${source.path}, then reload the plugin (or restart the MCP server).`;
+	}
+	// env fast path (plugin form) — or unknown, which for a single-instance install
+	// is overwhelmingly the plugin form.
+	return "This instance is configured via the plugin form / env vars (no YAML). Set the 'Read-only' field to false in the now-mcp plugin config (or SERVICENOW_READ_ONLY=false), then reload plugins.";
+}
+
 // Environment configuration type
 export interface Environment {
 	instances: InstanceConfig[];
 	logLevel: 'debug' | 'info' | 'warn' | 'error';
+	/** Where this config was resolved from (for source-aware error guidance). */
+	source: ConfigSource;
 }
 
 let cachedConfig: Environment | null = null;
+
+/**
+ * Absolute path to the annotated YAML template shipped with the plugin
+ * (config/sn-credential.example.yaml). Resolved relative to this module so it's
+ * correct wherever the plugin is installed. Surfaced in the startup log and the
+ * no-config error so YAML/OAuth/multi-instance users find it without hunting.
+ */
+export function exampleConfigPath(): string {
+	// build/config/environment.js → plugin root is two levels up.
+	const here = path.dirname(fileURLToPath(import.meta.url));
+	return path.resolve(here, '..', '..', 'config', 'sn-credential.example.yaml');
+}
 
 /**
  * Load and validate the YAML configuration file.
@@ -165,6 +207,7 @@ function loadYamlConfig(configPath: string): Environment {
 		return {
 			instances: result.data.instances,
 			logLevel: (process.env.LOG_LEVEL as Environment['logLevel']) || 'info',
+			source: { kind: 'yaml', path: configPath },
 		};
 	} catch (error) {
 		if (error instanceof Error) {
@@ -211,7 +254,7 @@ export function resolveNowSdkFollow(
 	if (!matchName) {
 		logger.warn(
 			`follow-now-sdk: now-sdk's active instance '${profile.host}' (alias '${profile.alias}') ` +
-				'has no matching entry in the YAML config; using the YAML default. ' +
+				'has no matching entry in the configured instances; using the default. ' +
 				'Add that instance (with its password) to follow it, or set SERVICENOW_FOLLOW_NOW_SDK=false.',
 		);
 		return null;
@@ -321,6 +364,7 @@ function buildSingleInstanceFromEnv(): Environment | null {
 	return {
 		instances: result.data.instances,
 		logLevel: (process.env.LOG_LEVEL as Environment['logLevel']) || 'info',
+		source: { kind: 'env' },
 	};
 }
 
@@ -400,9 +444,9 @@ export function loadConfig(): Environment {
 			'Fix it one of these ways:\n' +
 			'  • Plugin: open the now-mcp plugin settings and fill in the instance ' +
 			'URL, username, and password (single-instance, basic auth).\n' +
-			'  • YAML: create config/sn-credential.yaml (copy ' +
-			'config/sn-credential.example.yaml) for multi-instance or OAuth, ' +
-			'or point SERVICENOW_CONFIG_PATH at a YAML file.',
+			'  • YAML: copy the annotated template to config/sn-credential.yaml (or ' +
+			'anywhere, then set SERVICENOW_CONFIG_PATH) for multi-instance or OAuth.\n' +
+			`    Template: ${exampleConfigPath()}`,
 	);
 }
 

@@ -14,7 +14,7 @@ export interface FailureContext {
 	query?: string;
 }
 
-export type FailureType = '401' | '403' | '404' | '400' | 'field_error' | 'unknown';
+export type FailureType = '401' | '403' | 'readonly' | '404' | '400' | 'field_error' | 'unknown';
 
 export function classifyFailure(text: string): FailureType {
 	const t = text.toLowerCase();
@@ -27,13 +27,12 @@ export function classifyFailure(text: string): FailureType {
 		return 'field_error';
 	}
 	if (t.includes('401') || t.includes('authentication') || t.includes('unauthorized')) return '401';
-	if (
-		t.includes('403') ||
-		t.includes('access denied') ||
-		t.includes('forbidden') ||
-		t.includes('read-only')
-	)
-		return '403';
+	// A client-side read-only write block (thrown before any HTTP call). Its
+	// message already carries source-aware remediation, so it needs no extra hint —
+	// classify it distinctly from a genuine server ACL 403 to avoid appending
+	// stale, contradictory YAML advice.
+	if (t.includes('read-only') || t.includes('not permitted on read-only')) return 'readonly';
+	if (t.includes('403') || t.includes('access denied') || t.includes('forbidden')) return '403';
 	if (t.includes('404') || t.includes('not found') || t.includes('does not exist')) return '404';
 	if (t.includes('400') || t.includes('bad request')) return '400';
 	return 'unknown';
@@ -53,8 +52,11 @@ export function failureHints(text: string, ctx: FailureContext = {}): string[] {
 		case '403':
 			return [
 				`Access denied on ${table}. Likely an ACL — the account may lack the required role, or the field/record is restricted.`,
-				'If this is a write, the instance may be configured read-only (set readOnly: false on the instance in your YAML config to allow writes).',
 			];
+		case 'readonly':
+			// The read-only write-block message already includes source-aware
+			// remediation (which config to edit + reload). No extra hint.
+			return [];
 		case '401':
 			return [
 				'Authentication failed. Check the instance credentials (username/password or OAuth client).',

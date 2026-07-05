@@ -2,6 +2,7 @@
  * Instance Manager for handling multiple ServiceNow instances
  */
 
+import type { ConfigSource } from '../config/environment.js';
 import { ServiceNowError } from '../types/errors.js';
 import type { InstanceConfig, InstanceStatus } from '../types/instance.js';
 import { logger } from '../utils/logger.js';
@@ -14,13 +15,17 @@ export class InstanceManager {
 	private clients: Map<string, ServiceNowClient> = new Map();
 	private configs: Map<string, InstanceConfig> = new Map();
 	private defaultInstance: string;
+	/** Where the config came from — for source-aware runtime error guidance. */
+	private readonly configSource?: ConfigSource;
 
 	/**
 	 * Creates a new InstanceManager
 	 * @param instances Array of instance configurations
+	 * @param configSource Where the config was resolved from (optional)
 	 * @throws {ServiceNowError} If no default instance is specified or instance names are not unique
 	 */
-	constructor(instances: InstanceConfig[]) {
+	constructor(instances: InstanceConfig[], configSource?: ConfigSource) {
+		this.configSource = configSource;
 		if (instances.length === 0) {
 			throw new ServiceNowError('At least one instance configuration is required', 400);
 		}
@@ -101,6 +106,14 @@ export class InstanceManager {
 		}
 
 		return config;
+	}
+
+	/**
+	 * Where the config was resolved from (env fast-path vs a YAML file). Used to
+	 * give source-specific remediation when a write is blocked.
+	 */
+	getConfigSource(): ConfigSource | undefined {
+		return this.configSource;
 	}
 
 	/**

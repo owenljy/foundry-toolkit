@@ -13,14 +13,29 @@ test('classifyFailure recognizes the common ServiceNow failure shapes', () => {
   assert.equal(classifyFailure('401 Unauthorized'), '401');
   assert.equal(classifyFailure('Invalid field name: foo'), 'field_error');
   assert.equal(classifyFailure('something weird happened'), 'unknown');
+  // A client-side read-only write block is classified distinctly from a server
+  // ACL 403, so it doesn't get a stale YAML-assuming hint tacked on.
+  assert.equal(
+    classifyFailure("Write operations are not permitted on read-only instance 'prod'."),
+    'readonly',
+  );
 });
 
-test('403 hints mention ACLs and read-only', () => {
+test('403 hints point at ACLs/roles (not read-only, which is a separate class)', () => {
   const hints = failureHints('403 Access denied', { table: 'incident', operation: 'create' });
   const text = hints.join(' ');
   assert.match(text, /ACL/);
-  assert.match(text, /read-only/i);
   assert.match(text, /incident/);
+  // The read-only remediation lives on the write-block message itself, not here.
+  assert.doesNotMatch(text, /read-only/i);
+});
+
+test('read-only write block gets no extra hint (message is already source-aware)', () => {
+  const hints = failureHints(
+    "Write operations are not permitted on read-only instance 'prod'. Set ...",
+    { table: 'incident', operation: 'create' },
+  );
+  assert.deepEqual(hints, []);
 });
 
 test('field_error hints point at the schema tool', () => {

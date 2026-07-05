@@ -54,6 +54,7 @@ function makeManager(client, config = {}) {
   return {
     getClient: () => client,
     getConfig: () => ({ name: 'dev', readOnly: false, ...config }),
+    getConfigSource: () => ({ kind: 'env' }),
   };
 }
 

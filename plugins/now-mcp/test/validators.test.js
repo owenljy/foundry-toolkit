@@ -24,15 +24,38 @@ test('validateSysId accepts 32-char hex, rejects others', () => {
 });
 
 test('validateWriteAccess throws for read-only instances', () => {
-  const roManager = { getConfig: () => ({ name: 'prod', readOnly: true }) };
+  const roManager = {
+    getConfig: () => ({ name: 'prod', readOnly: true }),
+    getConfigSource: () => ({ kind: 'env' }),
+  };
   assert.throws(() => validateWriteAccess(roManager, 'prod'), /read-only/i);
 
   // readOnly undefined => defaults to read-only (true)
-  const defaultManager = { getConfig: () => ({ name: 'dev' }) };
+  const defaultManager = {
+    getConfig: () => ({ name: 'dev' }),
+    getConfigSource: () => ({ kind: 'env' }),
+  };
   assert.throws(() => validateWriteAccess(defaultManager), /read-only/i);
 });
 
+test('validateWriteAccess read-only message is source-aware (plugin form vs YAML)', () => {
+  const envManager = {
+    getConfig: () => ({ name: 'prod', readOnly: true }),
+    getConfigSource: () => ({ kind: 'env' }),
+  };
+  assert.throws(() => validateWriteAccess(envManager, 'prod'), /plugin form|SERVICENOW_READ_ONLY/);
+
+  const yamlManager = {
+    getConfig: () => ({ name: 'prod', readOnly: true }),
+    getConfigSource: () => ({ kind: 'yaml', path: '/tmp/sn.yaml' }),
+  };
+  assert.throws(() => validateWriteAccess(yamlManager, 'prod'), /\/tmp\/sn\.yaml/);
+});
+
 test('validateWriteAccess permits writes when readOnly is explicitly false', () => {
-  const rwManager = { getConfig: () => ({ name: 'dev', readOnly: false }) };
+  const rwManager = {
+    getConfig: () => ({ name: 'dev', readOnly: false }),
+    getConfigSource: () => ({ kind: 'env' }),
+  };
   assert.doesNotThrow(() => validateWriteAccess(rwManager, 'dev'));
 });
