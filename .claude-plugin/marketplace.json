@@ -5,9 +5,6 @@
   "owner": {
     "name": "Owen Liang"
   },
-  "renames": {
-    "toolkit": "aia-toolkit"
-  },
   "plugins": [
     {
       "name": "now-mcp",
