@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "toolkit",
+  "displayName": "ServiceNow AI Agent toolkit",
+  "description": "Skills for the full ServiceNow AI Agent lifecycle — build agents as now-sdk Fluent, audit them against deployment guardrails, build eval datasets, set up the platform eval pipeline, and analyze runtime execution traces. Pairs with the now-mcp plugin for live-instance reads and script execution.",
+  "author": {
+    "name": "Owen Liang"
+  },
+  "license": "MIT",
+  "keywords": [
+    "servicenow",
+    "ai-agent",
+    "now-assist",
+    "fluent",
+    "now-sdk",
+    "eval",
+    "claude"
+  ]
+}

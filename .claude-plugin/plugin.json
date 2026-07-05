@@ -41,7 +41,7 @@
     "config_path": {
       "type": "file",
       "title": "Config file (OPTIONAL — leave empty for a single instance)",
-      "description": "Leave EMPTY if you filled in URL + Username + Password above. Only for OAuth / multiple instances / now-sdk pairing: create a YAML file anywhere on your machine and put its absolute path here (it then overrides the fields above). A ready-to-copy annotated template ships with the plugin at config/servicenow-instances.example.yaml (also viewable at https://github.com/owenljy/foundry-toolkit/blob/main/config/servicenow-instances.example.yaml) — copy it, fill in your instance(s), and point this field at your copy."
+      "description": "Leave EMPTY if you filled in URL + Username + Password above. Only for OAuth / multiple instances / now-sdk pairing: create a YAML file anywhere on your machine and put its absolute path here (it then overrides the fields above). A ready-to-copy annotated template ships with the plugin at config/servicenow-instances.example.yaml (also viewable at https://github.com/owenljy/foundry-suite/blob/main/config/servicenow-instances.example.yaml) — copy it, fill in your instance(s), and point this field at your copy."
     }
   }
 }

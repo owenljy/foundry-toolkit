@@ -1,15 +1,22 @@
-# foundry-toolkit — Claude's ServiceNow toolkit, built around Fluent (`now-sdk`)
+# foundry-suite — Claude's ServiceNow toolkit, built around Fluent (`now-sdk`)
 
-A Claude Code **plugin toolkit** for working on ServiceNow the Fluent way. It
-bundles two kinds of thing, distributed together and growing over time:
+A Claude Code **plugin suite** (`foundry-suite`) for working on ServiceNow the
+Fluent way. It ships **two plugins** you can install separately or together, and
+it grows over time:
 
 - **`now-mcp`** — a small, trustworthy, **Fluent-native**
   [Model Context Protocol](https://modelcontextprotocol.io) server that lets
   Claude **operate a running ServiceNow instance**: read and write runtime data,
-  inspect schema, run scripts, manage attachments.
-- **Skills** — a growing set of on-demand workflow skills (e.g. `sn-docs-search`)
-  that Claude Code picks up when the task matches.
-- **A SessionStart hook** — when a project is a Fluent app (`now.config.json`
+  inspect schema, run scripts, manage attachments. It also carries on-demand
+  skills (e.g. `sn-docs-search`) and the Fluent-workflow SessionStart hook.
+- **`toolkit`** — skills for the full **ServiceNow AI Agent lifecycle**: build an
+  agent as now-sdk Fluent (`sn-aia-agent-builder`), audit it against deployment
+  guardrails (`sn-aia-agent-audit`), build eval datasets (`sn-aia-dataset-builder`),
+  set up the platform eval pipeline (`sn-eval-runner-builder`), and analyze
+  runtime execution traces (`sn-aia-trace-analyzer`). These skills resolve their
+  live-instance reads and script execution against whatever ServiceNow MCP is
+  connected — `now-mcp` is the natural pair, but not hardcoded.
+- **A SessionStart hook** (in `now-mcp`) — when a project is a Fluent app (`now.config.json`
   present), it injects a standing "Fluent workflow" block into that project's
   `CLAUDE.md`: the always-on rules for splitting work between **`now-sdk`** (author
   metadata, capture, reads) and **`now-mcp`** (aggregate, write data, run scripts),
@@ -27,7 +34,7 @@ operates** the running instance (query/aggregate data, read schema, write data
 rows, run server-side scripts, manage attachments); **skills orchestrate** the
 two into workflows. The line that keeps them apart: **data rows are runtime →
 MCP; config/metadata is the app's definition → Fluent source.** That's why the
-MCP writes an incident but never a business rule. This repo (`foundry-toolkit`)
+MCP writes an incident but never a business rule. This repo (`foundry-suite`)
 ships the MCP and the skills together as one installable toolkit.
 
 ![SDK authors the application, MCP operates the running instance, Skills orchestrate the two — with a "where does it go?" guide](docs/three-layers.png)
@@ -45,15 +52,20 @@ ships the MCP and the skills together as one installable toolkit.
 
 ### Install as a Claude Code plugin (recommended)
 
-The toolkit ships as a Claude Code **plugin** from the `foundry-toolkit`
-marketplace — the `now-mcp` server *and* the bundled skills install together,
-from git, with no manual build:
+The suite ships as Claude Code **plugins** from the `foundry-suite`
+marketplace — install from git, no manual build. Add the marketplace once, then
+install whichever plugins you want:
 
 ```
 /plugin marketplace add <REPO_URL>
-/plugin install now-mcp@foundry-toolkit
+/plugin install now-mcp@foundry-suite      # the MCP server + Fluent skills/hook
+/plugin install toolkit@foundry-suite      # the AI Agent lifecycle skills (optional)
 /reload-plugins
 ```
+
+Install `now-mcp` alone for the data/schema/script tools; add `toolkit` when you
+work on ServiceNow AI Agents. `toolkit` is skills-only (no setup form) and uses
+`now-mcp` for its live-instance reads, so installing both is the usual setup.
 
 
 When you enable it, Claude Code pops up a **setup form** for connection details.
@@ -86,7 +98,7 @@ Two ways to configure, depending on how complex your setup is:
 ```bash
 # 1. Copy the example (your copy is git-ignored, so credentials stay local).
 #    The template is bundled with the plugin at the same path, and viewable at
-#    https://github.com/owenljy/foundry-toolkit/blob/main/config/servicenow-instances.example.yaml
+#    https://github.com/owenljy/foundry-suite/blob/main/config/servicenow-instances.example.yaml
 cp config/servicenow-instances.example.yaml config/servicenow-instances.yaml
 # 2. Edit config/servicenow-instances.yaml — the file is commented; the minimal
 #    single-instance block at the top is all most setups need.

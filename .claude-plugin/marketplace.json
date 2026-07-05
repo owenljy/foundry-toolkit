@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-marketplace.json",
-  "name": "foundry-toolkit",
-  "description": "ServiceNow toolkit for Claude, built around Fluent (now-sdk) — the Fluent-native now-mcp server, on-demand skills, and auto-injected Fluent workflow rules. More to come.",
+  "name": "foundry-suite",
+  "description": "ServiceNow suite for Claude, built around Fluent (now-sdk) — the Fluent-native now-mcp server plus a toolkit of AI-agent build/audit/eval/trace skills. More to come.",
   "owner": {
     "name": "Owen Liang"
   },
@@ -10,6 +10,11 @@
       "name": "now-mcp",
       "source": "./",
       "description": "Fluent-native MCP server for ServiceNow, paired with auto-injected now-sdk/now-mcp workflow rules."
+    },
+    {
+      "name": "toolkit",
+      "source": "./toolkit",
+      "description": "Skills for the full ServiceNow AI Agent lifecycle — build, audit, dataset, eval-runner, and trace analysis. Pairs with now-mcp for live-instance reads and script execution."
     }
   ]
 }
