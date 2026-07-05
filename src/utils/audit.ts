@@ -5,9 +5,15 @@
  * trail of what this server changed and where. Entries always go to the
  * logger (stderr); if SERVICENOW_AUDIT_LOG is set to a file path, a JSON line
  * per write is also appended there.
+ *
+ * The file is size-capped: before each append, if it has grown past
+ * SERVICENOW_AUDIT_LOG_MAX_BYTES (default 10 MiB), it is rotated to
+ * `<path>.1` (replacing any previous rotation) and a fresh file is started.
+ * A single backup generation is kept — enough to bound disk use on a
+ * long-lived server without pulling in a full log-rotation dependency.
  */
 
-import { appendFileSync } from 'fs';
+import { appendFileSync, renameSync, statSync } from 'fs';
 import { logger } from './logger.js';
 
 export interface WriteAuditEntry {
@@ -17,11 +23,41 @@ export interface WriteAuditEntry {
   host: string;
 }
 
+const DEFAULT_MAX_BYTES = 10 * 1024 * 1024; // 10 MiB
+
 function hostOf(instanceUrl: string): string {
   try {
     return new URL(instanceUrl).host;
   } catch {
     return instanceUrl;
+  }
+}
+
+/**
+ * Resolve the configured rotation cap. Invalid or non-positive values disable
+ * rotation (returns Infinity) so a misconfigured env var never drops entries.
+ */
+function maxBytes(): number {
+  const raw = process.env.SERVICENOW_AUDIT_LOG_MAX_BYTES;
+  if (raw === undefined) return DEFAULT_MAX_BYTES;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return Infinity;
+  return n;
+}
+
+/**
+ * Rotate the audit file if it has reached the size cap. Best-effort: any
+ * failure (missing file, permission error) is swallowed so auditing keeps
+ * appending rather than blocking the write it is recording.
+ */
+function rotateIfNeeded(auditFile: string, limit: number): void {
+  if (limit === Infinity) return;
+  try {
+    const { size } = statSync(auditFile);
+    if (size < limit) return;
+    renameSync(auditFile, `${auditFile}.1`);
+  } catch {
+    // File doesn't exist yet, or can't be rotated — nothing to do.
   }
 }
 
@@ -41,6 +77,7 @@ export function recordWrite(method: string, endpoint: string, instanceUrl: strin
   const auditFile = process.env.SERVICENOW_AUDIT_LOG;
   if (auditFile) {
     try {
+      rotateIfNeeded(auditFile, maxBytes());
       appendFileSync(auditFile, JSON.stringify(entry) + '\n', 'utf-8');
     } catch (error) {
       // Never let auditing break the actual operation.

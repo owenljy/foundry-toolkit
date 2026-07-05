@@ -59,9 +59,7 @@ async function main() {
     //     one now-sdk is set to. This spawns now-sdk, hence it runs here rather
     //     than in loadConfig. Best-effort; keeps the YAML default on any miss.
     try {
-      const configured = im
-        .listInstances()
-        .map((name) => ({ name, url: im.getConfig(name).url }));
+      const configured = im.listInstances().map((name) => ({ name, url: im.getConfig(name).url }));
       const followTo = resolveNowSdkFollow(configured);
       if (followTo && followTo !== im.getDefaultInstance()) {
         im.setDefaultInstance(followTo);

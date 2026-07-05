@@ -24,7 +24,7 @@ Write policy (governs writes INSIDE the script body — separate from the instan
 - The script body is treated as READ-ONLY by default. Any detected insert()/update()/delete() call is BLOCKED unless allowWrites: true is explicitly set.
 - allowWrites: true is the approval signal — only set it when the user has confirmed the writes are intentional.
 - Writes to metadata/config tables (sys_business_rule, sys_script_include, etc.) are flagged separately even when allowWrites: true — those belong in Fluent source control, not ad-hoc scripts.
-- Detection is heuristic (literal GlideRecord table names only); dynamic table references are not caught.
+- Detection is heuristic (literal GlideRecord table names only); dynamic table references are not caught. When a write's table can't be resolved statically, the result carries a lowConfidenceWarning — the metadata-table check is incomplete, so review the script manually.
 
 Runtime contract (runs in ServiceNow's Rhino engine, NOT Node):
 - Output capture: call log('...') to return output. gs.log()/gs.info() calls in your script are automatically rewritten to log() — both work. Return values are discarded.
@@ -74,6 +74,11 @@ export function createExecuteBackgroundScriptTool(
                   metadataWarning: `Writes to metadata/config tables detected: ${writeDetection.metadataTables.join(', ')}. These belong in Fluent source control, not ad-hoc scripts.`,
                 }
               : {}),
+            ...(writeDetection.lowConfidence
+              ? {
+                  lowConfidenceWarning: `${writeDetection.unresolvedWrites} write(s) target a GlideRecord whose table name could not be resolved (dynamic name, concatenation, or function return). The metadata-table check is incomplete for those — a write to a protected table may be unflagged. Review the script manually before approving.`,
+                }
+              : {}),
             hint: 'Set allowWrites: true to explicitly approve this script. Only do so after confirming the writes are intentional.',
           };
           return {
@@ -114,6 +119,11 @@ export function createExecuteBackgroundScriptTool(
                   ...(writeDetection.metadataTables.length > 0
                     ? {
                         metadataWarning: `Wrote to metadata/config tables: ${writeDetection.metadataTables.join(', ')}. Consider moving this to Fluent source control.`,
+                      }
+                    : {}),
+                  ...(writeDetection.lowConfidence
+                    ? {
+                        lowConfidenceWarning: `${writeDetection.unresolvedWrites} approved write(s) target a GlideRecord whose table name could not be resolved statically — the metadata-table check could not cover them. Verify none wrote to a protected metadata/config table.`,
                       }
                     : {}),
                 },

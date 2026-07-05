@@ -3,6 +3,26 @@
  */
 
 import { z } from 'zod';
+import { maxBatchSize } from '../config/batch-config.js';
+
+/**
+ * Enforce the configured max-batch-size cap at parse time, reporting the actual
+ * resolved limit (which an operator can raise via SERVICENOW_MAX_BATCH_SIZE)
+ * rather than a hardcoded number. Applied via superRefine so the message stays
+ * accurate even when the env override changes the cap.
+ */
+function enforceBatchSize(items: unknown[], ctx: z.RefinementCtx): void {
+  const cap = maxBatchSize();
+  if (items.length > cap) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.too_big,
+      maximum: cap,
+      type: 'array',
+      inclusive: true,
+      message: `Cannot process more than ${cap} records at once (set SERVICENOW_MAX_BATCH_SIZE to change this).`,
+    });
+  }
+}
 
 /**
  * Schema for batch creating multiple records
@@ -23,7 +43,7 @@ export const BatchCreateSchema = z.object({
       }),
     )
     .min(1, 'At least one record is required')
-    .max(50, 'Cannot create more than 50 records at once')
+    .superRefine(enforceBatchSize)
     .describe('Array of record objects to create'),
   continueOnError: z
     .boolean()
@@ -66,7 +86,7 @@ export const BatchUpdateSchema = z.object({
       }),
     )
     .min(1, 'At least one update is required')
-    .max(50, 'Cannot update more than 50 records at once')
+    .superRefine(enforceBatchSize)
     .describe('Array of update objects with sysId and fields'),
   updateType: z
     .enum(['partial', 'full'])

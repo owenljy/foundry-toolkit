@@ -41,7 +41,9 @@ function rankStrings(candidates: string[], prefix: string): string[] {
  */
 function textPrompt(lines: string[]) {
   return {
-    messages: [{ role: 'user' as const, content: { type: 'text' as const, text: lines.join('\n') } }],
+    messages: [
+      { role: 'user' as const, content: { type: 'text' as const, text: lines.join('\n') } },
+    ],
   };
 }
 

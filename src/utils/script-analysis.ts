@@ -194,6 +194,16 @@ export interface WriteDetection {
   writeCalls: Array<{ method: string; table?: string }>;
   /** Tables that are known ServiceNow metadata/config tables. */
   metadataTables: string[];
+  /**
+   * True when at least one detected write is on a GlideRecord whose table name
+   * could NOT be resolved to a literal (dynamic name, string concatenation,
+   * function return, or property read). In that case the metadata-table
+   * classification is incomplete — a write to a metadata/config table may have
+   * gone unflagged — so callers should treat the result with extra suspicion.
+   */
+  lowConfidence: boolean;
+  /** How many detected writes have an unresolved table (the low-confidence set). */
+  unresolvedWrites: number;
 }
 
 /**
@@ -201,11 +211,16 @@ export interface WriteDetection {
  * and one level of constant propagation (`var t = 'table'; new GlideRecord(t)`).
  * Concatenation, function returns, and property reads are still missed.
  * Callers should treat this as a BEST-EFFORT gate, not a complete sandbox.
+ *
+ * When a write is detected but its table can't be resolved, `lowConfidence` is
+ * set so the caller can surface that the metadata classification is incomplete
+ * rather than silently reporting a clean-looking result.
  */
 export function detectWriteOperations(script: string): WriteDetection {
   const varTable = buildVarTable(script);
   const writeCalls: Array<{ method: string; table?: string }> = [];
   const metadataFound = new Set<string>();
+  let unresolvedWrites = 0;
   let m: RegExpExecArray | null;
 
   WRITE_METHOD_RE.lastIndex = 0;
@@ -215,6 +230,8 @@ export function detectWriteOperations(script: string): WriteDetection {
     writeCalls.push({ method: `${method}()`, table });
     if (table && METADATA_TABLES.has(table)) {
       metadataFound.add(table);
+    } else if (!table) {
+      unresolvedWrites += 1;
     }
   }
 
@@ -222,6 +239,8 @@ export function detectWriteOperations(script: string): WriteDetection {
     hasWrites: writeCalls.length > 0,
     writeCalls,
     metadataTables: [...metadataFound],
+    lowConfidence: unresolvedWrites > 0,
+    unresolvedWrites,
   };
 }
 
