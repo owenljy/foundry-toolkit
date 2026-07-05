@@ -8,90 +8,90 @@
  */
 
 export interface FailureContext {
-  table?: string;
-  /** Free-form label of the operation for logging/future use (not branched on). */
-  operation?: string;
-  query?: string;
+	table?: string;
+	/** Free-form label of the operation for logging/future use (not branched on). */
+	operation?: string;
+	query?: string;
 }
 
 export type FailureType = '401' | '403' | '404' | '400' | 'field_error' | 'unknown';
 
 export function classifyFailure(text: string): FailureType {
-  const t = text.toLowerCase();
-  if (
-    t.includes('invalid field') ||
-    t.includes('unknown field') ||
-    t.includes('invalid column') ||
-    t.includes('no such field')
-  ) {
-    return 'field_error';
-  }
-  if (t.includes('401') || t.includes('authentication') || t.includes('unauthorized')) return '401';
-  if (
-    t.includes('403') ||
-    t.includes('access denied') ||
-    t.includes('forbidden') ||
-    t.includes('read-only')
-  )
-    return '403';
-  if (t.includes('404') || t.includes('not found') || t.includes('does not exist')) return '404';
-  if (t.includes('400') || t.includes('bad request')) return '400';
-  return 'unknown';
+	const t = text.toLowerCase();
+	if (
+		t.includes('invalid field') ||
+		t.includes('unknown field') ||
+		t.includes('invalid column') ||
+		t.includes('no such field')
+	) {
+		return 'field_error';
+	}
+	if (t.includes('401') || t.includes('authentication') || t.includes('unauthorized')) return '401';
+	if (
+		t.includes('403') ||
+		t.includes('access denied') ||
+		t.includes('forbidden') ||
+		t.includes('read-only')
+	)
+		return '403';
+	if (t.includes('404') || t.includes('not found') || t.includes('does not exist')) return '404';
+	if (t.includes('400') || t.includes('bad request')) return '400';
+	return 'unknown';
 }
 
 /**
  * Produce actionable hint lines for a failed call.
  */
 export function failureHints(text: string, ctx: FailureContext = {}): string[] {
-  const table = ctx.table ? `'${ctx.table}'` : 'the table';
-  switch (classifyFailure(text)) {
-    case 'field_error':
-      return [
-        `A field name appears invalid. Run servicenow_get_table_schema for ${table} to confirm field names`,
-        'For choice fields, servicenow_get_choice_list shows valid values.',
-      ];
-    case '403':
-      return [
-        `Access denied on ${table}. Likely an ACL — the account may lack the required role, or the field/record is restricted.`,
-        'If this is a write, the instance may be configured read-only (set readOnly: false on the instance in your YAML config to allow writes).',
-      ];
-    case '401':
-      return [
-        'Authentication failed. Check the instance credentials (username/password or OAuth client).',
-      ];
-    case '404':
-      return [
-        `Not found. Verify the table name with servicenow_list_tables, and that the sys_id/record exists.`,
-      ];
-    case '400':
-      return [
-        `Bad request. Check the encoded query syntax${ctx.query ? ` ("${ctx.query}")` : ''} and field values.`,
-      ];
-    default:
-      return [];
-  }
+	const table = ctx.table ? `'${ctx.table}'` : 'the table';
+	switch (classifyFailure(text)) {
+		case 'field_error':
+			return [
+				`A field name appears invalid. Run servicenow_get_table_schema for ${table} to confirm field names`,
+				'For choice fields, servicenow_get_choice_list shows valid values.',
+			];
+		case '403':
+			return [
+				`Access denied on ${table}. Likely an ACL — the account may lack the required role, or the field/record is restricted.`,
+				'If this is a write, the instance may be configured read-only (set readOnly: false on the instance in your YAML config to allow writes).',
+			];
+		case '401':
+			return [
+				'Authentication failed. Check the instance credentials (username/password or OAuth client).',
+			];
+		case '404':
+			return [
+				`Not found. Verify the table name with servicenow_list_tables, and that the sys_id/record exists.`,
+			];
+		case '400':
+			return [
+				`Bad request. Check the encoded query syntax${ctx.query ? ` ("${ctx.query}")` : ''} and field values.`,
+			];
+		default:
+			return [];
+	}
 }
 
 /**
  * Hints for a successful-but-empty result set.
  */
 export function zeroResultHints(ctx: FailureContext = {}): string[] {
-  const hints = ['No records matched. The query may be too narrow, or the data may not exist.'];
-  if (ctx.query) {
-    hints.push(
-      `Try broadening the query (current: "${ctx.query}") — remove a clause or use LIKE for partial matches.`,
-    );
-  }
-  hints.push(
-    'Confirm field values with servicenow_get_choice_list, or check the table with servicenow_get_table_schema.',
-  );
-  return hints;
+	const hints = ['No records matched. The query may be too narrow, or the data may not exist.'];
+	if (ctx.query) {
+		hints.push(
+			`Try broadening the query (current: "${ctx.query}") — remove a clause or use LIKE for partial matches.`,
+		);
+	}
+	hints.push(
+		'Confirm field values with servicenow_get_choice_list, or check the table with servicenow_get_table_schema.',
+	);
+	return hints;
 }
 
 /**
  * Render hint lines as a single text block (or null if none).
  */
 export function renderHints(hints: string[]): string | null {
-  if (hints.length === 0) return null;
-  return 'Hints:\n' + hints.map((h) => `- ${h}`).join('\n');
+	if (hints.length === 0) return null;
+	return `Hints:\n${hints.map((h) => `- ${h}`).join('\n')}`;
 }

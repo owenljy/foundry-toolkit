@@ -25,8 +25,8 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Check formatting
-        run: pnpm exec prettier --check 'src/**/*.ts'
+      - name: Lint
+        run: pnpm exec biome ci src
 
       - name: Test
         run: pnpm test

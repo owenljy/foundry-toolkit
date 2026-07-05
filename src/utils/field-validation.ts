@@ -9,12 +9,12 @@
 import { closestMatch } from './levenshtein.js';
 
 export interface UnknownField {
-  field: string;
-  suggestion?: string;
+	field: string;
+	suggestion?: string;
 }
 
 export interface FieldValidationResult {
-  unknown: UnknownField[];
+	unknown: UnknownField[];
 }
 
 /**
@@ -23,19 +23,19 @@ export interface FieldValidationResult {
  * segment only, since the rest traverses another table.
  */
 export function validateFieldNames(
-  provided: string[],
-  knownFields: string[],
+	provided: string[],
+	knownFields: string[],
 ): FieldValidationResult {
-  const known = new Set(knownFields);
-  const unknown: UnknownField[] = [];
+	const known = new Set(knownFields);
+	const unknown: UnknownField[] = [];
 
-  for (const field of provided) {
-    const root = field.split('.')[0];
-    if (known.has(root)) continue;
-    unknown.push({ field, suggestion: closestMatch(root, knownFields) });
-  }
+	for (const field of provided) {
+		const root = field.split('.')[0];
+		if (known.has(root)) continue;
+		unknown.push({ field, suggestion: closestMatch(root, knownFields) });
+	}
 
-  return { unknown };
+	return { unknown };
 }
 
 /**
@@ -43,23 +43,23 @@ export function validateFieldNames(
  * there is nothing to report.
  */
 export function formatFieldValidationError(
-  tableName: string,
-  result: FieldValidationResult,
+	tableName: string,
+	result: FieldValidationResult,
 ): string | null {
-  if (result.unknown.length === 0) return null;
+	if (result.unknown.length === 0) return null;
 
-  const lines = result.unknown.map((u) =>
-    u.suggestion
-      ? `  - "${u.field}" is not a field on ${tableName}. Did you mean "${u.suggestion}"?`
-      : `  - "${u.field}" is not a field on ${tableName}.`,
-  );
+	const lines = result.unknown.map((u) =>
+		u.suggestion
+			? `  - "${u.field}" is not a field on ${tableName}. Did you mean "${u.suggestion}"?`
+			: `  - "${u.field}" is not a field on ${tableName}.`,
+	);
 
-  return (
-    `Unknown field(s) for table ${tableName} — the Table API would silently drop these:\n` +
-    lines.join('\n') +
-    `\n\nFix the field name(s), or pass skipFieldValidation: true to write anyway ` +
-    `(e.g. for a field not present in the cached dictionary).`
-  );
+	return (
+		`Unknown field(s) for table ${tableName} — the Table API would silently drop these:\n` +
+		lines.join('\n') +
+		`\n\nFix the field name(s), or pass skipFieldValidation: true to write anyway ` +
+		`(e.g. for a field not present in the cached dictionary).`
+	);
 }
 
 /**
@@ -68,13 +68,13 @@ export function formatFieldValidationError(
  * silently dropped by the Table API, so we validate every name that appears.
  */
 export function collectFieldNames(records: Array<Record<string, unknown>>): string[] {
-  const seen = new Set<string>();
-  for (const record of records) {
-    for (const name of Object.keys(record)) {
-      seen.add(name);
-    }
-  }
-  return Array.from(seen);
+	const seen = new Set<string>();
+	for (const record of records) {
+		for (const name of Object.keys(record)) {
+			seen.add(name);
+		}
+	}
+	return Array.from(seen);
 }
 
 /**
@@ -82,11 +82,11 @@ export function collectFieldNames(records: Array<Record<string, unknown>>): stri
  * pre-flight helper below stay decoupled from the full SchemaService.
  */
 export interface FieldValidator {
-  validateFields(
-    tableName: string,
-    fieldNames: string[],
-    instance?: string,
-  ): Promise<FieldValidationResult | null>;
+	validateFields(
+		tableName: string,
+		fieldNames: string[],
+		instance?: string,
+	): Promise<FieldValidationResult | null>;
 }
 
 /**
@@ -99,12 +99,12 @@ export interface FieldValidator {
  * typo'd field names identically.
  */
 export async function preflightFieldValidation(
-  validator: FieldValidator | undefined,
-  tableName: string,
-  fieldNames: string[],
-  options: { skip?: boolean; instance?: string } = {},
+	validator: FieldValidator | undefined,
+	tableName: string,
+	fieldNames: string[],
+	options: { skip?: boolean; instance?: string } = {},
 ): Promise<string | null> {
-  if (!validator || options.skip) return null;
-  const result = await validator.validateFields(tableName, fieldNames, options.instance);
-  return result ? formatFieldValidationError(tableName, result) : null;
+	if (!validator || options.skip) return null;
+	const result = await validator.validateFields(tableName, fieldNames, options.instance);
+	return result ? formatFieldValidationError(tableName, result) : null;
 }

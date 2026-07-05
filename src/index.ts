@@ -15,107 +15,107 @@
 // eslint-disable-next-line no-console
 console.log = (...args: unknown[]) => console.error(...args);
 
-import { loadConfig, resolveNowSdkFollow } from './config/environment.js';
-import { initializeLogger, logger } from './utils/logger.js';
-import { createServer, startServer } from './server.js';
 import { InstanceManager } from './client/instance-manager.js';
+import { loadConfig, resolveNowSdkFollow } from './config/environment.js';
+import { createServer, startServer } from './server.js';
+import { initializeLogger, logger } from './utils/logger.js';
 
 async function main() {
-  let instanceManager: InstanceManager | null = null;
-  let configError: Error | null = null;
+	let instanceManager: InstanceManager | null = null;
+	let configError: Error | null = null;
 
-  // 1. Load config. On failure, capture the error and degrade — do NOT exit,
-  //    so the client still connects and sees the reason.
-  try {
-    const config = loadConfig();
-    initializeLogger(config.logLevel);
-    logger.info('Configuration loaded', {
-      instanceCount: config.instances.length,
-      defaultInstance: config.instances.find((i) => i.default)?.name,
-    });
-    instanceManager = new InstanceManager(config.instances);
-  } catch (error) {
-    initializeLogger('info');
-    configError = error instanceof Error ? error : new Error(String(error));
-    logger.error(
-      'Configuration error — starting in DEGRADED mode (connection stays up, tools report the error)',
-      configError,
-    );
-  }
+	// 1. Load config. On failure, capture the error and degrade — do NOT exit,
+	//    so the client still connects and sees the reason.
+	try {
+		const config = loadConfig();
+		initializeLogger(config.logLevel);
+		logger.info('Configuration loaded', {
+			instanceCount: config.instances.length,
+			defaultInstance: config.instances.find((i) => i.default)?.name,
+		});
+		instanceManager = new InstanceManager(config.instances);
+	} catch (error) {
+		initializeLogger('info');
+		configError = error instanceof Error ? error : new Error(String(error));
+		logger.error(
+			'Configuration error — starting in DEGRADED mode (connection stays up, tools report the error)',
+			configError,
+		);
+	}
 
-  // 2. Start serving immediately. Never block the handshake on network checks
-  //    or now-sdk probes.
-  const server = await createServer(instanceManager, configError);
-  await startServer(server);
-  logger.info('now-mcp server is running');
+	// 2. Start serving immediately. Never block the handshake on network checks
+	//    or now-sdk probes.
+	const server = await createServer(instanceManager, configError);
+	await startServer(server);
+	logger.info('now-mcp server is running');
 
-  // 3. Post-start background work. None of this may block the handshake: the
-  //    now-sdk follow probe (~3s) and per-instance connection checks all run
-  //    AFTER the server is already serving. Problems surface as per-tool errors.
-  if (instanceManager) {
-    const im = instanceManager;
+	// 3. Post-start background work. None of this may block the handshake: the
+	//    now-sdk follow probe (~3s) and per-instance connection checks all run
+	//    AFTER the server is already serving. Problems surface as per-tool errors.
+	if (instanceManager) {
+		const im = instanceManager;
 
-    // 3a. Follow now-sdk (on by default): re-point the default instance to the
-    //     one now-sdk is set to. This spawns now-sdk, hence it runs here rather
-    //     than in loadConfig. Best-effort; keeps the YAML default on any miss.
-    try {
-      const configured = im.listInstances().map((name) => ({ name, url: im.getConfig(name).url }));
-      const followTo = resolveNowSdkFollow(configured);
-      if (followTo && followTo !== im.getDefaultInstance()) {
-        im.setDefaultInstance(followTo);
-        logger.info(`Default instance re-pointed to '${followTo}' to follow now-sdk.`);
-      }
-    } catch (e) {
-      logger.warn('follow-now-sdk check failed; keeping YAML default', {
-        error: e instanceof Error ? e.message : String(e),
-      });
-    }
+		// 3a. Follow now-sdk (on by default): re-point the default instance to the
+		//     one now-sdk is set to. This spawns now-sdk, hence it runs here rather
+		//     than in loadConfig. Best-effort; keeps the YAML default on any miss.
+		try {
+			const configured = im.listInstances().map((name) => ({ name, url: im.getConfig(name).url }));
+			const followTo = resolveNowSdkFollow(configured);
+			if (followTo && followTo !== im.getDefaultInstance()) {
+				im.setDefaultInstance(followTo);
+				logger.info(`Default instance re-pointed to '${followTo}' to follow now-sdk.`);
+			}
+		} catch (e) {
+			logger.warn('follow-now-sdk check failed; keeping YAML default', {
+				error: e instanceof Error ? e.message : String(e),
+			});
+		}
 
-    // 3b. Validate connections concurrently — one slow instance shouldn't serialize
-    //     behind the others (sum(timeout) → max(timeout)).
-    im.validateConnections()
-      .then((results) => {
-        for (const s of results) {
-          if (s.connected) logger.info(`Instance ${s.name}: connected ✓`);
-          else logger.warn(`Instance ${s.name}: not reachable`, { error: s.error });
-        }
-        if (results.filter((r) => r.connected).length === 0) {
-          logger.warn(
-            'No instances are currently reachable — tools will report connection errors until resolved.',
-          );
-        }
-      })
-      .catch((e) =>
-        logger.warn('Background connection validation failed', {
-          error: e instanceof Error ? e.message : String(e),
-        }),
-      );
-  }
+		// 3b. Validate connections concurrently — one slow instance shouldn't serialize
+		//     behind the others (sum(timeout) → max(timeout)).
+		im.validateConnections()
+			.then((results) => {
+				for (const s of results) {
+					if (s.connected) logger.info(`Instance ${s.name}: connected ✓`);
+					else logger.warn(`Instance ${s.name}: not reachable`, { error: s.error });
+				}
+				if (results.filter((r) => r.connected).length === 0) {
+					logger.warn(
+						'No instances are currently reachable — tools will report connection errors until resolved.',
+					);
+				}
+			})
+			.catch((e) =>
+				logger.warn('Background connection validation failed', {
+					error: e instanceof Error ? e.message : String(e),
+				}),
+			);
+	}
 }
 
 // Keep the server alive through stray errors — one bad tool call or rejected
 // promise must not drop the whole MCP session.
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught exception (continuing)', error);
+	logger.error('Uncaught exception (continuing)', error);
 });
 process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled promise rejection (continuing)', {
-    reason: reason instanceof Error ? reason.message : reason,
-  });
+	logger.error('Unhandled promise rejection (continuing)', {
+		reason: reason instanceof Error ? reason.message : reason,
+	});
 });
 
 // Graceful shutdown on signals.
 process.on('SIGINT', () => {
-  logger.info('Received SIGINT, shutting down...');
-  process.exit(0);
+	logger.info('Received SIGINT, shutting down...');
+	process.exit(0);
 });
 process.on('SIGTERM', () => {
-  logger.info('Received SIGTERM, shutting down...');
-  process.exit(0);
+	logger.info('Received SIGTERM, shutting down...');
+	process.exit(0);
 });
 
 // Only a failure to even start serving (e.g. the stdio transport) is fatal.
 main().catch((error) => {
-  logger.error('Fatal: MCP server could not start', error);
-  process.exit(1);
+	logger.error('Fatal: MCP server could not start', error);
+	process.exit(1);
 });

@@ -5,11 +5,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { SetLevelRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { registerTools, registerDegradedTools } from './tools/index.js';
-import { registerResources } from './resources/index.js';
-import { registerPrompts } from './prompts/index.js';
-import { logger } from './utils/logger.js';
 import type { InstanceManager } from './client/instance-manager.js';
+import { registerPrompts } from './prompts/index.js';
+import { registerResources } from './resources/index.js';
+import { registerDegradedTools, registerTools } from './tools/index.js';
+import { logger } from './utils/logger.js';
 
 const SERVER_VERSION = '4.0.0';
 
@@ -28,116 +28,116 @@ now-sdk default alignment: by default the MCP AUTO-FOLLOWS now-sdk's active inst
  * @param configError The configuration error to surface in degraded mode.
  */
 export async function createServer(
-  instanceManager: InstanceManager | null,
-  configError: Error | null = null,
+	instanceManager: InstanceManager | null,
+	configError: Error | null = null,
 ): Promise<McpServer> {
-  // The high-level McpServer infers capabilities from registrations. In
-  // degraded mode we register no tools and fall back to low-level handlers
-  // (see registerDegradedTools), but still declare the tools capability so the
-  // empty list + config error are visible.
-  const capabilities = instanceManager
-    ? { tools: {}, resources: {}, prompts: {}, logging: {} }
-    : { tools: {}, logging: {} };
+	// The high-level McpServer infers capabilities from registrations. In
+	// degraded mode we register no tools and fall back to low-level handlers
+	// (see registerDegradedTools), but still declare the tools capability so the
+	// empty list + config error are visible.
+	const capabilities = instanceManager
+		? { tools: {}, resources: {}, prompts: {}, logging: {} }
+		: { tools: {}, logging: {} };
 
-  // Returned in the `initialize` result. Drives the session-start protocol that
-  // keeps the MCP default instance aligned with the instance now-sdk is
-  // connected to — with explicit user confirmation before any switch.
-  const instructions = instanceManager ? SESSION_INSTRUCTIONS : undefined;
+	// Returned in the `initialize` result. Drives the session-start protocol that
+	// keeps the MCP default instance aligned with the instance now-sdk is
+	// connected to — with explicit user confirmation before any switch.
+	const instructions = instanceManager ? SESSION_INSTRUCTIONS : undefined;
 
-  const server = new McpServer(
-    {
-      name: 'now-mcp',
-      title: 'ServiceNow',
-      version: SERVER_VERSION,
-    },
-    { capabilities, instructions },
-  );
+	const server = new McpServer(
+		{
+			name: 'now-mcp',
+			title: 'ServiceNow',
+			version: SERVER_VERSION,
+		},
+		{ capabilities, instructions },
+	);
 
-  // Mirror our stderr logs to the MCP client via notifications/message. stderr
-  // remains the always-on fallback (see logger.ts); this is best-effort and
-  // never throws — the SDK drops messages until the client supports logging and
-  // gates them by the client's requested level.
-  logger.setMcpSender((entry) => {
-    server.server
-      .sendLoggingMessage({
-        level: entry.level,
-        logger: 'now-mcp',
-        data: entry.data,
-      })
-      .catch(() => {
-        // Client not ready / logging unsupported — stderr already has the log.
-      });
-  });
+	// Mirror our stderr logs to the MCP client via notifications/message. stderr
+	// remains the always-on fallback (see logger.ts); this is best-effort and
+	// never throws — the SDK drops messages until the client supports logging and
+	// gates them by the client's requested level.
+	logger.setMcpSender((entry) => {
+		server.server
+			.sendLoggingMessage({
+				level: entry.level,
+				logger: 'now-mcp',
+				data: entry.data,
+			})
+			.catch(() => {
+				// Client not ready / logging unsupported — stderr already has the log.
+			});
+	});
 
-  // When the logging capability is declared, the SDK's underlying Server
-  // auto-registers its own logging/setLevel handler (it records the level to
-  // gate outgoing messages per session). setRequestHandler is a Map.set, so
-  // registering ours here REPLACES the SDK's. That's intentional: we gate
-  // forwarding at the source via the Logger's own level (see forwardToMcp +
-  // shouldLog), so steering logger.setLevel is what actually honors the client's
-  // request. The try/catch is defensive only — a future SDK that rejects
-  // duplicate registration must not crash startup.
-  try {
-    server.server.setRequestHandler(SetLevelRequestSchema, async (req) => {
-      const level = req.params.level;
-      // Map the MCP spec level enum onto the levels our Logger understands.
-      if (level === 'warning' || level === 'notice') {
-        logger.setLevel('warn');
-      } else if (
-        level === 'error' ||
-        level === 'critical' ||
-        level === 'alert' ||
-        level === 'emergency'
-      ) {
-        logger.setLevel('error');
-      } else if (level === 'debug') {
-        logger.setLevel('debug');
-      } else {
-        logger.setLevel('info');
-      }
-      return {};
-    });
-  } catch (e) {
-    logger.debug('logging/setLevel handled by SDK; skipping manual handler', {
-      error: e instanceof Error ? e.message : String(e),
-    });
-  }
+	// When the logging capability is declared, the SDK's underlying Server
+	// auto-registers its own logging/setLevel handler (it records the level to
+	// gate outgoing messages per session). setRequestHandler is a Map.set, so
+	// registering ours here REPLACES the SDK's. That's intentional: we gate
+	// forwarding at the source via the Logger's own level (see forwardToMcp +
+	// shouldLog), so steering logger.setLevel is what actually honors the client's
+	// request. The try/catch is defensive only — a future SDK that rejects
+	// duplicate registration must not crash startup.
+	try {
+		server.server.setRequestHandler(SetLevelRequestSchema, async (req) => {
+			const level = req.params.level;
+			// Map the MCP spec level enum onto the levels our Logger understands.
+			if (level === 'warning' || level === 'notice') {
+				logger.setLevel('warn');
+			} else if (
+				level === 'error' ||
+				level === 'critical' ||
+				level === 'alert' ||
+				level === 'emergency'
+			) {
+				logger.setLevel('error');
+			} else if (level === 'debug') {
+				logger.setLevel('debug');
+			} else {
+				logger.setLevel('info');
+			}
+			return {};
+		});
+	} catch (e) {
+		logger.debug('logging/setLevel handled by SDK; skipping manual handler', {
+			error: e instanceof Error ? e.message : String(e),
+		});
+	}
 
-  // Register tools normally, or degraded handlers if config couldn't load.
-  if (instanceManager) {
-    await registerTools(server, instanceManager);
-    registerResources(server, instanceManager);
-    registerPrompts(server, instanceManager);
-  } else {
-    await registerDegradedTools(server, configError);
-  }
+	// Register tools normally, or degraded handlers if config couldn't load.
+	if (instanceManager) {
+		await registerTools(server, instanceManager);
+		registerResources(server, instanceManager);
+		registerPrompts(server, instanceManager);
+	} else {
+		await registerDegradedTools(server, configError);
+	}
 
-  // Set up error handler on the underlying low-level Server.
-  server.server.onerror = (error) => {
-    logger.error('Server error occurred', error);
-  };
+	// Set up error handler on the underlying low-level Server.
+	server.server.onerror = (error) => {
+		logger.error('Server error occurred', error);
+	};
 
-  logger.info('now-mcp server initialized');
+	logger.info('now-mcp server initialized');
 
-  return server;
+	return server;
 }
 
 /**
  * Start the MCP server with stdio transport
  */
 export async function startServer(server: McpServer): Promise<void> {
-  // Create stdio transport
-  const transport = new StdioServerTransport();
+	// Create stdio transport
+	const transport = new StdioServerTransport();
 
-  // Connect server to transport
-  await server.connect(transport);
+	// Connect server to transport
+	await server.connect(transport);
 
-  logger.info('now-mcp server connected via stdio transport');
+	logger.info('now-mcp server connected via stdio transport');
 
-  // Log server information
-  logger.info('Server ready to receive requests', {
-    name: 'now-mcp',
-    version: SERVER_VERSION,
-    transport: 'stdio',
-  });
+	// Log server information
+	logger.info('Server ready to receive requests', {
+		name: 'now-mcp',
+		version: SERVER_VERSION,
+		transport: 'stdio',
+	});
 }

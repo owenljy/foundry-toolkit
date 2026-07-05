@@ -8,28 +8,28 @@
  * (catching the classic "deployed to dev, queried prod" mistake).
  */
 
-import { spawnSync } from 'child_process';
+import { spawnSync } from 'node:child_process';
 
 export interface AuthProfile {
-  alias: string;
-  host: string;
-  type?: string;
-  username?: string;
-  isDefault: boolean;
+	alias: string;
+	host: string;
+	type?: string;
+	username?: string;
+	isDefault: boolean;
 }
 
 export interface InstanceAlignment {
-  instance: string;
-  url: string;
-  matchedProfile: string | null; // now-sdk alias whose host matches, if any
-  aligned: boolean;
+	instance: string;
+	url: string;
+	matchedProfile: string | null; // now-sdk alias whose host matches, if any
+	aligned: boolean;
 }
 
 /** A parsed semantic version: `4.8.0` → { major: 4, minor: 8, patch: 0 }. */
 export interface SemVer {
-  major: number;
-  minor: number;
-  patch: number;
+	major: number;
+	minor: number;
+	patch: number;
 }
 
 /**
@@ -38,27 +38,27 @@ export interface SemVer {
  * null if no `major.minor` can be found.
  */
 export function parseSemVer(version: string | null | undefined): SemVer | null {
-  if (!version) return null;
-  const m = version.trim().match(/(\d+)\.(\d+)(?:\.(\d+))?/);
-  if (!m) return null;
-  return {
-    major: Number(m[1]),
-    minor: Number(m[2]),
-    patch: m[3] ? Number(m[3]) : 0,
-  };
+	if (!version) return null;
+	const m = version.trim().match(/(\d+)\.(\d+)(?:\.(\d+))?/);
+	if (!m) return null;
+	return {
+		major: Number(m[1]),
+		minor: Number(m[2]),
+		patch: m[3] ? Number(m[3]) : 0,
+	};
 }
 
 /** Compare two SemVers: negative if a<b, 0 if equal, positive if a>b. */
 export function compareSemVer(a: SemVer, b: SemVer): number {
-  return a.major - b.major || a.minor - b.minor || a.patch - b.patch;
+	return a.major - b.major || a.minor - b.minor || a.patch - b.patch;
 }
 
 /** True if `version` is >= the `>=x.y.z` constraint. Unknown version → false. */
 export function satisfiesAtLeast(version: SemVer | null, constraint: string): boolean {
-  if (!version) return false;
-  const min = parseSemVer(constraint.replace(/^>=/, ''));
-  if (!min) return false;
-  return compareSemVer(version, min) >= 0;
+	if (!version) return false;
+	const min = parseSemVer(constraint.replace(/^>=/, ''));
+	if (!min) return false;
+	return compareSemVer(version, min) >= 0;
 }
 
 /**
@@ -79,9 +79,9 @@ export const AUTH_LIST_PARSED_VERSION: SemVer = { major: 4, minor: 8, patch: 0 }
  * unverified. Newer majors are flagged because the format could drift.
  */
 export function isAuthListFormatVerified(version: SemVer | null): boolean {
-  if (!version) return false;
-  // Same major as the verified release: trust the text parser.
-  return version.major === AUTH_LIST_PARSED_VERSION.major;
+	if (!version) return false;
+	// Same major as the verified release: trust the text parser.
+	return version.major === AUTH_LIST_PARSED_VERSION.major;
 }
 
 /**
@@ -93,10 +93,10 @@ export function isAuthListFormatVerified(version: SemVer | null): boolean {
  * `sdk_status` output. Add a feature by adding a constraint here.
  */
 export const NOW_SDK_FEATURE_CONSTRAINTS: Record<string, string> = {
-  // `now-sdk query -o json` (instance read substrate for Fluent authoring).
-  query: '>=4.8.0',
-  // `now-sdk transform` by sys_id (instance→Fluent capture by record id).
-  transformById: '>=4.7.0',
+	// `now-sdk query -o json` (instance read substrate for Fluent authoring).
+	query: '>=4.8.0',
+	// `now-sdk transform` by sys_id (instance→Fluent capture by record id).
+	transformById: '>=4.7.0',
 };
 
 /**
@@ -105,20 +105,20 @@ export const NOW_SDK_FEATURE_CONSTRAINTS: Record<string, string> = {
  * feature to `false` — the safe default of assuming nothing.
  */
 export function resolveFeatures(version: SemVer | null): Record<string, boolean> {
-  const resolved: Record<string, boolean> = {};
-  for (const [feature, constraint] of Object.entries(NOW_SDK_FEATURE_CONSTRAINTS)) {
-    resolved[feature] = satisfiesAtLeast(version, constraint);
-  }
-  return resolved;
+	const resolved: Record<string, boolean> = {};
+	for (const [feature, constraint] of Object.entries(NOW_SDK_FEATURE_CONSTRAINTS)) {
+		resolved[feature] = satisfiesAtLeast(version, constraint);
+	}
+	return resolved;
 }
 
 /** Normalize a host for comparison: drop protocol, trailing slash, lowercase. */
 export function normalizeHost(url: string): string {
-  return url
-    .trim()
-    .replace(/^https?:\/\//i, '')
-    .replace(/\/+$/, '')
-    .toLowerCase();
+	return url
+		.trim()
+		.replace(/^https?:\/\//i, '')
+		.replace(/\/+$/, '')
+		.toLowerCase();
 }
 
 /**
@@ -137,50 +137,50 @@ export function normalizeHost(url: string): string {
  * {@link isAuthListFormatVerified}.
  */
 export function parseAuthList(output: string): AuthProfile[] {
-  const profiles: AuthProfile[] = [];
-  let current: AuthProfile | null = null;
+	const profiles: AuthProfile[] = [];
+	let current: AuthProfile | null = null;
 
-  for (const rawLine of output.split('\n')) {
-    const line = rawLine.trim();
-    const aliasMatch = line.match(/^(\*?)\[(.+)\]$/);
-    if (aliasMatch) {
-      if (current) profiles.push(current);
-      current = { alias: aliasMatch[2], host: '', isDefault: aliasMatch[1] === '*' };
-      continue;
-    }
-    if (!current) continue;
+	for (const rawLine of output.split('\n')) {
+		const line = rawLine.trim();
+		const aliasMatch = line.match(/^(\*?)\[(.+)\]$/);
+		if (aliasMatch) {
+			if (current) profiles.push(current);
+			current = { alias: aliasMatch[2], host: '', isDefault: aliasMatch[1] === '*' };
+			continue;
+		}
+		if (!current) continue;
 
-    const kv = line.match(/^(host|type|username|default)\s*=\s*(.+)$/i);
-    if (!kv) continue;
-    const key = kv[1].toLowerCase();
-    const value = kv[2].trim();
-    if (key === 'host') current.host = value;
-    else if (key === 'type') current.type = value;
-    else if (key === 'username') current.username = value;
-    else if (key === 'default' && /^yes$/i.test(value)) current.isDefault = true;
-  }
-  if (current) profiles.push(current);
+		const kv = line.match(/^(host|type|username|default)\s*=\s*(.+)$/i);
+		if (!kv) continue;
+		const key = kv[1].toLowerCase();
+		const value = kv[2].trim();
+		if (key === 'host') current.host = value;
+		else if (key === 'type') current.type = value;
+		else if (key === 'username') current.username = value;
+		else if (key === 'default' && /^yes$/i.test(value)) current.isDefault = true;
+	}
+	if (current) profiles.push(current);
 
-  return profiles;
+	return profiles;
 }
 
 /**
  * Compare the MCP's configured instances against now-sdk auth profiles.
  */
 export function computeAlignment(
-  configured: Array<{ name: string; url: string }>,
-  profiles: AuthProfile[],
+	configured: Array<{ name: string; url: string }>,
+	profiles: AuthProfile[],
 ): InstanceAlignment[] {
-  return configured.map(({ name, url }) => {
-    const host = normalizeHost(url);
-    const match = profiles.find((p) => normalizeHost(p.host) === host);
-    return {
-      instance: name,
-      url,
-      matchedProfile: match ? match.alias : null,
-      aligned: Boolean(match),
-    };
-  });
+	return configured.map(({ name, url }) => {
+		const host = normalizeHost(url);
+		const match = profiles.find((p) => normalizeHost(p.host) === host);
+		return {
+			instance: name,
+			url,
+			matchedProfile: match ? match.alias : null,
+			aligned: Boolean(match),
+		};
+	});
 }
 
 // Bounded timeouts so a missing/slow now-sdk can never stall MCP startup. The
@@ -189,20 +189,20 @@ const DEFAULT_TIMEOUT_MS = 5_000;
 const VERSION_TIMEOUT_MS = 2_000;
 
 function runNowSdk(
-  args: string[],
-  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+	args: string[],
+	timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): { ok: boolean; stdout: string; stderr: string } {
-  try {
-    const res = spawnSync('now-sdk', args, { encoding: 'utf-8', timeout: timeoutMs });
-    if (res.error) return { ok: false, stdout: '', stderr: String(res.error.message) };
-    return { ok: res.status === 0, stdout: res.stdout || '', stderr: res.stderr || '' };
-  } catch (error) {
-    return {
-      ok: false,
-      stdout: '',
-      stderr: error instanceof Error ? error.message : String(error),
-    };
-  }
+	try {
+		const res = spawnSync('now-sdk', args, { encoding: 'utf-8', timeout: timeoutMs });
+		if (res.error) return { ok: false, stdout: '', stderr: String(res.error.message) };
+		return { ok: res.status === 0, stdout: res.stdout || '', stderr: res.stderr || '' };
+	} catch (error) {
+		return {
+			ok: false,
+			stdout: '',
+			stderr: error instanceof Error ? error.message : String(error),
+		};
+	}
 }
 
 // Probe `now-sdk --version` once per process — presence and version don't change
@@ -212,20 +212,20 @@ function runNowSdk(
 let versionProbe: { available: boolean; version: string | null } | null = null;
 
 function probeVersion(): { available: boolean; version: string | null } {
-  if (versionProbe !== null) return versionProbe;
-  const res = runNowSdk(['--version'], VERSION_TIMEOUT_MS);
-  const version = res.ok ? res.stdout.trim().split('\n').pop()?.trim() || null : null;
-  versionProbe = { available: res.ok, version };
-  return versionProbe;
+	if (versionProbe !== null) return versionProbe;
+	const res = runNowSdk(['--version'], VERSION_TIMEOUT_MS);
+	const version = res.ok ? res.stdout.trim().split('\n').pop()?.trim() || null : null;
+	versionProbe = { available: res.ok, version };
+	return versionProbe;
 }
 
 /** True if the now-sdk CLI is available on PATH (cached probe). */
 export function isNowSdkAvailable(): boolean {
-  return probeVersion().available;
+	return probeVersion().available;
 }
 
 export function getNowSdkVersion(): string | null {
-  return probeVersion().version;
+	return probeVersion().version;
 }
 
 // `now-sdk auth --list` spawns a JVM-backed CLI that costs ~2.8s per call, and
@@ -236,15 +236,15 @@ const PROFILE_CACHE_TTL_MS = 60_000;
 let profileCache: { at: number; profiles: AuthProfile[] } | null = null;
 
 export function listNowSdkProfiles(): AuthProfile[] {
-  const now = Date.now();
-  if (profileCache && now - profileCache.at < PROFILE_CACHE_TTL_MS) {
-    return profileCache.profiles;
-  }
-  const res = runNowSdk(['auth', '--list']);
-  if (!res.ok) return [];
-  const profiles = parseAuthList(res.stdout);
-  profileCache = { at: now, profiles };
-  return profiles;
+	const now = Date.now();
+	if (profileCache && now - profileCache.at < PROFILE_CACHE_TTL_MS) {
+		return profileCache.profiles;
+	}
+	const res = runNowSdk(['auth', '--list']);
+	if (!res.ok) return [];
+	const profiles = parseAuthList(res.stdout);
+	profileCache = { at: now, profiles };
+	return profiles;
 }
 
 /**
@@ -259,14 +259,14 @@ export function listNowSdkProfiles(): AuthProfile[] {
  * second `now-sdk auth --list` spawn.
  */
 export function pickDefaultProfile(profiles: AuthProfile[], alias?: string): AuthProfile | null {
-  if (alias) return profiles.find((p) => p.alias === alias) || null;
-  const def = profiles.find((p) => p.isDefault);
-  if (def) return def;
-  return profiles.length === 1 ? profiles[0] : null;
+	if (alias) return profiles.find((p) => p.alias === alias) || null;
+	const def = profiles.find((p) => p.isDefault);
+	if (def) return def;
+	return profiles.length === 1 ? profiles[0] : null;
 }
 
 export function resolveProfile(alias?: string): AuthProfile | null {
-  return pickDefaultProfile(listNowSdkProfiles(), alias);
+	return pickDefaultProfile(listNowSdkProfiles(), alias);
 }
 
 /**
@@ -275,12 +275,12 @@ export function resolveProfile(alias?: string): AuthProfile | null {
  * is currently set to. Returns the instance name, or null if none match.
  */
 export function findInstanceByHost(
-  instances: Array<{ name: string; url: string }>,
-  host: string,
+	instances: Array<{ name: string; url: string }>,
+	host: string,
 ): string | null {
-  const target = normalizeHost(host);
-  const match = instances.find((i) => normalizeHost(i.url) === target);
-  return match ? match.name : null;
+	const target = normalizeHost(host);
+	const match = instances.find((i) => normalizeHost(i.url) === target);
+	return match ? match.name : null;
 }
 
 /**
@@ -288,19 +288,19 @@ export function findInstanceByHost(
  * now-sdk is currently connected to (its default auth profile).
  */
 export interface DefaultAlignment {
-  nowSdkAvailable: boolean;
-  nowSdkDefaultProfile: string | null;
-  nowSdkDefaultHost: string | null;
-  mcpDefaultInstance: string;
-  /**
-   * True when no switch is warranted: either the MCP default already matches
-   * now-sdk's default, OR the situation is indeterminate (now-sdk absent, no
-   * default profile, or its host matches no configured instance). In all of
-   * these the caller should NOT prompt to switch.
-   */
-  defaultAligned: boolean;
-  /** Configured instance name to switch to, or null when none is warranted. */
-  recommendedDefaultInstance: string | null;
+	nowSdkAvailable: boolean;
+	nowSdkDefaultProfile: string | null;
+	nowSdkDefaultHost: string | null;
+	mcpDefaultInstance: string;
+	/**
+	 * True when no switch is warranted: either the MCP default already matches
+	 * now-sdk's default, OR the situation is indeterminate (now-sdk absent, no
+	 * default profile, or its host matches no configured instance). In all of
+	 * these the caller should NOT prompt to switch.
+	 */
+	defaultAligned: boolean;
+	/** Configured instance name to switch to, or null when none is warranted. */
+	recommendedDefaultInstance: string | null;
 }
 
 /**
@@ -310,34 +310,34 @@ export interface DefaultAlignment {
  * true` / `recommendedDefaultInstance: null` so callers never nag.
  */
 export function deriveDefaultAlignment(
-  profile: AuthProfile | null,
-  configured: Array<{ name: string; url: string }>,
-  mcpDefaultInstance: string,
-  nowSdkAvailable: boolean,
+	profile: AuthProfile | null,
+	configured: Array<{ name: string; url: string }>,
+	mcpDefaultInstance: string,
+	nowSdkAvailable: boolean,
 ): DefaultAlignment {
-  const base = {
-    nowSdkAvailable,
-    nowSdkDefaultProfile: profile ? profile.alias : null,
-    nowSdkDefaultHost: profile ? profile.host : null,
-    mcpDefaultInstance,
-  };
+	const base = {
+		nowSdkAvailable,
+		nowSdkDefaultProfile: profile ? profile.alias : null,
+		nowSdkDefaultHost: profile ? profile.host : null,
+		mcpDefaultInstance,
+	};
 
-  if (!nowSdkAvailable || !profile) {
-    return { ...base, defaultAligned: true, recommendedDefaultInstance: null };
-  }
+	if (!nowSdkAvailable || !profile) {
+		return { ...base, defaultAligned: true, recommendedDefaultInstance: null };
+	}
 
-  const match = findInstanceByHost(configured, profile.host);
-  if (!match) {
-    // now-sdk points at an instance we don't have configured — can't switch.
-    return { ...base, defaultAligned: true, recommendedDefaultInstance: null };
-  }
+	const match = findInstanceByHost(configured, profile.host);
+	if (!match) {
+		// now-sdk points at an instance we don't have configured — can't switch.
+		return { ...base, defaultAligned: true, recommendedDefaultInstance: null };
+	}
 
-  const aligned = match === mcpDefaultInstance;
-  return {
-    ...base,
-    defaultAligned: aligned,
-    recommendedDefaultInstance: aligned ? null : match,
-  };
+	const aligned = match === mcpDefaultInstance;
+	return {
+		...base,
+		defaultAligned: aligned,
+		recommendedDefaultInstance: aligned ? null : match,
+	};
 }
 
 /**
@@ -345,10 +345,10 @@ export function deriveDefaultAlignment(
  * compares against the MCP's current default instance.
  */
 export function getDefaultAlignment(
-  configured: Array<{ name: string; url: string }>,
-  mcpDefaultInstance: string,
+	configured: Array<{ name: string; url: string }>,
+	mcpDefaultInstance: string,
 ): DefaultAlignment {
-  const available = isNowSdkAvailable();
-  const profile = available ? resolveProfile() : null;
-  return deriveDefaultAlignment(profile, configured, mcpDefaultInstance, available);
+	const available = isNowSdkAvailable();
+	const profile = available ? resolveProfile() : null;
+	return deriveDefaultAlignment(profile, configured, mcpDefaultInstance, available);
 }

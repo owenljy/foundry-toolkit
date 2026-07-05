@@ -6,9 +6,9 @@
  * Authentication configuration for Basic Auth
  */
 export interface BasicAuthConfig {
-  type: 'basic';
-  username: string;
-  password: string;
+	type: 'basic';
+	username: string;
+	password: string;
 }
 
 /**
@@ -26,18 +26,18 @@ export type OAuthGrantType = 'client_credentials' | 'password';
  * compatible). For `password`, `username` and `password` are required.
  */
 export interface OAuthConfig {
-  type: 'oauth';
-  /** OAuth grant type. Defaults to `client_credentials` when omitted. */
-  grantType?: OAuthGrantType;
-  clientId: string;
-  clientSecret: string;
-  tokenUrl: string;
-  /** Required when grantType is `password`. */
-  username?: string;
-  /** Required when grantType is `password`. */
-  password?: string;
-  /** Optional OAuth scope. */
-  scope?: string;
+	type: 'oauth';
+	/** OAuth grant type. Defaults to `client_credentials` when omitted. */
+	grantType?: OAuthGrantType;
+	clientId: string;
+	clientSecret: string;
+	tokenUrl: string;
+	/** Required when grantType is `password`. */
+	username?: string;
+	/** Required when grantType is `password`. */
+	password?: string;
+	/** Optional OAuth scope. */
+	scope?: string;
 }
 
 /**
@@ -49,39 +49,39 @@ export type AuthConfig = BasicAuthConfig | OAuthConfig;
  * Configuration for a single ServiceNow instance
  */
 export interface InstanceConfig {
-  /** Unique name identifier for this instance */
-  name: string;
+	/** Unique name identifier for this instance */
+	name: string;
 
-  /** HTTPS URL of the ServiceNow instance */
-  url: string;
+	/** HTTPS URL of the ServiceNow instance */
+	url: string;
 
-  /** Authentication configuration */
-  auth: AuthConfig;
+	/** Authentication configuration */
+	auth: AuthConfig;
 
-  /** Whether this is the default instance */
-  default: boolean;
+	/** Whether this is the default instance */
+	default: boolean;
 
-  /** Request timeout in seconds */
-  timeout?: number;
+	/** Request timeout in seconds */
+	timeout?: number;
 
-  /** Whether this instance is read-only (defaults to true for safety) */
-  readOnly?: boolean;
+	/** Whether this instance is read-only (defaults to true for safety) */
+	readOnly?: boolean;
 
-  /**
-   * Optional path to a custom Scripted REST API that executes background scripts
-   * synchronously (e.g. /api/x_custom/script_runner/execute). When set, the
-   * execute_background_script tool POSTs directly here instead of relying on the
-   * ServiceNow scheduler via sys_trigger. Install the companion Scripted REST API
-   * on the instance to enable this fast path.
-   */
-  scriptApiPath?: string;
+	/**
+	 * Optional path to a custom Scripted REST API that executes background scripts
+	 * synchronously (e.g. /api/x_custom/script_runner/execute). When set, the
+	 * execute_background_script tool POSTs directly here instead of relying on the
+	 * ServiceNow scheduler via sys_trigger. Install the companion Scripted REST API
+	 * on the instance to enable this fast path.
+	 */
+	scriptApiPath?: string;
 }
 
 /**
  * Multi-instance configuration container
  */
 export interface MultiInstanceConfig {
-  instances: InstanceConfig[];
+	instances: InstanceConfig[];
 }
 
 /**
@@ -93,18 +93,18 @@ export type ServiceNowConfig = MultiInstanceConfig;
  * OAuth token response
  */
 export interface OAuthToken {
-  accessToken: string;
-  refreshToken?: string;
-  expiresIn: number;
-  tokenType: string;
+	accessToken: string;
+	refreshToken?: string;
+	expiresIn: number;
+	tokenType: string;
 }
 
 /**
  * Instance connection status
  */
 export interface InstanceStatus {
-  name: string;
-  connected: boolean;
-  error?: string;
-  lastChecked: Date;
+	name: string;
+	connected: boolean;
+	error?: string;
+	lastChecked: Date;
 }

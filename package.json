@@ -19,7 +19,9 @@
     "start": "node build/index.js",
     "test": "tsc && node --test test/*.test.js",
     "test:watch": "node --test --watch test/*.test.js",
-    "format": "prettier --write 'src/**/*.ts'",
+    "format": "biome format --write src",
+    "lint": "biome lint src",
+    "check": "biome check src",
     "prepare": "tsc"
   },
   "keywords": [
@@ -42,9 +44,9 @@
     "zod": "^3.25.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.2",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.17.10",
-    "prettier": "^3.4.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }

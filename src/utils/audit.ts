@@ -13,24 +13,24 @@
  * long-lived server without pulling in a full log-rotation dependency.
  */
 
-import { appendFileSync, renameSync, statSync } from 'fs';
+import { appendFileSync, renameSync, statSync } from 'node:fs';
 import { logger } from './logger.js';
 
 export interface WriteAuditEntry {
-  timestamp: string;
-  method: string;
-  endpoint: string;
-  host: string;
+	timestamp: string;
+	method: string;
+	endpoint: string;
+	host: string;
 }
 
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024; // 10 MiB
 
 function hostOf(instanceUrl: string): string {
-  try {
-    return new URL(instanceUrl).host;
-  } catch {
-    return instanceUrl;
-  }
+	try {
+		return new URL(instanceUrl).host;
+	} catch {
+		return instanceUrl;
+	}
 }
 
 /**
@@ -38,11 +38,11 @@ function hostOf(instanceUrl: string): string {
  * rotation (returns Infinity) so a misconfigured env var never drops entries.
  */
 function maxBytes(): number {
-  const raw = process.env.SERVICENOW_AUDIT_LOG_MAX_BYTES;
-  if (raw === undefined) return DEFAULT_MAX_BYTES;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n <= 0) return Infinity;
-  return n;
+	const raw = process.env.SERVICENOW_AUDIT_LOG_MAX_BYTES;
+	if (raw === undefined) return DEFAULT_MAX_BYTES;
+	const n = Number(raw);
+	if (!Number.isFinite(n) || n <= 0) return Infinity;
+	return n;
 }
 
 /**
@@ -51,39 +51,39 @@ function maxBytes(): number {
  * appending rather than blocking the write it is recording.
  */
 function rotateIfNeeded(auditFile: string, limit: number): void {
-  if (limit === Infinity) return;
-  try {
-    const { size } = statSync(auditFile);
-    if (size < limit) return;
-    renameSync(auditFile, `${auditFile}.1`);
-  } catch {
-    // File doesn't exist yet, or can't be rotated — nothing to do.
-  }
+	if (limit === Infinity) return;
+	try {
+		const { size } = statSync(auditFile);
+		if (size < limit) return;
+		renameSync(auditFile, `${auditFile}.1`);
+	} catch {
+		// File doesn't exist yet, or can't be rotated — nothing to do.
+	}
 }
 
 /**
  * Record a write operation to the audit trail.
  */
 export function recordWrite(method: string, endpoint: string, instanceUrl: string): void {
-  const entry: WriteAuditEntry = {
-    timestamp: new Date().toISOString(),
-    method: method.toUpperCase(),
-    endpoint,
-    host: hostOf(instanceUrl),
-  };
+	const entry: WriteAuditEntry = {
+		timestamp: new Date().toISOString(),
+		method: method.toUpperCase(),
+		endpoint,
+		host: hostOf(instanceUrl),
+	};
 
-  logger.info(`[AUDIT] ${entry.method} ${entry.endpoint} @ ${entry.host}`);
+	logger.info(`[AUDIT] ${entry.method} ${entry.endpoint} @ ${entry.host}`);
 
-  const auditFile = process.env.SERVICENOW_AUDIT_LOG;
-  if (auditFile) {
-    try {
-      rotateIfNeeded(auditFile, maxBytes());
-      appendFileSync(auditFile, JSON.stringify(entry) + '\n', 'utf-8');
-    } catch (error) {
-      // Never let auditing break the actual operation.
-      logger.warn(`Failed to write audit log to ${auditFile}`, {
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
+	const auditFile = process.env.SERVICENOW_AUDIT_LOG;
+	if (auditFile) {
+		try {
+			rotateIfNeeded(auditFile, maxBytes());
+			appendFileSync(auditFile, `${JSON.stringify(entry)}\n`, 'utf-8');
+		} catch (error) {
+			// Never let auditing break the actual operation.
+			logger.warn(`Failed to write audit log to ${auditFile}`, {
+				error: error instanceof Error ? error.message : String(error),
+			});
+		}
+	}
 }

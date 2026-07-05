@@ -8,7 +8,7 @@ import { z } from 'zod';
  * Schema for switching the session default instance.
  */
 export const SwitchDefaultInstanceSchema = z.object({
-  instance: z.string().describe('Name of a configured instance to make default for this session'),
+	instance: z.string().describe('Name of a configured instance to make default for this session'),
 });
 
 export type SwitchDefaultInstanceInput = z.infer<typeof SwitchDefaultInstanceSchema>;
@@ -17,9 +17,9 @@ export type SwitchDefaultInstanceInput = z.infer<typeof SwitchDefaultInstanceSch
  * Output schema for servicenow_switch_default_instance.
  */
 export const SwitchDefaultInstanceOutputSchema = z.object({
-  success: z.boolean(),
-  previousDefault: z.string(),
-  newDefault: z.string(),
-  connectivityVerified: z.boolean(),
-  connectivityDetail: z.string().optional(),
+	success: z.boolean(),
+	previousDefault: z.string(),
+	newDefault: z.string(),
+	connectivityVerified: z.boolean(),
+	connectivityDetail: z.string().optional(),
 });

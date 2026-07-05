@@ -11,35 +11,35 @@
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { InstanceManager } from '../client/instance-manager.js';
-import { TableService } from '../services/table-service.js';
+import type { InstanceManager } from '../client/instance-manager.js';
 import { AttachmentService } from '../services/attachment-service.js';
-import { ScriptService } from '../services/script-service.js';
 import { BatchService } from '../services/batch-service.js';
 import { SchemaService } from '../services/schema-service.js';
-import { createQueryRecordsTool } from './query-records-tool.js';
+import { ScriptService } from '../services/script-service.js';
+import { TableService } from '../services/table-service.js';
+import { logger } from '../utils/logger.js';
+import { isNowSdkAvailable } from '../utils/now-sdk-cli.js';
+import { formatToolCall } from '../utils/tool-log.js';
 import { createAggregateRecordsTool } from './aggregate-records-tool.js';
-import { createCreateRecordTool } from './create-record-tool.js';
-import { createUpdateRecordTool } from './update-record-tool.js';
-import { createDeleteRecordTool } from './delete-record-tool.js';
-import { createUploadAttachmentTool } from './upload-attachment-tool.js';
-import { createDownloadAttachmentTool } from './download-attachment-tool.js';
+import { TOOL_ANNOTATIONS } from './annotations.js';
 import { createBatchCreateTool } from './batch-create-tool.js';
 import { createBatchUpdateTool } from './batch-update-tool.js';
-import { createGetTableSchemaTool } from './get-table-schema-tool.js';
-import { createListTablesTool } from './list-tables-tool.js';
-import { createGetChoiceListTool } from './get-choice-list-tool.js';
-import { createExecuteBackgroundScriptTool } from './execute-background-script-tool.js';
-import { createSdkStatusTool } from './sdk-status-tool.js';
+import { createCreateRecordTool } from './create-record-tool.js';
+import { createDeleteRecordTool } from './delete-record-tool.js';
 import { createDiffRecordsTool } from './diff-records-tool.js';
+import { createDownloadAttachmentTool } from './download-attachment-tool.js';
+import { createExecuteBackgroundScriptTool } from './execute-background-script-tool.js';
 import { createGetAttachmentMetadataTool } from './get-attachment-metadata-tool.js';
-import { createGetTableStructureFromDataTool } from './get-table-structure-from-data-tool.js';
+import { createGetChoiceListTool } from './get-choice-list-tool.js';
 import { createGetSecurityInfoTool } from './get-security-info-tool.js';
+import { createGetTableSchemaTool } from './get-table-schema-tool.js';
+import { createGetTableStructureFromDataTool } from './get-table-structure-from-data-tool.js';
+import { createListTablesTool } from './list-tables-tool.js';
+import { createQueryRecordsTool } from './query-records-tool.js';
+import { createSdkStatusTool } from './sdk-status-tool.js';
 import { createSwitchDefaultInstanceTool } from './switch-default-instance-tool.js';
-import { TOOL_ANNOTATIONS } from './annotations.js';
-import { isNowSdkAvailable } from '../utils/now-sdk-cli.js';
-import { logger } from '../utils/logger.js';
-import { formatToolCall } from '../utils/tool-log.js';
+import { createUpdateRecordTool } from './update-record-tool.js';
+import { createUploadAttachmentTool } from './upload-attachment-tool.js';
 
 /**
  * Shape every createXTool factory returns. `inputSchema` / `outputSchema` are
@@ -48,24 +48,24 @@ import { formatToolCall } from '../utils/tool-log.js';
  * object: success carries `structuredContent`, errors set `isError: true`.
  */
 export interface ToolDescriptor {
-  name: string;
-  title?: string;
-  description: string;
-  inputSchema: z.ZodTypeAny;
-  outputSchema: z.ZodTypeAny;
-  handler: (args: unknown) => Promise<ToolResult> | ToolResult;
+	name: string;
+	title?: string;
+	description: string;
+	inputSchema: z.ZodTypeAny;
+	outputSchema: z.ZodTypeAny;
+	handler: (args: unknown) => Promise<ToolResult> | ToolResult;
 }
 
 interface ToolResult {
-  content: { type: 'text'; text: string }[];
-  structuredContent?: Record<string, unknown>;
-  /**
-   * Result-level metadata (MCP `_meta`): structured, outside the text body and
-   * outside `structuredContent`. Query/aggregate carry `{ instance, durationMs,
-   * rowCount? }` here (WS-B §4.2).
-   */
-  _meta?: Record<string, unknown>;
-  isError?: boolean;
+	content: { type: 'text'; text: string }[];
+	structuredContent?: Record<string, unknown>;
+	/**
+	 * Result-level metadata (MCP `_meta`): structured, outside the text body and
+	 * outside `structuredContent`. Query/aggregate carry `{ instance, durationMs,
+	 * rowCount? }` here (WS-B §4.2).
+	 */
+	_meta?: Record<string, unknown>;
+	isError?: boolean;
 }
 
 /**
@@ -76,47 +76,47 @@ interface ToolResult {
  * converts the error into an `isError` tool result.
  */
 function withLogging(
-  name: string,
-  handler: ToolDescriptor['handler'],
+	name: string,
+	handler: ToolDescriptor['handler'],
 ): (args: unknown, extra: unknown) => Promise<ToolResult> {
-  return async (args: unknown): Promise<ToolResult> => {
-    logger.debug(`Tool called: ${name}`, { arguments: args });
+	return async (args: unknown): Promise<ToolResult> => {
+		logger.debug(`Tool called: ${name}`, { arguments: args });
 
-    // Best-effort extraction of the target instance for the structured log.
-    const instance =
-      args &&
-      typeof args === 'object' &&
-      typeof (args as Record<string, unknown>).instance === 'string'
-        ? ((args as Record<string, unknown>).instance as string)
-        : undefined;
+		// Best-effort extraction of the target instance for the structured log.
+		const instance =
+			args &&
+			typeof args === 'object' &&
+			typeof (args as Record<string, unknown>).instance === 'string'
+				? ((args as Record<string, unknown>).instance as string)
+				: undefined;
 
-    const start = Date.now();
-    try {
-      const result = await handler(args);
-      const durationMs = Date.now() - start;
-      const ok = !(result && result.isError === true);
-      const { msg, data } = formatToolCall({
-        tool: name,
-        durationMs,
-        ok,
-        instance,
-      });
-      logger.info(msg, data);
-      return result;
-    } catch (error) {
-      const durationMs = Date.now() - start;
-      const message = error instanceof Error ? error.message : String(error);
-      const { msg, data } = formatToolCall({
-        tool: name,
-        durationMs,
-        ok: false,
-        instance,
-        error: message,
-      });
-      logger.info(msg, data);
-      throw error;
-    }
-  };
+		const start = Date.now();
+		try {
+			const result = await handler(args);
+			const durationMs = Date.now() - start;
+			const ok = !(result && result.isError === true);
+			const { msg, data } = formatToolCall({
+				tool: name,
+				durationMs,
+				ok,
+				instance,
+			});
+			logger.info(msg, data);
+			return result;
+		} catch (error) {
+			const durationMs = Date.now() - start;
+			const message = error instanceof Error ? error.message : String(error);
+			const { msg, data } = formatToolCall({
+				tool: name,
+				durationMs,
+				ok: false,
+				instance,
+				error: message,
+			});
+			logger.info(msg, data);
+			throw error;
+		}
+	};
 }
 
 /**
@@ -125,90 +125,90 @@ function withLogging(
  * @param instanceManager Instance manager for multi-instance support
  */
 export async function registerTools(
-  server: McpServer,
-  instanceManager: InstanceManager,
+	server: McpServer,
+	instanceManager: InstanceManager,
 ): Promise<void> {
-  // Initialize services with instance manager
-  const tableService = new TableService(instanceManager);
-  const attachmentService = new AttachmentService(instanceManager);
-  const scriptService = new ScriptService(instanceManager);
-  const batchService = new BatchService(instanceManager);
-  const schemaService = new SchemaService(instanceManager);
+	// Initialize services with instance manager
+	const tableService = new TableService(instanceManager);
+	const attachmentService = new AttachmentService(instanceManager);
+	const scriptService = new ScriptService(instanceManager);
+	const batchService = new BatchService(instanceManager);
+	const schemaService = new SchemaService(instanceManager);
 
-  const tools: ToolDescriptor[] = [
-    // Table operations (runtime data)
-    createQueryRecordsTool(tableService),
-    createAggregateRecordsTool(tableService),
-    createCreateRecordTool(tableService, schemaService),
-    createUpdateRecordTool(tableService, schemaService),
-    createDeleteRecordTool(tableService),
+	const tools: ToolDescriptor[] = [
+		// Table operations (runtime data)
+		createQueryRecordsTool(tableService),
+		createAggregateRecordsTool(tableService),
+		createCreateRecordTool(tableService, schemaService),
+		createUpdateRecordTool(tableService, schemaService),
+		createDeleteRecordTool(tableService),
 
-    // Batch operations
-    createBatchCreateTool(batchService, schemaService),
-    createBatchUpdateTool(batchService, schemaService),
+		// Batch operations
+		createBatchCreateTool(batchService, schemaService),
+		createBatchUpdateTool(batchService, schemaService),
 
-    // Schema discovery
-    createGetTableSchemaTool(schemaService),
-    createListTablesTool(schemaService),
-    createGetChoiceListTool(schemaService),
-    // Data-inference fallback for tables whose sys_dictionary is thin/incomplete.
-    createGetTableStructureFromDataTool(tableService),
+		// Schema discovery
+		createGetTableSchemaTool(schemaService),
+		createListTablesTool(schemaService),
+		createGetChoiceListTool(schemaService),
+		// Data-inference fallback for tables whose sys_dictionary is thin/incomplete.
+		createGetTableStructureFromDataTool(tableService),
 
-    // Comparison & security posture (read-only observation)
-    createDiffRecordsTool(tableService),
-    createGetSecurityInfoTool(tableService),
+		// Comparison & security posture (read-only observation)
+		createDiffRecordsTool(tableService),
+		createGetSecurityInfoTool(tableService),
 
-    // Script execution (with advisory schema pre-flight on referenced fields)
-    createExecuteBackgroundScriptTool(scriptService, schemaService),
+		// Script execution (with advisory schema pre-flight on referenced fields)
+		createExecuteBackgroundScriptTool(scriptService, schemaService),
 
-    // Attachments
-    createUploadAttachmentTool(attachmentService),
-    createDownloadAttachmentTool(attachmentService),
-    // Lightweight "what attachments exist" — no content download.
-    createGetAttachmentMetadataTool(attachmentService),
-  ];
+		// Attachments
+		createUploadAttachmentTool(attachmentService),
+		createDownloadAttachmentTool(attachmentService),
+		// Lightweight "what attachments exist" — no content download.
+		createGetAttachmentMetadataTool(attachmentService),
+	];
 
-  // Session instance switching only makes sense when there's more than one
-  // instance to switch between. A single-instance setup (env-based config always
-  // yields exactly one; a one-entry YAML likewise) has nothing to switch to, so
-  // the tool would just be noise — only expose it for a multi-instance config.
-  if (instanceManager.getInstanceCount() > 1) {
-    // Mutates the in-memory default only; no writes to any instance.
-    tools.push(createSwitchDefaultInstanceTool(instanceManager, tableService));
-    logger.info('Multi-instance config — servicenow_switch_default_instance tool enabled');
-  } else {
-    logger.info('Single instance — servicenow_switch_default_instance tool disabled');
-  }
+	// Session instance switching only makes sense when there's more than one
+	// instance to switch between. A single-instance setup (env-based config always
+	// yields exactly one; a one-entry YAML likewise) has nothing to switch to, so
+	// the tool would just be noise — only expose it for a multi-instance config.
+	if (instanceManager.getInstanceCount() > 1) {
+		// Mutates the in-memory default only; no writes to any instance.
+		tools.push(createSwitchDefaultInstanceTool(instanceManager, tableService));
+		logger.info('Multi-instance config — servicenow_switch_default_instance tool enabled');
+	} else {
+		logger.info('Single instance — servicenow_switch_default_instance tool disabled');
+	}
 
-  // Fluent SDK bridge: only expose when the now-sdk CLI is actually installed.
-  if (isNowSdkAvailable()) {
-    tools.push(createSdkStatusTool(instanceManager));
-    logger.info('now-sdk detected — servicenow_sdk_status tool enabled');
-  } else {
-    logger.info('now-sdk not on PATH — servicenow_sdk_status tool disabled');
-  }
+	// Fluent SDK bridge: only expose when the now-sdk CLI is actually installed.
+	if (isNowSdkAvailable()) {
+		tools.push(createSdkStatusTool(instanceManager));
+		logger.info('now-sdk detected — servicenow_sdk_status tool enabled');
+	} else {
+		logger.info('now-sdk not on PATH — servicenow_sdk_status tool disabled');
+	}
 
-  // Register every tool on the high-level McpServer. The Zod input/output
-  // schemas are passed directly — the SDK advertises the JSON Schema, validates
-  // input (bad input → self-correctable tool error, not a protocol throw), and
-  // validates that a success result carries `structuredContent`.
-  for (const tool of tools) {
-    server.registerTool(
-      tool.name,
-      {
-        title: tool.title,
-        description: tool.description,
-        inputSchema: tool.inputSchema as never,
-        outputSchema: tool.outputSchema as never,
-        annotations: TOOL_ANNOTATIONS[tool.name],
-      },
-      withLogging(tool.name, tool.handler) as never,
-    );
-    logger.info(`Registered tool: ${tool.name}`);
-  }
+	// Register every tool on the high-level McpServer. The Zod input/output
+	// schemas are passed directly — the SDK advertises the JSON Schema, validates
+	// input (bad input → self-correctable tool error, not a protocol throw), and
+	// validates that a success result carries `structuredContent`.
+	for (const tool of tools) {
+		server.registerTool(
+			tool.name,
+			{
+				title: tool.title,
+				description: tool.description,
+				inputSchema: tool.inputSchema as never,
+				outputSchema: tool.outputSchema as never,
+				annotations: TOOL_ANNOTATIONS[tool.name],
+			},
+			withLogging(tool.name, tool.handler) as never,
+		);
+		logger.info(`Registered tool: ${tool.name}`);
+	}
 
-  logger.info(`Registered ${tools.length} ServiceNow tools`);
-  logger.info(`Managing ${instanceManager.getInstanceCount()} ServiceNow instance(s)`);
+	logger.info(`Registered ${tools.length} ServiceNow tools`);
+	logger.info(`Managing ${instanceManager.getInstanceCount()} ServiceNow instance(s)`);
 }
 
 /**
@@ -219,49 +219,49 @@ export async function registerTools(
  * call returns the configuration error so the cause is visible in the client.
  */
 export async function registerDegradedTools(
-  server: McpServer,
-  configError: Error | null,
+	server: McpServer,
+	configError: Error | null,
 ): Promise<void> {
-  const reason = configError?.message || 'now-mcp is not configured.';
+	const reason = configError?.message || 'now-mcp is not configured.';
 
-  const message =
-    'now-mcp is connected but not usable — configuration error:\n\n' +
-    reason +
-    `\n\n(server working directory: ${process.cwd()})` +
-    '\n\nFix the config (plugin settings, or config/servicenow-instances.yaml, ' +
-    'or the file at SERVICENOW_CONFIG_PATH) and reconnect the MCP server.';
+	const message =
+		'now-mcp is connected but not usable — configuration error:\n\n' +
+		reason +
+		`\n\n(server working directory: ${process.cwd()})` +
+		'\n\nFix the config (plugin settings, or config/servicenow-instances.yaml, ' +
+		'or the file at SERVICENOW_CONFIG_PATH) and reconnect the MCP server.';
 
-  // Degraded mode still completes the handshake, but every capability is a
-  // single status tool that reports the configuration error. Registering it via
-  // the high-level `registerTool` keeps handshake, schema advertisement, and the
-  // error path all on the supported McpServer API (rather than dropping to the
-  // low-level request handlers, which is brittle across SDK upgrades).
-  server.registerTool(
-    'servicenow_status',
-    {
-      title: 'ServiceNow status',
-      description:
-        'Report the now-mcp status. In this session the server started in ' +
-        'degraded mode because configuration failed to load; calling it returns ' +
-        'the configuration error and how to fix it.',
-      inputSchema: z.object({}).shape,
-      outputSchema: z.object({ status: z.string(), error: z.string() }).shape,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
-    },
-    // outputSchema is declared, but an error result (isError:true, text only)
-    // is allowed to omit structuredContent — same idiom the other tools use.
-    async () => ({
-      content: [{ type: 'text' as const, text: message }],
-      isError: true as const,
-    }),
-  );
+	// Degraded mode still completes the handshake, but every capability is a
+	// single status tool that reports the configuration error. Registering it via
+	// the high-level `registerTool` keeps handshake, schema advertisement, and the
+	// error path all on the supported McpServer API (rather than dropping to the
+	// low-level request handlers, which is brittle across SDK upgrades).
+	server.registerTool(
+		'servicenow_status',
+		{
+			title: 'ServiceNow status',
+			description:
+				'Report the now-mcp status. In this session the server started in ' +
+				'degraded mode because configuration failed to load; calling it returns ' +
+				'the configuration error and how to fix it.',
+			inputSchema: z.object({}).shape,
+			outputSchema: z.object({ status: z.string(), error: z.string() }).shape,
+			annotations: {
+				readOnlyHint: true,
+				destructiveHint: false,
+				idempotentHint: true,
+				openWorldHint: false,
+			},
+		},
+		// outputSchema is declared, but an error result (isError:true, text only)
+		// is allowed to omit structuredContent — same idiom the other tools use.
+		async () => ({
+			content: [{ type: 'text' as const, text: message }],
+			isError: true as const,
+		}),
+	);
 
-  logger.warn(
-    'Registered DEGRADED handlers (configuration error). Tools will report the error until the config is fixed.',
-  );
+	logger.warn(
+		'Registered DEGRADED handlers (configuration error). Tools will report the error until the config is fixed.',
+	);
 }

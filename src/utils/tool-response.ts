@@ -13,9 +13,9 @@
 const MAX_TOOL_TEXT = 16000;
 
 export function toolText(value: unknown): string {
-  const s = JSON.stringify(value);
-  return s.length <= MAX_TOOL_TEXT
-    ? s
-    : s.slice(0, MAX_TOOL_TEXT) +
-        `\n…[truncated ${s.length - MAX_TOOL_TEXT} chars — narrow fields/limit or use servicenow_aggregate_records]`;
+	const s = JSON.stringify(value);
+	return s.length <= MAX_TOOL_TEXT
+		? s
+		: s.slice(0, MAX_TOOL_TEXT) +
+				`\n…[truncated ${s.length - MAX_TOOL_TEXT} chars — narrow fields/limit or use servicenow_aggregate_records]`;
 }

@@ -3,104 +3,105 @@
  */
 
 import {
-  ServiceNowError,
-  AuthenticationError,
-  ValidationError,
-  NotFoundError,
-  RateLimitError,
-  ServerError,
-  NetworkError,
-  HttpError,
+	AuthenticationError,
+	HttpError,
+	NetworkError,
+	NotFoundError,
+	RateLimitError,
+	ServerError,
+	ServiceNowError,
+	ValidationError,
 } from '../types/errors.js';
+import { type FailureContext, failureHints, renderHints } from './failure-enrichment.js';
 import { logger } from './logger.js';
 import { toolText } from './tool-response.js';
-import { failureHints, renderHints, type FailureContext } from './failure-enrichment.js';
 
 /**
  * Transforms an HTTP (non-2xx response) error into a ServiceNow-specific error.
  */
 export function transformHttpError(error: HttpError): ServiceNowError {
-  const { status, data } = error;
-  const servicenowError = data as any;
+	const { status, data } = error;
+	const servicenowError = data as any;
 
-  logger.debug('ServiceNow API error', {
-    status,
-    data: servicenowError,
-  });
+	logger.debug('ServiceNow API error', {
+		status,
+		data: servicenowError,
+	});
 
-  // Handle specific HTTP status codes
-  switch (status) {
-    case 401:
-    case 403:
-      return new AuthenticationError(
-        servicenowError?.error?.message || 'Authentication failed. Please check your credentials.',
-        servicenowError,
-      );
+	// Handle specific HTTP status codes
+	switch (status) {
+		case 401:
+		case 403:
+			return new AuthenticationError(
+				servicenowError?.error?.message || 'Authentication failed. Please check your credentials.',
+				servicenowError,
+			);
 
-    case 404:
-      return new NotFoundError(
-        servicenowError?.error?.message || 'The requested resource was not found.',
-        servicenowError,
-      );
+		case 404:
+			return new NotFoundError(
+				servicenowError?.error?.message || 'The requested resource was not found.',
+				servicenowError,
+			);
 
-    case 429:
-      const retryAfter = error.headers['retry-after'];
-      return new RateLimitError(
-        servicenowError?.error?.message || 'Rate limit exceeded. Please try again later.',
-        retryAfter ? parseInt(retryAfter, 10) : undefined,
-        servicenowError,
-      );
+		case 429: {
+			const retryAfter = error.headers['retry-after'];
+			return new RateLimitError(
+				servicenowError?.error?.message || 'Rate limit exceeded. Please try again later.',
+				retryAfter ? parseInt(retryAfter, 10) : undefined,
+				servicenowError,
+			);
+		}
 
-    case 400:
-      return new ValidationError(
-        servicenowError?.error?.message || 'Invalid request. Please check your input parameters.',
-        servicenowError,
-      );
+		case 400:
+			return new ValidationError(
+				servicenowError?.error?.message || 'Invalid request. Please check your input parameters.',
+				servicenowError,
+			);
 
-    case 500:
-    case 502:
-    case 503:
-    case 504:
-      return new ServerError(
-        servicenowError?.error?.message ||
-          'ServiceNow server error occurred. Please try again later.',
-        servicenowError,
-      );
+		case 500:
+		case 502:
+		case 503:
+		case 504:
+			return new ServerError(
+				servicenowError?.error?.message ||
+					'ServiceNow server error occurred. Please try again later.',
+				servicenowError,
+			);
 
-    default:
-      return new ServiceNowError(
-        servicenowError?.error?.message || `ServiceNow API error: ${status}`,
-        status,
-        servicenowError,
-        'API_ERROR',
-      );
-  }
+		default:
+			return new ServiceNowError(
+				servicenowError?.error?.message || `ServiceNow API error: ${status}`,
+				status,
+				servicenowError,
+				'API_ERROR',
+			);
+	}
 }
 
 /**
  * Transforms any error into a ServiceNowError
  */
 export function transformError(error: unknown): ServiceNowError {
-  if (error instanceof ServiceNowError) {
-    return error;
-  }
+	if (error instanceof ServiceNowError) {
+		return error;
+	}
 
-  if (error instanceof HttpError) {
-    return transformHttpError(error);
-  }
+	if (error instanceof HttpError) {
+		return transformHttpError(error);
+	}
 
-  if (error instanceof Error) {
-    logger.error('Unexpected error', error);
-    return new ServiceNowError(
-      error.message,
-      undefined,
-      { stack: error.stack },
-      'UNEXPECTED_ERROR',
-    );
-  }
+	if (error instanceof Error) {
+		logger.error('Unexpected error', error);
+		return new ServiceNowError(
+			error.message,
+			undefined,
+			{ stack: error.stack },
+			'UNEXPECTED_ERROR',
+		);
+	}
 
-  logger.error('Unknown error type', { error });
-  return new ServiceNowError('An unknown error occurred', undefined, error, 'UNKNOWN_ERROR');
+	logger.error('Unknown error type', { error });
+	return new ServiceNowError('An unknown error occurred', undefined, error, 'UNKNOWN_ERROR');
 }
 
 /**
@@ -111,8 +112,8 @@ export function transformError(error: unknown): ServiceNowError {
  * they duplicated failureHints with more, vaguer text on every error.
  */
 export function formatErrorForTool(error: unknown): string {
-  const servicenowError = transformError(error);
-  return toolText(servicenowError.toJSON());
+	const servicenowError = transformError(error);
+	return toolText(servicenowError.toJSON());
 }
 
 /**
@@ -121,36 +122,36 @@ export function formatErrorForTool(error: unknown): string {
  * Centralizes the catch-block boilerplate every tool otherwise repeats.
  */
 export function toolError(error: unknown, ctx: FailureContext = {}) {
-  const hints = renderHints(failureHints(String(error), ctx));
-  return {
-    content: [
-      { type: 'text' as const, text: formatErrorForTool(error) },
-      ...(hints ? [{ type: 'text' as const, text: hints }] : []),
-    ],
-    isError: true as const,
-  };
+	const hints = renderHints(failureHints(String(error), ctx));
+	return {
+		content: [
+			{ type: 'text' as const, text: formatErrorForTool(error) },
+			...(hints ? [{ type: 'text' as const, text: hints }] : []),
+		],
+		isError: true as const,
+	};
 }
 
 /**
  * Determines if an error is retryable
  */
 export function isRetryableError(error: unknown): boolean {
-  if (error instanceof NetworkError) {
-    return true;
-  }
+	if (error instanceof NetworkError) {
+		return true;
+	}
 
-  if (error instanceof RateLimitError) {
-    return true;
-  }
+	if (error instanceof RateLimitError) {
+		return true;
+	}
 
-  if (error instanceof ServerError) {
-    return true;
-  }
+	if (error instanceof ServerError) {
+		return true;
+	}
 
-  if (error instanceof HttpError) {
-    // Retry on rate-limit or 5xx status codes
-    return error.status === 429 || error.status >= 500;
-  }
+	if (error instanceof HttpError) {
+		// Retry on rate-limit or 5xx status codes
+		return error.status === 429 || error.status >= 500;
+	}
 
-  return false;
+	return false;
 }

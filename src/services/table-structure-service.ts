@@ -12,15 +12,15 @@ type SNValue = unknown;
 
 /** ServiceNow reference values arrive as { value, display_value, link }. */
 interface SNReferenceObject {
-  link?: unknown;
-  value?: unknown;
-  display_value?: unknown;
+	link?: unknown;
+	value?: unknown;
+	display_value?: unknown;
 }
 
 function isReferenceObject(value: unknown): value is SNReferenceObject {
-  if (typeof value !== 'object' || value === null) return false;
-  const o = value as SNReferenceObject;
-  return (('link' in o && 'value' in o) || 'display_value' in o) as boolean;
+	if (typeof value !== 'object' || value === null) return false;
+	const o = value as SNReferenceObject;
+	return (('link' in o && 'value' in o) || 'display_value' in o) as boolean;
 }
 
 /**
@@ -29,49 +29,49 @@ function isReferenceObject(value: unknown): value is SNReferenceObject {
  * of string-shape regexes. Null/'' yields 'unknown'.
  */
 export function inferFieldType(value: SNValue): string {
-  if (value === null || value === undefined || value === '') return 'unknown';
+	if (value === null || value === undefined || value === '') return 'unknown';
 
-  if (typeof value === 'boolean') return 'boolean';
-  if (typeof value === 'number') return 'number';
+	if (typeof value === 'boolean') return 'boolean';
+	if (typeof value === 'number') return 'number';
 
-  if (isReferenceObject(value)) return 'reference';
+	if (isReferenceObject(value)) return 'reference';
 
-  if (typeof value === 'string') {
-    const s = value;
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) return 'glide_date_time';
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return 'glide_date';
-    if (/^[0-9a-f]{32}$/.test(s)) return 'sys_id';
-    if (s === 'true' || s === 'false') return 'boolean';
-    if (/^\d+$/.test(s) && s.length < 10) return 'integer';
-    if (/^\d+\.\d+$/.test(s)) return 'decimal';
-    return 'string';
-  }
+	if (typeof value === 'string') {
+		const s = value;
+		if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) return 'glide_date_time';
+		if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return 'glide_date';
+		if (/^[0-9a-f]{32}$/.test(s)) return 'sys_id';
+		if (s === 'true' || s === 'false') return 'boolean';
+		if (/^\d+$/.test(s) && s.length < 10) return 'integer';
+		if (/^\d+\.\d+$/.test(s)) return 'decimal';
+		return 'string';
+	}
 
-  return 'string';
+	return 'string';
 }
 
 /** Is a value considered "empty" (not populated) for ratio purposes? */
 function isEmptyValue(value: unknown): boolean {
-  if (value === null || value === undefined || value === '') return true;
-  if (isReferenceObject(value)) {
-    const o = value as SNReferenceObject;
-    // A reference with neither a value nor a display_value is effectively empty.
-    return !o.value && !o.display_value;
-  }
-  return false;
+	if (value === null || value === undefined || value === '') return true;
+	if (isReferenceObject(value)) {
+		const o = value as SNReferenceObject;
+		// A reference with neither a value nor a display_value is effectively empty.
+		return !o.value && !o.display_value;
+	}
+	return false;
 }
 
 /** Render a value as a short sample string for display. */
 function toSampleString(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'boolean' || typeof value === 'number') return String(value);
-  if (isReferenceObject(value)) {
-    const o = value as SNReferenceObject;
-    const disp = o.display_value ?? o.value;
-    return typeof disp === 'string' ? disp : JSON.stringify(disp ?? '');
-  }
-  return JSON.stringify(value);
+	if (value === null || value === undefined) return '';
+	if (typeof value === 'string') return value;
+	if (typeof value === 'boolean' || typeof value === 'number') return String(value);
+	if (isReferenceObject(value)) {
+		const o = value as SNReferenceObject;
+		const disp = o.display_value ?? o.value;
+		return typeof disp === 'string' ? disp : JSON.stringify(disp ?? '');
+	}
+	return JSON.stringify(value);
 }
 
 /**
@@ -80,38 +80,38 @@ function toSampleString(value: unknown): string {
  *   https://<host>/api/now/table/<referenced_table>/<sys_id>
  */
 function extractReferencesTable(value: unknown): string | undefined {
-  if (!isReferenceObject(value)) return undefined;
-  const link = (value as SNReferenceObject).link;
-  if (typeof link !== 'string') return undefined;
-  const match = link.match(/\/api\/now\/(?:v\d+\/)?table\/([a-z0-9_]+)\//i);
-  return match ? match[1] : undefined;
+	if (!isReferenceObject(value)) return undefined;
+	const link = (value as SNReferenceObject).link;
+	if (typeof link !== 'string') return undefined;
+	const match = link.match(/\/api\/now\/(?:v\d+\/)?table\/([a-z0-9_]+)\//i);
+	return match ? match[1] : undefined;
 }
 
 interface FieldAccumulator {
-  seenCount: number;
-  nonEmptyCount: number;
-  types: Set<string>;
-  /** Ordered non-unknown types, first-seen order, for choosing the dominant. */
-  typeOrder: string[];
-  sampleValues: string[];
-  isReference: boolean;
-  referencesTable?: string;
+	seenCount: number;
+	nonEmptyCount: number;
+	types: Set<string>;
+	/** Ordered non-unknown types, first-seen order, for choosing the dominant. */
+	typeOrder: string[];
+	sampleValues: string[];
+	isReference: boolean;
+	referencesTable?: string;
 }
 
 export interface InferredField {
-  name: string;
-  inferredType: string;
-  populatedRatio: string;
-  isReference: boolean;
-  sampleValues: string[];
+	name: string;
+	inferredType: string;
+	populatedRatio: string;
+	isReference: boolean;
+	sampleValues: string[];
 }
 
 export interface TableStructureAnalysis {
-  recordsSampled: number;
-  alwaysPopulated: string[];
-  neverPopulated: string[];
-  referenceFields: Array<{ field: string; referencesTable?: string }>;
-  fields: InferredField[];
+	recordsSampled: number;
+	alwaysPopulated: string[];
+	neverPopulated: string[];
+	referenceFields: Array<{ field: string; referencesTable?: string }>;
+	fields: InferredField[];
 }
 
 /**
@@ -119,89 +119,89 @@ export interface TableStructureAnalysis {
  * Pure logic — no network, no dependencies.
  */
 export function analyzeTableStructure(
-  records: Array<Record<string, unknown>>,
+	records: Array<Record<string, unknown>>,
 ): TableStructureAnalysis {
-  const total = records.length;
-  const acc = new Map<string, FieldAccumulator>();
+	const total = records.length;
+	const acc = new Map<string, FieldAccumulator>();
 
-  for (const record of records) {
-    if (!record || typeof record !== 'object') continue;
-    for (const [name, value] of Object.entries(record)) {
-      let field = acc.get(name);
-      if (!field) {
-        field = {
-          seenCount: 0,
-          nonEmptyCount: 0,
-          types: new Set<string>(),
-          typeOrder: [],
-          sampleValues: [],
-          isReference: false,
-        };
-        acc.set(name, field);
-      }
+	for (const record of records) {
+		if (!record || typeof record !== 'object') continue;
+		for (const [name, value] of Object.entries(record)) {
+			let field = acc.get(name);
+			if (!field) {
+				field = {
+					seenCount: 0,
+					nonEmptyCount: 0,
+					types: new Set<string>(),
+					typeOrder: [],
+					sampleValues: [],
+					isReference: false,
+				};
+				acc.set(name, field);
+			}
 
-      field.seenCount += 1;
+			field.seenCount += 1;
 
-      const empty = isEmptyValue(value);
-      if (!empty) {
-        field.nonEmptyCount += 1;
+			const empty = isEmptyValue(value);
+			if (!empty) {
+				field.nonEmptyCount += 1;
 
-        const type = inferFieldType(value);
-        if (type !== 'unknown' && !field.types.has(type)) {
-          field.types.add(type);
-          field.typeOrder.push(type);
-        }
+				const type = inferFieldType(value);
+				if (type !== 'unknown' && !field.types.has(type)) {
+					field.types.add(type);
+					field.typeOrder.push(type);
+				}
 
-        if (type === 'reference') {
-          field.isReference = true;
-          if (!field.referencesTable) {
-            const ref = extractReferencesTable(value);
-            if (ref) field.referencesTable = ref;
-          }
-        }
+				if (type === 'reference') {
+					field.isReference = true;
+					if (!field.referencesTable) {
+						const ref = extractReferencesTable(value);
+						if (ref) field.referencesTable = ref;
+					}
+				}
 
-        if (field.sampleValues.length < 3) {
-          field.sampleValues.push(toSampleString(value));
-        }
-      }
-    }
-  }
+				if (field.sampleValues.length < 3) {
+					field.sampleValues.push(toSampleString(value));
+				}
+			}
+		}
+	}
 
-  const alwaysPopulated: string[] = [];
-  const neverPopulated: string[] = [];
-  const referenceFields: Array<{ field: string; referencesTable?: string }> = [];
-  const fields: InferredField[] = [];
+	const alwaysPopulated: string[] = [];
+	const neverPopulated: string[] = [];
+	const referenceFields: Array<{ field: string; referencesTable?: string }> = [];
+	const fields: InferredField[] = [];
 
-  for (const [name, field] of acc) {
-    // Always populated: non-empty in every sampled record.
-    if (total > 0 && field.nonEmptyCount === total) {
-      alwaysPopulated.push(name);
-    }
-    // Never populated: seen but never non-empty.
-    if (field.nonEmptyCount === 0) {
-      neverPopulated.push(name);
-    }
+	for (const [name, field] of acc) {
+		// Always populated: non-empty in every sampled record.
+		if (total > 0 && field.nonEmptyCount === total) {
+			alwaysPopulated.push(name);
+		}
+		// Never populated: seen but never non-empty.
+		if (field.nonEmptyCount === 0) {
+			neverPopulated.push(name);
+		}
 
-    if (field.isReference) {
-      referenceFields.push({ field: name, referencesTable: field.referencesTable });
-    }
+		if (field.isReference) {
+			referenceFields.push({ field: name, referencesTable: field.referencesTable });
+		}
 
-    const inferredType = field.typeOrder.length > 0 ? field.typeOrder[0] : 'unknown';
+		const inferredType = field.typeOrder.length > 0 ? field.typeOrder[0] : 'unknown';
 
-    fields.push({
-      name,
-      inferredType,
-      populatedRatio: `${field.nonEmptyCount}/${total}`,
-      isReference: field.isReference,
-      sampleValues: field.sampleValues,
-    });
-  }
+		fields.push({
+			name,
+			inferredType,
+			populatedRatio: `${field.nonEmptyCount}/${total}`,
+			isReference: field.isReference,
+			sampleValues: field.sampleValues,
+		});
+	}
 
-  return {
-    recordsSampled: total,
-    alwaysPopulated,
-    neverPopulated,
-    referenceFields,
-    fields,
-  };
+	return {
+		recordsSampled: total,
+		alwaysPopulated,
+		neverPopulated,
+		referenceFields,
+		fields,
+	};
 }

@@ -29,10 +29,10 @@ export const MAX_BATCH_SIZE_CEILING = 100;
  * unset, non-numeric, or non-positive. `ceiling`, when given, clamps the result.
  */
 function readPositiveInt(raw: string | undefined, fallback: number, ceiling?: number): number {
-  if (raw === undefined) return fallback;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n <= 0) return fallback;
-  return ceiling !== undefined ? Math.min(n, ceiling) : n;
+	if (raw === undefined) return fallback;
+	const n = Number(raw);
+	if (!Number.isInteger(n) || n <= 0) return fallback;
+	return ceiling !== undefined ? Math.min(n, ceiling) : n;
 }
 
 /**
@@ -40,11 +40,11 @@ function readPositiveInt(raw: string | undefined, fallback: number, ceiling?: nu
  * overridable via SERVICENOW_MAX_BATCH_SIZE up to MAX_BATCH_SIZE_CEILING.
  */
 export function maxBatchSize(): number {
-  return readPositiveInt(
-    process.env.SERVICENOW_MAX_BATCH_SIZE,
-    DEFAULT_MAX_BATCH_SIZE,
-    MAX_BATCH_SIZE_CEILING,
-  );
+	return readPositiveInt(
+		process.env.SERVICENOW_MAX_BATCH_SIZE,
+		DEFAULT_MAX_BATCH_SIZE,
+		MAX_BATCH_SIZE_CEILING,
+	);
 }
 
 /**
@@ -52,7 +52,7 @@ export function maxBatchSize(): number {
  * Table API request). Default 25, overridable via SERVICENOW_BATCH_CONCURRENCY.
  */
 export function batchConcurrency(): number {
-  return readPositiveInt(process.env.SERVICENOW_BATCH_CONCURRENCY, DEFAULT_BATCH_CONCURRENCY);
+	return readPositiveInt(process.env.SERVICENOW_BATCH_CONCURRENCY, DEFAULT_BATCH_CONCURRENCY);
 }
 
 /**
@@ -60,9 +60,9 @@ export function batchConcurrency(): number {
  * Default 100. A value of 0 is honored (no delay); see readNonNegativeInt.
  */
 export function batchDelayMs(): number {
-  const raw = process.env.SERVICENOW_BATCH_DELAY_MS;
-  if (raw === undefined) return DEFAULT_BATCH_DELAY_MS;
-  const n = Number(raw);
-  if (!Number.isInteger(n) || n < 0) return DEFAULT_BATCH_DELAY_MS;
-  return n;
+	const raw = process.env.SERVICENOW_BATCH_DELAY_MS;
+	if (raw === undefined) return DEFAULT_BATCH_DELAY_MS;
+	const n = Number(raw);
+	if (!Number.isInteger(n) || n < 0) return DEFAULT_BATCH_DELAY_MS;
+	return n;
 }
