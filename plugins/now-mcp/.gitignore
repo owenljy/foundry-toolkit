@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+build/
+dist/
+*.tsbuildinfo
+
+# Configuration files with credentials (keep the example template tracked)
+config/sn-credential.*
+!config/sn-credential.example.*
+config/*.bak*
+config/NOTES.md
+
+# Claude plugin scaffolding (generated locally)
+CLAUDE.md
+
+# Logs
+*.log
