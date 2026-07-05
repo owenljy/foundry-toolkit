@@ -11,13 +11,13 @@ import type { InstanceConfig, ServiceNowConfig } from '../types/instance.js';
 
 /**
  * Resolve the config file path: SERVICENOW_CONFIG_PATH, else
- * ./config/servicenow-instances.yaml.
+ * ./config/sn-credential.yaml.
  */
 export function getConfigPath(): string {
 	if (process.env.SERVICENOW_CONFIG_PATH) {
 		return process.env.SERVICENOW_CONFIG_PATH;
 	}
-	return resolve('config', 'servicenow-instances.yaml');
+	return resolve('config', 'sn-credential.yaml');
 }
 
 /**

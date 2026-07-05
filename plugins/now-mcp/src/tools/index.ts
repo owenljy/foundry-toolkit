@@ -1,7 +1,7 @@
 /**
  * Tool registration for MCP server
  *
- * v4 "senses, not hands": this server is the live-instance observation +
+ * this server is the live-instance observation +
  * data layer. Authoring app metadata (business rules, ACLs, UI policies,
  * flows, PA, portal, AI agents, AWA, ...) is the job of the ServiceNow Fluent
  * SDK driven by Claude Code — not blind table POSTs from here. The surface is
@@ -228,7 +228,7 @@ export async function registerDegradedTools(
 		'now-mcp is connected but not usable — configuration error:\n\n' +
 		reason +
 		`\n\n(server working directory: ${process.cwd()})` +
-		'\n\nFix the config (plugin settings, or config/servicenow-instances.yaml, ' +
+		'\n\nFix the config (plugin settings, or config/sn-credential.yaml, ' +
 		'or the file at SERVICENOW_CONFIG_PATH) and reconnect the MCP server.';
 
 	// Degraded mode still completes the handshake, but every capability is a

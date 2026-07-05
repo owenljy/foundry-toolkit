@@ -329,7 +329,7 @@ function buildSingleInstanceFromEnv(): Environment | null {
  *   1. SERVICENOW_CONFIG_PATH — an explicit YAML file at any path.
  *   2. SERVICENOW_URL (+ _USERNAME/_PASSWORD) — the single-instance fast path
  *      (basic auth, no file needed; what the plugin form feeds).
- *   3. config/servicenow-instances.yaml (or .yml) in the working directory.
+ *   3. config/sn-credential.yaml (or .yml) in the working directory.
  * A YAML file (1 or 3) supports single OR multi-instance and OAuth; the fast
  * path (2) is basic-auth single-instance only.
  *
@@ -374,8 +374,8 @@ export function loadConfig(): Environment {
 
 	// 3. Default YAML in the working directory.
 	const defaultConfigPath = [
-		path.resolve('config/servicenow-instances.yaml'),
-		path.resolve('config/servicenow-instances.yml'),
+		path.resolve('config/sn-credential.yaml'),
+		path.resolve('config/sn-credential.yml'),
 	].find((p) => fs.existsSync(p));
 
 	if (defaultConfigPath) {
@@ -400,8 +400,8 @@ export function loadConfig(): Environment {
 			'Fix it one of these ways:\n' +
 			'  • Plugin: open the now-mcp plugin settings and fill in the instance ' +
 			'URL, username, and password (single-instance, basic auth).\n' +
-			'  • YAML: create config/servicenow-instances.yaml (copy ' +
-			'config/servicenow-instances.example.yaml) for multi-instance or OAuth, ' +
+			'  • YAML: create config/sn-credential.yaml (copy ' +
+			'config/sn-credential.example.yaml) for multi-instance or OAuth, ' +
 			'or point SERVICENOW_CONFIG_PATH at a YAML file.',
 	);
 }

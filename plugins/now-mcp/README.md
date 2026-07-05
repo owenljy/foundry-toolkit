@@ -46,7 +46,7 @@ For a single instance (basic auth), just fill in **instance URL**, **username**,
 and **password** — the password is stored in your system keychain, and no config
 file is needed. Leave **Read-only** as-is to stay read-only (type `false` to
 allow writes). For multi-instance, OAuth, or now-sdk pairing, leave those blank
-and set **config file** to the path of a `servicenow-instances.yaml`
+and set **config file** to the path of a `sn-credential.yaml`
 (see [Configuration](#configuration)) instead.
 
 ---
@@ -68,11 +68,11 @@ Two ways to configure, depending on how complex your setup is:
 
 ```bash
 # 1. Copy the example (your copy is git-ignored, so credentials stay local).
-#    The template is bundled with the plugin at config/servicenow-instances.example.yaml
+#    The template is bundled with the plugin at config/sn-credential.example.yaml
 #    (relative to the plugin root), and viewable at
-#    https://github.com/owenljy/foundry-suite/blob/main/plugins/now-mcp/config/servicenow-instances.example.yaml
-cp config/servicenow-instances.example.yaml config/servicenow-instances.yaml
-# 2. Edit config/servicenow-instances.yaml — the file is commented; the minimal
+#    https://github.com/owenljy/foundry-suite/blob/main/plugins/now-mcp/config/sn-credential.example.yaml
+cp config/sn-credential.example.yaml config/sn-credential.yaml
+# 2. Edit config/sn-credential.yaml — the file is commented; the minimal
 #    single-instance block at the top is all most setups need.
 ```
 
@@ -122,7 +122,7 @@ fine and old JSON still parses.
    single-instance **fast path**: one basic-auth instance built straight from
    env vars, no file required. This is what the plugin form feeds. Basic-auth
    single-instance only; use YAML for OAuth or multiple instances. Else
-3. **`config/servicenow-instances.yaml`** (or `.yml`) in the working directory.
+3. **`config/sn-credential.yaml`** (or `.yml`) in the working directory.
 
 Without a valid config the server still starts (degraded mode) and reports the
 reason (including the working directory and which sources it checked) on each
@@ -284,7 +284,7 @@ cd foundry-suite/plugins/now-mcp
 pnpm install
 pnpm build
 claude mcp add now-mcp -s user \
-  --env SERVICENOW_CONFIG_PATH="$PWD/config/servicenow-instances.yaml" \
+  --env SERVICENOW_CONFIG_PATH="$PWD/config/sn-credential.yaml" \
   -- node "$PWD/build/index.js"
 ```
 

@@ -13,11 +13,10 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 // (follow is on by default now — must be explicitly turned off here).
 const SERVER_ENV = {
   ...process.env,
-  SERVICENOW_CONFIG_PATH: 'config/servicenow-instances.example.yaml',
+  SERVICENOW_CONFIG_PATH: 'config/sn-credential.example.yaml',
   SERVICENOW_FOLLOW_NOW_SDK: 'false',
 };
 
-// Core tools that MUST be advertised by the v4 server.
 const EXPECTED_CORE_TOOLS = [
   'servicenow_query_records',
   'servicenow_aggregate_records',

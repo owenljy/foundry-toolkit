@@ -8,7 +8,7 @@ import { MultiInstanceConfigSchema } from '../build/config/environment.js';
 import { loadConfig as loadCliConfig, saveConfig } from '../build/config/config-file.js';
 
 test('the shipped example YAML parses and passes schema validation', () => {
-  const content = readFileSync('config/servicenow-instances.example.yaml', 'utf-8');
+  const content = readFileSync('config/sn-credential.example.yaml', 'utf-8');
   const parsed = yaml.load(content);
   const result = MultiInstanceConfigSchema.safeParse(parsed);
   assert.ok(result.success, JSON.stringify(result.error?.errors));

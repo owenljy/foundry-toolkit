@@ -5,7 +5,7 @@
  *   servicenow://schema/{table}   → a table's schema (resource template)
  *
  * Resources complement tools: the model can pull schema/context by URI without
- * spending a tool call, which fits the "senses" positioning.
+ * spending a tool call
  */
 
 import { type McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
