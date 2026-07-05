@@ -11,6 +11,13 @@ MCP call; only reach for the matching script below when MCP isn't available. Pas
 > for deployed tool scripts because those run as the agent's user). Do not "fix" these scripts
 > to `GlideRecordSecure` — that would hide records you need to see.
 
+> **Logging: use `gs.info(...)`, not `gs.print(...)`.** These scripts intentionally use `gs.info`
+> for output. `gs.print` is a global-scope-only API — in a scoped Script Include or scoped
+> background script it is blocked (calls fail or are silently swallowed). Default to `gs.info` in
+> any scoped context; its output appears in **System Logs → System Log (syslog)**, not the
+> background-script result panel. (In Global scope both work, but `gs.info` keeps these scripts
+> copy-paste-safe if someone runs them inside an application scope.)
+
 ---
 
 ## Option B — Find a recent execution plan

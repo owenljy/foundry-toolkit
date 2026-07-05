@@ -95,11 +95,15 @@ export class ScriptService {
 			// Step 2: Build and create the Run Once trigger.
 			// gs is a Java-backed object in Rhino — assigning gs.log = function(){} silently
 			// fails. Instead we define a log() helper in the wrapper scope and rewrite any
-			// gs.log( / gs.info( calls in the user script to log() before inlining.
+			// gs.log( / gs.info( / gs.print( calls in the user script to log() before inlining.
+			// gs.print is a global-scope-only API (blocked/swallowed in scoped scripts), so we
+			// normalize it here too — a user who pastes gs.print still gets captured output, and
+			// the canonical scoped-safe call is gs.info (see the tool description's runtime contract).
 			// sys_properties.value is limited to 4000 chars; truncate output to stay safe.
 			const rewrittenScript = script
 				.replace(/\bgs\.log\s*\(/g, 'log(')
-				.replace(/\bgs\.info\s*\(/g, 'log(');
+				.replace(/\bgs\.info\s*\(/g, 'log(')
+				.replace(/\bgs\.print\s*\(/g, 'log(');
 
 			const wrappedScript = `
         (function() {

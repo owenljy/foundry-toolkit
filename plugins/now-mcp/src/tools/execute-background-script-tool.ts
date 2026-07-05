@@ -27,7 +27,8 @@ Write policy (governs writes INSIDE the script body — separate from the instan
 - Detection is heuristic (literal GlideRecord table names only); dynamic table references are not caught. When a write's table can't be resolved statically, the result carries a lowConfidenceWarning — the metadata-table check is incomplete, so review the script manually.
 
 Runtime contract (runs in ServiceNow's Rhino engine, NOT Node):
-- Output capture: call log('...') to return output. gs.log()/gs.info() calls in your script are automatically rewritten to log() — both work. Return values are discarded.
+- Output capture: call log('...') to return output. gs.log()/gs.info()/gs.print() calls in your script are automatically rewritten to log() — all three work. Return values are discarded.
+- Logging in scoped contexts: default to gs.info(...), NOT gs.print(...). gs.print is a global-scope-only API — in scoped Script Includes or scoped background scripts it is blocked (calls fail or are silently swallowed). gs.info output lands in System Logs → System Log (syslog), not the background-script result panel.
 - No import/require/module system; synchronous only (no setTimeout/Promise/await).
 - Use GlideRecordSecure + canWrite() for writes; setLimit() your queries.
 - Referenced table/field names are checked against the live schema first; unknown names come back in a "schemaCheck" field (advisory — the script still runs).

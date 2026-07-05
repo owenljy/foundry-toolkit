@@ -46,7 +46,7 @@ coverage/
 
 # Auto Claude data directory
 .auto-claude/
-.claude/scheduled_tasks.lock
+.claude/
 
 CLAUDE.md
 

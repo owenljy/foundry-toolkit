@@ -34,5 +34,14 @@ behavior): the `verify_fluent_deploy` MCP prompt packages the checks; the
 record changed by a human, not your deploy), reconcile by updating the Fluent
 source and redeploying — never treat the instance as the source of truth.
 
+## Server-side script conventions (background scripts & Script Includes)
+- **Log with `gs.info(...)`, never `gs.print(...)`.** `gs.print` is a global-scope-only
+  API — in a scoped Script Include or scoped background script it is blocked (the call
+  fails or is silently swallowed). Default to `gs.info(...)` everywhere; it works in both
+  global and scoped contexts. Output lands in **System Logs → System Log (syslog)**, not
+  the background-script result panel. (The `servicenow_execute_background_script` MCP tool
+  auto-rewrites `gs.print`/`gs.info`/`gs.log` to its capture helper, so its result panel
+  still shows output — but write `gs.info` in the source you keep.)
 
 Project Specific Architecture & Design to be defined in `README.md`
+
