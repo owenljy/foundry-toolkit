@@ -25,7 +25,7 @@ MCP writes an incident but never a business rule.
 ## Quick start
 
 ### Prerequisites
-- **Node.js 20+** (matches now-sdk's floor and CI)
+- **Node.js 22+** (matches now-sdk's floor and CI)
 - **pnpm via corepack** — run `corepack enable` once (corepack ships with Node); the
   plugin's first-launch bootstrap uses it to install deps at the pinned version
 - A **ServiceNow instance** and credentials (basic auth or OAuth)

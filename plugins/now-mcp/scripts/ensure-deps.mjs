@@ -81,7 +81,7 @@ function install(installDir) {
   if (!pm) {
     throw new Error(
       'could not find pnpm. This project uses pnpm (pnpm-lock.yaml). ' +
-        'Run `corepack enable` (ships with Node 20+), then reconnect the MCP server, ' +
+        'Run `corepack enable` (ships with Node 22+), then reconnect the MCP server, ' +
         'or install pnpm globally: `npm i -g pnpm`.',
     );
   }
