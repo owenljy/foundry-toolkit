@@ -11,10 +11,33 @@ test('sanitizeQuery allows ServiceNow glide expressions (javascript:gs.*)', () =
   );
 });
 
-test('sanitizeQuery still blocks XSS-style content', () => {
+test('sanitizeQuery still blocks XSS-style content in values', () => {
   assert.throws(() => sanitizeQuery('<script>alert(1)</script>'), /dangerous/i);
-  assert.throws(() => sanitizeQuery('x=1^onclick=evil'), /dangerous/i);
   assert.throws(() => sanitizeQuery('eval(bad)'), /dangerous/i);
+  // Danger lives in the VALUE, and is still caught there.
+  assert.throws(
+    () => sanitizeQuery('short_description=<script>onerror=alert(1)</script>'),
+    /dangerous/i
+  );
+  assert.throws(() => sanitizeQuery('short_description=<div onmouseover=alert(1)>'), /dangerous/i);
+});
+
+test('sanitizeQuery does not false-positive on benign field names (on_plan= regression)', () => {
+  // The classic false positive: `execution_plan=` contains the substring
+  // `on_plan=`, which used to collide with the `on\w+=` event-handler signature.
+  const q = 'execution_plan=bfc8ccfdc379c790cf16de777a01311a';
+  assert.equal(sanitizeQuery(q), q);
+
+  // Other field names whose characters brush up against XSS signatures.
+  for (const good of [
+    'x_on_plan=1',
+    'href_count=1',
+    'src_field=1',
+    'onclick=1', // a field literally named onclick is still just a field name
+    'execution_plan=abc^status=success',
+  ]) {
+    assert.equal(sanitizeQuery(good), good, `expected to allow: ${good}`);
+  }
 });
 
 test('validateSysId accepts 32-char hex, rejects others', () => {

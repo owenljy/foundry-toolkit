@@ -43,37 +43,84 @@ export function validateTableName(tableName: string): void {
 	assertTableAllowed(tableName);
 }
 
+// Obviously-malicious content we refuse to pass through. These are XSS-oriented:
+// the query itself is sent as a REST query parameter (not rendered as HTML), so
+// this is defense-in-depth against a value being reflected somewhere downstream.
+// NOTE: we intentionally do NOT block "javascript:" — ServiceNow encoded queries
+// (and this server's natural-language translation) legitimately use glide
+// expressions like "javascript:gs.beginningOfToday()".
+const DANGEROUS_QUERY_PATTERNS = [
+	/<script/i,
+	/on\w+\s*=/i, // HTML event handlers like onclick=
+	/eval\(/i,
+];
+
+// Splits an encoded query into its conditions. Conditions are joined by "^",
+// optionally with a logical marker (^OR / ^NQ / ^EQ) that is part of the
+// separator, not of the condition text.
+const CONDITION_SEPARATOR = /\^(?:OR|NQ|EQ)?/;
+
+// Matches a leading "<field><operator>" so we can isolate the value that follows.
+// The field token is lowercase ([a-z0-9_.]) to mirror real ServiceNow column
+// names; this is what keeps a benign field name (e.g. `execution_plan`) from
+// being scanned as if it were payload — the historical `on\w+=` false positive
+// (`...on_plan=`). Longer word operators are listed before their prefixes so the
+// alternation is greedy where it matters (STARTSWITH before nothing, >= before >).
+const FIELD_OPERATOR =
+	/^[a-z0-9_.]+(?:!=|>=|<=|=|>|<|STARTSWITH|ENDSWITH|NOT LIKE|LIKE|NOT IN|IN|SAMEAS|NSAMEAS|INSTANCEOF|BETWEEN|DYNAMIC|ANYTHING|ISNOTEMPTY|ISEMPTY|VALCHANGES|CHANGES)/;
+
 /**
- * Sanitizes an encoded query to prevent basic injection attempts
- * Note: ServiceNow's encoded queries are generally safe, but we add basic validation
+ * Extracts the segments of an encoded query that should be scanned for dangerous
+ * content. For a well-formed `field<op>value` condition, only the value is
+ * returned — field names and operators are structure, not payload. For a segment
+ * that doesn't parse as a condition (e.g. a raw `<script>...` or `eval(...)`
+ * blob), the whole segment is returned so genuine injection attempts are still
+ * caught.
+ */
+function extractScannableSegments(query: string): string[] {
+	const segments: string[] = [];
+
+	for (const condition of query.split(CONDITION_SEPARATOR)) {
+		if (!condition) {
+			continue;
+		}
+
+		const match = FIELD_OPERATOR.exec(condition);
+		if (match) {
+			// A recognized condition: scan only the value that follows the operator.
+			segments.push(condition.slice(match[0].length));
+		} else {
+			// Not a parseable condition — scan the raw text conservatively.
+			segments.push(condition);
+		}
+	}
+
+	return segments;
+}
+
+/**
+ * Sanitizes an encoded query to prevent basic injection attempts.
+ *
+ * ServiceNow's encoded queries are generally safe, but we scan for obviously
+ * malicious content as defense-in-depth. Crucially, the scan is applied to the
+ * VALUE portion of each condition, never to field names or operators — otherwise
+ * a legitimate field name whose characters happen to form an XSS signature (the
+ * classic `execution_plan=` → `on_plan=` collision with `on\w+=`) gets rejected.
  */
 export function sanitizeQuery(query: string): string {
 	if (!query) {
 		return query;
 	}
 
-	// Remove any potentially dangerous characters
-	// Encoded queries use: =, !=, ^, ^OR, ^NQ, LIKE, IN, etc.
-	// We'll allow alphanumeric, spaces, and ServiceNow query operators
 	const sanitized = query.trim();
 
-	// Basic validation - check for obviously malicious patterns.
-	// NOTE: we intentionally do NOT block "javascript:" — ServiceNow encoded
-	// queries (and this server's natural-language translation) legitimately use
-	// glide expressions like "javascript:gs.beginningOfToday()". The query is
-	// sent as a REST query parameter, not rendered as HTML, so the XSS-oriented
-	// patterns below are what matter.
-	const dangerousPatterns = [
-		/<script/gi,
-		/on\w+\s*=/gi, // Event handlers like onclick=
-		/eval\(/gi,
-	];
-
-	for (const pattern of dangerousPatterns) {
-		if (pattern.test(sanitized)) {
-			throw new ValidationError('Query contains potentially dangerous content', {
-				query: sanitized,
-			});
+	for (const segment of extractScannableSegments(sanitized)) {
+		for (const pattern of DANGEROUS_QUERY_PATTERNS) {
+			if (pattern.test(segment)) {
+				throw new ValidationError('Query contains potentially dangerous content', {
+					query: sanitized,
+				});
+			}
 		}
 	}
 
