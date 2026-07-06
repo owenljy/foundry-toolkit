@@ -4,7 +4,6 @@ description: Analyzes AI Agent execution traces, spans, and logs on a ServiceNow
 argument-hint: "[execution-plan-sys-id] [symptom / what went wrong]"
 context: fork
 agent: general-purpose
-effort: high
 ---
 
 # ServiceNow AI Agent Trace Analyzer
