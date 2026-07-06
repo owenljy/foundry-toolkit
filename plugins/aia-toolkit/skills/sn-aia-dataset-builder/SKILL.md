@@ -13,9 +13,15 @@ Each dataset record represents one test scenario: a prompt sent to the agent, op
 
 ---
 
+## How to Run the Interview
+
+**Use the `AskUserQuestion` tool for every question in this skill** — the scope choice (Scope section), the agent/use-case questions (Step 1), the development stage (Step 2), the proposed-cases sign-off (Step 3), and the ground-truth pattern choice (Step 4). Present the options as structured choices rather than free-form prose so the user can pick quickly. The tables in each step already give you the option labels and descriptions to populate the tool with; add an "Other" path when the choice isn't strictly enumerated (e.g. which agent). Batch related questions into a single `AskUserQuestion` call where they're independent (Step 1's use-case / context-record / pre-processing questions can go together).
+
+---
+
 ## Scope — Ask This First
 
-**Single scope or two scopes?**
+**Single scope or two scopes?** *(ask with `AskUserQuestion` — two options below)*
 
 | Mode | Where dataset files go | When to use |
 |---|---|---|
@@ -46,7 +52,7 @@ aia_artifact_dataset records   ← you define these (this skill)
 
 Ask: **Which agent are these test cases for?** Read its `<name>-instructions.md` to understand the question categories and tools it uses.
 
-Also ask:
+Also ask (batch these into one `AskUserQuestion` call — they're independent):
 - **Does the agent have a use case record (`sn_aia_usecase`)?** If yes, collect its sys_id — it goes in `usecase_table: 'sn_aia_usecase'` + `aia_usecase` on each dataset record.
 - **Does the agent need a context record (alert, incident, change) to function?** Many agents are sub-agents that expect upstream context (e.g., an `em_alert` sys_id). If yes, every dataset record must include `artifact_table` and `artifact_record` pointing to a real record on the instance, or the agent's tools will fail at eval time.
 - **Does the agent access context directly, or does a parent orchestrator pre-process it?** This is critical for standalone eval wrappers. Check the parent orchestrator's instructions — if a parent tool extracts IDs before calling this agent, the agent has no way to get that data itself. In that case, **embed the pre-processed data directly in the prompt**. The `artifact_table`/`artifact_record` fields won't help if the agent has no tool to read that table.
@@ -55,7 +61,7 @@ Also ask:
 
 ## Step 2: Clarify Development Stage and Metrics Focus
 
-Ask: **What stage of development is this agent at?** This determines dataset size targets and which scenario types to prioritize.
+Ask: **What stage of development is this agent at?** *(ask with `AskUserQuestion` — the four stages below are the options)* This determines dataset size targets and which scenario types to prioritize.
 
 | Stage | Target size | Scenario focus | Key metrics to exercise |
 |---|---|---|---|
@@ -92,13 +98,13 @@ Proposed test cases for <agent-name>:
 2. ...
 ```
 
-Ask: **Does this look right? Any adjustments, additions, or scenarios to remove?**
+Ask (with `AskUserQuestion`): **Does this look right? Any adjustments, additions, or scenarios to remove?** — offer options like "Looks good, generate", "Adjust some cases", "Add more scenarios", letting the user pick or type specifics via "Other".
 
 ---
 
 ## Step 4: Collect Ground Truth (Optional)
 
-There are two ground truth patterns. Pick based on the scenario:
+There are three ground truth patterns. *(Use `AskUserQuestion` to have the user pick — Pattern A / Pattern B / Pattern C / none — described below.)* Pick based on the scenario:
 
 ### Pattern A — Golden Response (only for time-stable queries)
 
