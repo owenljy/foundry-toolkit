@@ -430,12 +430,25 @@ export function loadConfig(): Environment {
 	// No config anywhere — report exactly what was checked so the fix is obvious
 	// regardless of install mode (plugin form vs. standalone YAML). The password
 	// is only ever reported as set/unset, never echoed.
+	//
+	// We distinguish three states per var:
+	//   "not set"      — process.env has no entry (plugin not installed / env not passed)
+	//   "set but empty" — plugin form installed but field left blank; ${user_config.X}
+	//                     substitution yields "" which envValue() treats as absent
+	//   "set"          — a non-empty value reached us
+	function varStatus(name: string, redact = false): string {
+		const raw = process.env[name];
+		if (raw === undefined) return 'not set';
+		if (raw.trim() === '') return 'set but empty (plugin field may be blank)';
+		return redact ? 'set' : raw;
+	}
+
 	const pathVar = process.env.SERVICENOW_CONFIG_PATH;
 	const seen = [
-		`SERVICENOW_CONFIG_PATH: ${pathVar && pathVar.trim() !== '' ? `set (${pathVar.trim()}) but file not found` : 'not set'}`,
-		`SERVICENOW_URL: ${envValue('SERVICENOW_URL') ?? 'not set'}`,
-		`SERVICENOW_USERNAME: ${envValue('SERVICENOW_USERNAME') ? 'set' : 'not set'}`,
-		`SERVICENOW_PASSWORD: ${envValue('SERVICENOW_PASSWORD') ? 'set' : 'not set'}`,
+		`SERVICENOW_CONFIG_PATH: ${pathVar === undefined ? 'not set' : pathVar.trim() === '' ? 'set but empty' : `set (${pathVar.trim()}) but file not found`}`,
+		`SERVICENOW_URL: ${varStatus('SERVICENOW_URL')}`,
+		`SERVICENOW_USERNAME: ${varStatus('SERVICENOW_USERNAME', true)}`,
+		`SERVICENOW_PASSWORD: ${varStatus('SERVICENOW_PASSWORD', true)}`,
 	];
 	throw new Error(
 		'No ServiceNow configuration found.\n\n' +
