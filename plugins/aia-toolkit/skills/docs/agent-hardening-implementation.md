@@ -82,7 +82,7 @@ dry-run guard" rule would false-positive constantly and read as noise.
 | Escalate as first-class outcome (A/#5) | instruction template + audit **W9** (judgment warning) |
 | Dry-run / mock guard (B/#2) | opt-in template skeleton + builder convention + audit **W11** (judgment warning) |
 | Long-running → async driver (C/#3) | prose in builder decision tree + `CLAUDE.md` |
-| Config externalization (D/#6) | builder rule **A4** + audit **W10** (judgment warning) |
+| Config externalization (D/#6) | builder rule **A3** + audit **W10** (judgment warning) |
 | Hex sys_id literal in a **server script** (D/#6) | scan check **[12]** — the one deterministic MUST-be-zero grep (see the "hard" note above) |
 
 New audit warning IDs: **W8, W9, W10, W11**. New scan check: **[12]**.
@@ -383,7 +383,7 @@ cross-link resolves.
 
 ### D.1 `sn-aia-agent-builder/SKILL.md` — anti-staleness rules
 
-Add **A4 — Externalize customer/environment-specific values.** Generalizes A2 (no
+Add **A3 — Externalize customer/environment-specific values.** Generalizes A2 (no
 hardcoded `sn_aia_*` sys_ids) to *all* environment-specific values:
 
 > Do not hardcode any customer/environment-specific value (endpoint URL, queue/group
@@ -402,7 +402,7 @@ hardcoded `sn_aia_*` sys_ids) to *all* environment-specific values:
   constraint #2): a literal endpoint URL, or **non-hex** config baked in (threshold values,
   MID/group names, software/serial strings), appearing in a server script outside the
   connection-resolution helper. Fix: externalize to a property or connection alias (rule
-  A4). **The hardcoded-hex-sys_id case is owned by scan check [12] — W10 defers to it** and
+  A3). **The hardcoded-hex-sys_id case is owned by scan check [12] — W10 defers to it** and
   should say so, rather than re-encoding the same hex check at a softer tier.
 - Mirror W10 in the Local audit checklist.
 

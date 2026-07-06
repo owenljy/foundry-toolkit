@@ -15,11 +15,7 @@ it as **now-sdk typed Fluent** and the agent's instructions + Rhino tool scripts
 > `package.json` for `@servicenow/sdk`. If it's missing, **stop and tell the user**:
 > "now-sdk isn't a dependency in this repo — I can still design the agent, but
 > deployment (Step 9+) will fail until it's installed." Don't discover this silently
-> partway through. Also resolve `read_records` / `run_privileged_script` against
-> whatever MCP is connected (see
-> [../docs/mcp-capability-resolution.md](../docs/mcp-capability-resolution.md)); if
-> nothing matches, tell the user you're falling back to background scripts rather
-> than switching silently. Always use the latest installed SDK; run `now-sdk explain
+> partway through. Always use the latest installed SDK; run `now-sdk explain
 > aiagent-api` before emitting to surface the current param surface (see Step 3).
 
 ## Division of labour — work hand-in-hand with now-sdk
@@ -32,13 +28,10 @@ it as **now-sdk typed Fluent** and the agent's instructions + Rhino tool scripts
 | Rhino `.js` tool/agent scripts (the runtime contract) | **this skill** |
 | Anti-pattern / audit / deploy / smoke test | **this skill** |
 
-`AiAgent()` auto-generates ~9 records (agent, config, version, tools, m2m, ACL,
-trigger); `AiAgenticWorkflow()` ~7 (usecase, team, team_member, version, trigger).
-**Do not hand-roll those with `Record()`.** The structural source of truth is
-[references/now-sdk-emitter.md](references/now-sdk-emitter.md); the structure of
-the *intent* is [references/agent-design-spec.md](references/agent-design-spec.md).
-For exact param shapes, run `now-sdk explain aiagent-api` /
-`now-sdk explain aiagenticworkflow-api`.
+**Do not hand-roll agent/workflow records with `Record()`** — the typed API
+generates them (counts + rationale: [references/now-sdk-emitter.md](references/now-sdk-emitter.md)).
+The *intent* structure is [references/agent-design-spec.md](references/agent-design-spec.md).
+For exact param shapes, run `now-sdk explain aiagent-api` / `aiagenticworkflow-api`.
 
 ### Anti-staleness rules (non-negotiable)
 
@@ -47,21 +40,16 @@ For exact param shapes, run `now-sdk explain aiagent-api` /
   "Gap policy"), in one commented place.
 - **A2 — Never write a sys_id for `sn_aia_*` structure.** Roles by name
   (`roleMap` / `securityAcl.roles`), cross-refs by JS variable. A 32-char hex
-  literal in an agent file is a bug (the audit scan flags it). The old
-  `strategy: 'b264…'` is exactly what this rule kills.
-- **A3 — Don't re-encode now-sdk's knowledge.** If the answer to "what column /
-  relationship?" is in `now-sdk explain`, link to it; don't copy it here.
-- **A4 — Externalize customer/environment-specific values.** Generalizes A2 (no
-  hardcoded `sn_aia_*` sys_ids) to *all* environment-specific values. Do not hardcode
-  any customer/environment-specific value (endpoint URL, queue/group sys_id, MID,
-  threshold, software/serial name) in a **server script** (tool script,
-  `applicability`, or `context-processing` — the Rhino contract applies to all three).
-  Read it from a system property (`gs.getProperty` with a safe default) or a connection
-  & credential alias at runtime, so the same built artifact behaves per-install with no
-  rebuild. This is the generalization of the credential-minimization rule (Step 2b) — if
-  a script can read a value from config or the connection at runtime, it must, rather
-  than baking it in or taking it as an input. The hardcoded-hex case is caught by anti-
-  pattern scan check **[12]**; non-hex config (URLs, thresholds) is audit warning **W10**.
+  literal in an agent file is a bug — caught by anti-pattern scan check **[12]**
+  (the old `strategy: 'b264…'` is exactly what this kills).
+- **A3 — Externalize customer/environment-specific values.** Generalizes A2 to
+  *all* environment-specific values (endpoint URL, queue/group sys_id, MID,
+  threshold, software/serial name): a **server script** (tool script,
+  `applicability`, or `context-processing`) must read them from a system property
+  (`gs.getProperty` with a safe default) or the connection & credential alias at
+  runtime — never bake them in or take them as an input if config can supply them
+  (the Step 2b credential-minimization rule, generalized). Non-hex config is audit
+  warning **W10**.
 
 ---
 
@@ -111,35 +99,11 @@ and Q1/Q2 must always be confirmed.
 1. **Agent name** — e.g. "Incident Triage Agent".
 2. **What should it do?** — Questions it answers / tasks it performs, with concrete
    examples. If it calls external APIs, ask **which vendor(s)/service(s)**.
-   - **Discover reusable resources before proposing any new tool.** Resolve the
-     `read_records` capability (see
-     [../docs/mcp-capability-resolution.md](../docs/mcp-capability-resolution.md))
-     and run these queries in parallel for each capability keyword, adapting the
-     param names below to whichever tool resolves.
-     If no matching tool is connected, use the background script in
-     [references/tool-discovery-bg-script.js](references/tool-discovery-bg-script.js)
-     and ask the user to paste the output. If neither is available, skip discovery
-     and note the tool set is unverified.
-
-     | Query | Table | Encoded query | Fields |
-     |---|---|---|---|
-     | Existing AIA tools | `sn_aia_tool` | `descriptionLIKE<kw>^ORnameLIKE<kw>` | name, type, target_document_table, sys_scope |
-     | Subflows | `sys_hub_flow` | `descriptionLIKE<kw>^ORnameLIKE<kw>^active=true` | name, sys_id, sys_scope |
-     | Flow actions | `sys_hub_action_type_definition` | `descriptionLIKE<kw>^ORnameLIKE<kw>^active=true` | name, sys_id, sys_scope |
-     | Now Assist skills | `sn_nowassist_skill_config` | `nameLIKE<kw>^ORdescriptionLIKE<kw>` | name, sys_id, sys_scope |
-     | Catalog items | `sc_cat_item` | `(nameLIKE<kw>^ORshort_descriptionLIKE<kw>)^active=true` | name, sys_id, sys_scope |
-     | VA topics | `sys_cs_topic` | `(nameLIKE<kw>^ORdescriptionLIKE<kw>)^active=true` | name, type, sys_id, sys_scope |
-     | Existing agents | `sn_aia_agent` | `descriptionLIKE<kw>^ORnameLIKE<kw>` | name, sys_id, sys_scope |
-     | Script Includes | `sys_script_include` | `nameLIKE<kw>^ORdescriptionLIKE<kw>^active=true` | name, api_name, access, sys_scope |
-
-     Map results to builder tool types: `sys_hub_flow` → `subflow` (`subflowId`),
-     `sys_hub_action_type_definition` → `action` (`flowActionId`),
-     `sn_nowassist_skill_config` → `capability` (`capabilityId`),
-     `sc_cat_item` → `catalog` (`catalogItemId`),
-     `sys_cs_topic` type=TOPIC → `topic` / TOPIC_BLOCK → `topic_block` (`virtualAgentId`).
-     Script Includes surface only for the script-tool path — check `access=public`
-     for cross-scope use. If an existing agent covers the use case, suggest extending
-     it (Q0 "editing").
+   - **Discover reusable resources before proposing any new tool.** Run the
+     parallel discovery queries per capability keyword, then map hits to builder
+     tool types — full query table + mapping in
+     [references/tool-discovery-queries.md](references/tool-discovery-queries.md).
+     If an existing agent covers the use case, suggest extending it (Q0 "editing").
    - **Propose the tool set.** For each: name, `kind` (oob / rag / capability /
      subflow / action / catalog / topic / mcp / crud / script), one-line purpose,
      and **Reuse** vs **New**. Apply the selection priority (Step 2b). Any `script`
@@ -265,37 +229,23 @@ Don't regenerate unchanged files.
   `.js` files under `src/server/agents/<agent>/…` (see Step 4 + Runtime Contract).
 - HTTP connection alias → now-sdk `Alias()` (emitter ref), only if requested.
 
-Per-tool execution fields live on each `tools[]` entry (judgment, not plumbing):
-
-| Field | Default | Override when |
-|---|---|---|
-| `executionMode` | `autopilot` | tool **mutates state** (transfer, payment, delete) → `copilot` |
-| `displayOutput` | `false` | the raw return is itself the user-facing display (rare) |
-| `outputTransformationStrategy` | `none` | long unstructured text → `summary`; search hit lists → `summary_for_search_results`. Never for structured JSON (collapses to `"success"`). |
-| `maxAutoExecutions` | `10` | lower for expensive tools |
-
-> **Scope reminder after generating:** tell the user agent files are in
-> `src/fluent/agent/ai-agent-<name>/`, and to run `/sn-aia-dataset-builder` for eval
-> test cases (→ `src/fluent/eval/` if two-scope, else alongside the agent).
+Per-tool execution fields (`executionMode`, `displayOutput`,
+`outputTransformationStrategy`, `maxAutoExecutions`) live on each `tools[]`
+entry — judgment, not plumbing. Defaults + override rules:
+[references/now-sdk-emitter.md](references/now-sdk-emitter.md) (Per-tool execution
+fields).
 
 ### Directory structure
 
 ```
-src/fluent/agent/ai-agent-<agent>/
-  <agent>-agent.now.ts            # AiAgent({...}) — agent + tools[] + acl + triggers
-  <agent>-instructions.md         # Now.include'd by versionDetails
-  <agent>-proficiency.md
-  <workflow>-workflow.now.ts      # AiAgenticWorkflow({...}) — only for multi-agent
-src/server/agents/<agent>/agent-scripts/
-  <agent>-applicability.js        # plain-JS IIFE (Runtime Contract)
-  <agent>-context-processing.js
-src/server/agents/<agent>/tool-scripts/
-  <tool-name>.js                  # one per SCRIPT-typed tool (crud is auto-generated)
+src/fluent/agent/ai-agent-<agent>/     # AiAgent()/AiAgenticWorkflow() .now.ts + skill-owned .md
+src/server/agents/<agent>/             # agent-scripts/ + tool-scripts/ (plain-JS IIFEs)
 ```
 
-That's it — the per-table `Record()` sprawl (config/version/tool/m2m/team/
-team-member/mcp-server/security-acl) is gone; `AiAgent()`/`AiAgenticWorkflow()`
-generate those records.
+Full annotated tree in
+[references/now-sdk-emitter.md](references/now-sdk-emitter.md) (Directory
+structure). The per-table `Record()` sprawl is gone — the typed API generates
+those records.
 
 ---
 
@@ -377,22 +327,9 @@ field — a `script`-tool's source, `applicabilityScript`, `contextProcessingScr
 file are what Rhino runs.
 
 **So these scripts are plain `.js` IIFEs, and `Now.include()` must point at the
-source `.js`, never a `dist/` output.**
-
-```js
-// src/server/agents/<agent>/tool-scripts/<tool-name>.js
-(function (inputs) {
-    function getConnection(connectionSysId) {            // helpers INLINE — no require
-        var gr = new GlideRecordSecure('http_connection'); // platform global — no import
-        if (!gr.get(connectionSysId) || !gr.canRead()) return null;
-        return { endpoint: gr.getValue('connection_url'), credential: gr.getValue('credential') };
-    }
-    var conn = getConnection(inputs.connectionSysId);
-    if (!conn) return { status: 'error', message: 'Connection not found or not readable' };
-    // ... tool logic ...
-    return { status: 'success', data: /* ... */ };          // return on EVERY path
-})(inputs); // ← IIFE invoked: this expression's value IS the tool output
-```
+source `.js`, never a `dist/` output.** Copy the canonical IIFE template from
+[references/runtime-contract.md](references/runtime-contract.md) (Required IIFE
+shape) — that file also holds the full Rhino-failure rationale.
 
 Rules (enforced by `scripts/anti-pattern-scan.sh`):
 - **IIFE** whose final top-level expression is `(function(inputs){…})(inputs)`.
@@ -404,8 +341,7 @@ Rules (enforced by `scripts/anti-pattern-scan.sh`):
 
 > now-sdk may support a module-import form for `script`-tool content in newer
 > SDKs; if you use it, follow `now-sdk explain aiagent-api`. The `Now.include`
-> source-`.js` path above is the safe, runtime-correct default. Full rationale:
-> [references/runtime-contract.md](references/runtime-contract.md).
+> source-`.js` path above is the safe, runtime-correct default.
 
 ### Agent scripts (applicability / context-processing)
 

@@ -220,3 +220,35 @@ Default: there is **no gap** for core agent/workflow structure — `AiAgent()` a
   creating the alias — see [credential-auth.md](credential-auth.md).
 - Standalone ACLs → `Acl()` (`now-sdk explain acl-api`). For agent-invocation
   access, prefer the `securityAcl` param on `AiAgent()` (it builds the ACL for you).
+
+## Per-tool execution fields
+
+Each `tools[]` entry carries these execution fields — judgment, not plumbing:
+
+| Field | Default | Override when |
+|---|---|---|
+| `executionMode` | `autopilot` | tool **mutates state** (transfer, payment, delete) → `copilot` |
+| `displayOutput` | `false` | the raw return is itself the user-facing display (rare) |
+| `outputTransformationStrategy` | `none` | long unstructured text → `summary`; search hit lists → `summary_for_search_results`. Never for structured JSON (collapses to `"success"`). |
+| `maxAutoExecutions` | `10` | lower for expensive tools |
+
+## Directory structure
+
+The full layout the builder emits (Step 3):
+
+```
+src/fluent/agent/ai-agent-<agent>/
+  <agent>-agent.now.ts            # AiAgent({...}) — agent + tools[] + acl + triggers
+  <agent>-instructions.md         # Now.include'd by versionDetails
+  <agent>-proficiency.md
+  <workflow>-workflow.now.ts      # AiAgenticWorkflow({...}) — only for multi-agent
+src/server/agents/<agent>/agent-scripts/
+  <agent>-applicability.js        # plain-JS IIFE (Runtime Contract)
+  <agent>-context-processing.js
+src/server/agents/<agent>/tool-scripts/
+  <tool-name>.js                  # one per SCRIPT-typed tool (crud is auto-generated)
+```
+
+That's it — the per-table `Record()` sprawl (config/version/tool/m2m/team/
+team-member/mcp-server/security-acl) is gone; `AiAgent()`/`AiAgenticWorkflow()`
+generate those records.

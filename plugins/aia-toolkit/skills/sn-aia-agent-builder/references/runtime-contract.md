@@ -1,6 +1,30 @@
 # Runtime Contract — deep dive (Rhino sandbox rationale)
 
-The diagnostic rationale behind the hard rules. For the enforceable rules + required IIFE shape, see [../SKILL.md](../SKILL.md) (## Runtime Contract for Tool & Agent Scripts).
+The canonical IIFE template plus the diagnostic rationale behind the hard rules.
+For the enforced-rule summary in context, see [../SKILL.md](../SKILL.md)
+(## Runtime Contract for Tool & Agent Scripts).
+
+## Required IIFE shape
+
+```js
+// src/server/agents/<agent>/tool-scripts/<tool-name>.js
+(function (inputs) {
+    function getConnection(connectionSysId) {            // helpers INLINE — no require
+        var gr = new GlideRecordSecure('http_connection'); // platform global — no import
+        if (!gr.get(connectionSysId) || !gr.canRead()) return null;
+        return { endpoint: gr.getValue('connection_url'), credential: gr.getValue('credential') };
+    }
+    var conn = getConnection(inputs.connectionSysId);
+    if (!conn) return { status: 'error', message: 'Connection not found or not readable' };
+    // ... tool logic ...
+    return { status: 'success', data: /* ... */ };          // return on EVERY path
+})(inputs); // ← IIFE invoked: this expression's value IS the tool output
+```
+
+The rules this shape satisfies (IIFE final expression; no `import`/`export`/
+`require`; inline every helper; return on every path; `Now.include()` the source
+`.js`, never `dist/`) are enforced by `scripts/anti-pattern-scan.sh`. The `why`
+follows.
 
 ## Why scripts must be plain `.js` (the four ways a `tsc`/CommonJS build fails at runtime)
 
