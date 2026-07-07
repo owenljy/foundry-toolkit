@@ -276,7 +276,11 @@ export class ServiceNowClient {
 		recordSysId: string,
 	): Promise<unknown> {
 		// Attachment upload is a write; audit it like every other POST/PUT/PATCH/DELETE.
-		recordWrite('POST', `${API_ENDPOINTS.ATTACHMENT_UPLOAD} (${tableName}/${recordSysId})`, this.instanceUrl);
+		recordWrite(
+			'POST',
+			`${API_ENDPOINTS.ATTACHMENT_UPLOAD} (${tableName}/${recordSysId})`,
+			this.instanceUrl,
+		);
 
 		// ServiceNow's multipart attachment endpoint requires table_name/table_sys_id
 		// as form fields *before* the file part, and the file part must be named
