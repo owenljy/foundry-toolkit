@@ -2,7 +2,7 @@
  * ServiceNow HTTP client for all API interactions (native fetch, no axios).
  */
 
-import { HTTP_CONFIG } from '../config/constants.js';
+import { API_ENDPOINTS, HTTP_CONFIG } from '../config/constants.js';
 import { HttpError, NetworkError } from '../types/errors.js';
 import type { AuthConfig } from '../types/instance.js';
 import { recordWrite } from '../utils/audit.js';
@@ -276,16 +276,18 @@ export class ServiceNowClient {
 		recordSysId: string,
 	): Promise<unknown> {
 		// Attachment upload is a write; audit it like every other POST/PUT/PATCH/DELETE.
-		recordWrite('POST', `/api/now/attachment/file (${tableName}/${recordSysId})`, this.instanceUrl);
+		recordWrite('POST', `${API_ENDPOINTS.ATTACHMENT_UPLOAD} (${tableName}/${recordSysId})`, this.instanceUrl);
 
+		// ServiceNow's multipart attachment endpoint requires table_name/table_sys_id
+		// as form fields *before* the file part, and the file part must be named
+		// 'uploadFile' and be the last part (per the Attachment API contract).
 		const formData = new FormData();
-		formData.append('file', new Blob([file]), fileName);
 		formData.append('table_name', tableName);
 		formData.append('table_sys_id', recordSysId);
-		formData.append('file_name', fileName);
+		formData.append('uploadFile', new Blob([file]), fileName);
 
 		return this.requestWithRetry(() =>
-			this.doFetch('/api/now/attachment/file', {
+			this.doFetch(API_ENDPOINTS.ATTACHMENT_UPLOAD, {
 				method: 'POST',
 				body: formData,
 				timeoutMs: HTTP_CONFIG.ATTACHMENT_TIMEOUT,
