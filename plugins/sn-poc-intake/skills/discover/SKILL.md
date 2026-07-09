@@ -1,0 +1,25 @@
+---
+name: discover
+description: Pre-meeting discovery — challenge a feature idea, generate client meeting questions, anticipate end-user FAQ, and produce a client-ready brief. Triggers on "/sn-poc-intake:discover", "discover this feature", "prep for client meeting".
+argument-hint: <feature idea or description>
+context: fork
+agent: discovery-agent
+---
+
+# Discover
+
+Prepare for the client meeting on this feature idea:
+
+$ARGUMENTS
+
+If no feature idea was provided above, ask the user: "What feature are you planning to discuss with the client? Give me a rough description — even a sentence is enough to start."
+
+## How this skill works
+
+This skill runs two agents in sequence:
+
+1. **discovery-agent** — challenges the idea, surfaces weak assumptions, and generates structured questions for the client meeting. Produces `discovery-brief.md`.
+
+2. **faq-agent** — anticipates questions end users will ask, writes draft answers, and produces a client-facing brief. Produces `customer-faq.md`, `client-brief.md`, and `index.html`.
+
+The faq-agent runs automatically after the discovery-agent completes and the user approves the discovery brief.

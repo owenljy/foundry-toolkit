@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "sn-poc-intake",
+  "displayName": "ServiceNow PoC Intake",
+  "description": "Discovery-to-planning workflow for ServiceNow PoC features — challenge a feature idea, generate client meeting questions, write product and technical specs, and decompose into implementation-ready stories.",
+  "author": {
+    "name": "Owen Liang"
+  },
+  "license": "MIT",
+  "keywords": [
+    "servicenow",
+    "poc",
+    "discovery",
+    "spec",
+    "planning",
+    "fluent",
+    "now-sdk",
+    "claude"
+  ]
+}
