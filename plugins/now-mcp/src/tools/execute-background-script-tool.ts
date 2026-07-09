@@ -125,7 +125,10 @@ export function createExecuteBackgroundScriptTool(
 				);
 			} catch (error) {
 				logger.error('Error executing background script', error);
-				return toolError(error, { operation: 'execute background script', requiredRoles: ['admin'] });
+				return toolError(error, {
+					operation: 'execute background script',
+					requiredRoles: ['admin'],
+				});
 			}
 		},
 	};

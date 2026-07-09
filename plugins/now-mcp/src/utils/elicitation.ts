@@ -24,7 +24,7 @@ export async function elicitConfirmation(server: Server, message: string): Promi
 				required: ['confirmed'],
 			},
 		});
-		return result.action === 'accept' && result.content?.['confirmed'] === true;
+		return result.action === 'accept' && result.content?.confirmed === true;
 	} catch {
 		// Client doesn't support elicitation — proceed without confirmation.
 		return true;

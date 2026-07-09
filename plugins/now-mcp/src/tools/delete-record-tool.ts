@@ -6,8 +6,8 @@ import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { DeleteRecordOutputSchema } from '../schemas/output-schemas.js';
 import { DeleteRecordSchema } from '../schemas/table-schemas.js';
 import type { TableService } from '../services/table-service.js';
-import { formatErrorForTool } from '../utils/error-handler.js';
 import { elicitConfirmation, toolAborted } from '../utils/elicitation.js';
+import { formatErrorForTool } from '../utils/error-handler.js';
 import { failureHints, renderHints } from '../utils/failure-enrichment.js';
 import { logger } from '../utils/logger.js';
 import { toolText } from '../utils/tool-response.js';
@@ -77,7 +77,13 @@ export function createDeleteRecordTool(tableService: TableService) {
 				logger.error('Error deleting record', error);
 
 				const table = (params as { tableName?: string })?.tableName;
-				const hints = renderHints(failureHints(String(error), { table, operation: 'delete', requiredRoles: ['admin', 'itil'] }));
+				const hints = renderHints(
+					failureHints(String(error), {
+						table,
+						operation: 'delete',
+						requiredRoles: ['admin', 'itil'],
+					}),
+				);
 				return {
 					content: [
 						{ type: 'text' as const, text: formatErrorForTool(error) },
