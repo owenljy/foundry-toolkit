@@ -154,7 +154,7 @@ export function createGetSecurityInfoTool(tableService: TableService) {
 				);
 			} catch (error) {
 				logger.error('Error getting security info', error);
-				return toolError(error, { table: tableName, operation: 'get security info' });
+				return toolError(error, { table: tableName, operation: 'get security info', requiredRoles: ['admin', 'security_admin'] });
 			}
 		},
 	};

@@ -9,6 +9,7 @@
  * attachments, update sets, and test-data seeding.
  */
 
+import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { InstanceManager } from '../client/instance-manager.js';
@@ -53,7 +54,7 @@ export interface ToolDescriptor {
 	description: string;
 	inputSchema: z.ZodTypeAny;
 	outputSchema: z.ZodTypeAny;
-	handler: (args: unknown) => Promise<ToolResult> | ToolResult;
+	handler: (args: unknown, server?: Server) => Promise<ToolResult> | ToolResult;
 }
 
 interface ToolResult {
@@ -78,6 +79,7 @@ interface ToolResult {
 function withLogging(
 	name: string,
 	handler: ToolDescriptor['handler'],
+	lowLevelServer: Server,
 ): (args: unknown, extra: unknown) => Promise<ToolResult> {
 	return async (args: unknown): Promise<ToolResult> => {
 		logger.debug(`Tool called: ${name}`, { arguments: args });
@@ -92,7 +94,7 @@ function withLogging(
 
 		const start = Date.now();
 		try {
-			const result = await handler(args);
+			const result = await handler(args, lowLevelServer);
 			const durationMs = Date.now() - start;
 			const ok = !(result && result.isError === true);
 			const { msg, data } = formatToolCall({
@@ -202,7 +204,7 @@ export async function registerTools(
 				outputSchema: tool.outputSchema as never,
 				annotations: TOOL_ANNOTATIONS[tool.name],
 			},
-			withLogging(tool.name, tool.handler) as never,
+			withLogging(tool.name, tool.handler, server.server) as never,
 		);
 		logger.info(`Registered tool: ${tool.name}`);
 	}

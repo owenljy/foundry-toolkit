@@ -2,10 +2,12 @@
  * MCP tool for deleting a ServiceNow record
  */
 
+import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { DeleteRecordOutputSchema } from '../schemas/output-schemas.js';
 import { DeleteRecordSchema } from '../schemas/table-schemas.js';
 import type { TableService } from '../services/table-service.js';
 import { formatErrorForTool } from '../utils/error-handler.js';
+import { elicitConfirmation, toolAborted } from '../utils/elicitation.js';
 import { failureHints, renderHints } from '../utils/failure-enrichment.js';
 import { logger } from '../utils/logger.js';
 import { toolText } from '../utils/tool-response.js';
@@ -26,7 +28,7 @@ WARNING: permanent hard delete. There is no trash/undo — recovery is only poss
 export function createDeleteRecordTool(tableService: TableService) {
 	return {
 		...DELETE_RECORD_TOOL,
-		handler: async (params: unknown) => {
+		handler: async (params: unknown, server?: Server) => {
 			try {
 				// Validate input
 				const validated = DeleteRecordSchema.parse(params);
@@ -35,6 +37,15 @@ export function createDeleteRecordTool(tableService: TableService) {
 					sysId: validated.sysId,
 					instance: validated.instance || 'default',
 				});
+
+				// Require explicit user confirmation before a permanent hard delete.
+				if (server) {
+					const confirmed = await elicitConfirmation(
+						server,
+						`Permanently delete record ${validated.sysId} from '${validated.tableName}'? This cannot be undone.`,
+					);
+					if (!confirmed) return toolAborted('Delete cancelled by user.');
+				}
 
 				// Delete record
 				const result = await tableService.deleteRecord(
@@ -66,7 +77,7 @@ export function createDeleteRecordTool(tableService: TableService) {
 				logger.error('Error deleting record', error);
 
 				const table = (params as { tableName?: string })?.tableName;
-				const hints = renderHints(failureHints(String(error), { table, operation: 'delete' }));
+				const hints = renderHints(failureHints(String(error), { table, operation: 'delete', requiredRoles: ['admin', 'itil'] }));
 				return {
 					content: [
 						{ type: 'text' as const, text: formatErrorForTool(error) },

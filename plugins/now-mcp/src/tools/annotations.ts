@@ -15,6 +15,8 @@ export interface ToolAnnotations {
 	destructiveHint: boolean;
 	idempotentHint: boolean;
 	openWorldHint: boolean;
+	/** ServiceNow roles required to call this tool (empty = table-ACL-dependent). */
+	requiredRoles?: string[];
 }
 
 // Every instance-facing tool talks to a live external ServiceNow instance, so
@@ -70,7 +72,6 @@ export const TOOL_ANNOTATIONS: Record<string, ToolAnnotations> = {
 	sn_get_choice_list: RO,
 	sn_get_table_structure_from_data: RO,
 	sn_diff_records: RO,
-	sn_get_security_info: RO,
 	sn_download_attachment: RO,
 	sn_get_attachment_metadata: RO,
 	sn_sdk_status: SDK_STATUS,
@@ -86,11 +87,13 @@ export const TOOL_ANNOTATIONS: Record<string, ToolAnnotations> = {
 	sn_upload_attachment: WRITE,
 
 	// Destructive / arbitrary code
-	sn_delete_record: DESTRUCTIVE,
+	sn_delete_record: { ...DESTRUCTIVE, requiredRoles: ['admin', 'itil'] },
 	sn_execute_background_script: {
 		readOnlyHint: false,
 		destructiveHint: true,
 		idempotentHint: false,
 		openWorldHint: true,
+		requiredRoles: ['admin'],
 	},
+	sn_get_security_info: { ...RO, requiredRoles: ['admin', 'security_admin'] },
 };

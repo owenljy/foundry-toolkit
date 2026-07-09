@@ -12,6 +12,8 @@ export interface FailureContext {
 	/** Free-form label of the operation for logging/future use (not branched on). */
 	operation?: string;
 	query?: string;
+	/** ServiceNow roles required by this tool, surfaced in 403 hints. */
+	requiredRoles?: string[];
 }
 
 export type FailureType = '401' | '403' | 'readonly' | '404' | '400' | 'field_error' | 'unknown';
@@ -49,10 +51,14 @@ export function failureHints(text: string, ctx: FailureContext = {}): string[] {
 				`A field name appears invalid. Run sn_get_table_schema for ${table} to confirm field names`,
 				'For choice fields, sn_get_choice_list shows valid values.',
 			];
-		case '403':
+		case '403': {
+			const roleNote = ctx.requiredRoles?.length
+				? ` This tool requires the ${ctx.requiredRoles.join(' or ')} role.`
+				: '';
 			return [
-				`Access denied on ${table}. Likely an ACL — the account may lack the required role, or the field/record is restricted.`,
+				`Access denied on ${table}. Likely an ACL — the account may lack the required role, or the field/record is restricted.${roleNote}`,
 			];
+		}
 		case 'readonly':
 			// The read-only write-block message already includes source-aware
 			// remediation (which config to edit + reload). No extra hint.
