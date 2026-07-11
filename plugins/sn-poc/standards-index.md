@@ -2,7 +2,7 @@
 
 > Routing table for ServiceNow architecture standards docs. Load the doc for each component type you are designing or decomposing — not all of them, only what the current feature touches.
 >
-> All paths are relative to `plugins/sn-poc-intake/docs/`.
+> All paths are relative to `plugins/sn-poc/docs/`.
 
 ## Architecture
 

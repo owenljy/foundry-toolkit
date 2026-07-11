@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Discovery — {{FEATURE_NAME}}</title>
+  <style>
+    /* ── ServiceNow brand: Infinite Blue base, Wasabi Green accent ── */
+    :root {
+      --bg:           #032D42;
+      --sidebar-bg:   #021f30;
+      --border:       #0a4060;
+      --text:         #e8f0f5;
+      --text-muted:   #7a9bb0;
+      --accent:       #63DF4E;
+      --accent-dim:   rgba(99,223,78,0.08);
+      --card-bg:      #042a3d;
+      --table-header: #021f30;
+      --table-stripe: #052f45;
+      --edit-ring:    rgba(99,223,78,0.5);
+
+      /* tag color pairs: bg / text */
+      --tag-red-bg:    rgba(239,68,68,0.15);  --tag-red-tx:    #ef4444;
+      --tag-blue-bg:   rgba(82,184,255,0.15); --tag-blue-tx:   #52B8FF;
+      --tag-green-bg:  rgba(99,223,78,0.15);  --tag-green-tx:  #63DF4E;
+      --tag-amber-bg:  rgba(245,158,11,0.15); --tag-amber-tx:  #f59e0b;
+      --tag-purple-bg: rgba(191,113,242,0.15);--tag-purple-tx: #BF71F2;
+      --tag-teal-bg:   rgba(20,184,166,0.15); --tag-teal-tx:   #14b8a6;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font:14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); }
+    .layout { display:flex; height:100vh; overflow:hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar { width:232px; background:var(--sidebar-bg); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+    .sidebar-header { padding:20px 16px 14px; border-bottom:1px solid var(--border); }
+    .logo { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+    .sidebar-title { font-size:14px; font-weight:700; line-height:1.3; margin-bottom:8px; }
+    .status-pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; background:rgba(99,223,78,0.12); color:var(--accent); border:1px solid rgba(99,223,78,0.25); }
+    .sidebar-nav { flex:1; overflow-y:auto; padding:6px 0; }
+    .nav-group { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); padding:14px 16px 4px; }
+    .sidebar-nav a { display:block; padding:7px 16px; color:var(--text-muted); text-decoration:none; font-size:13px; border-left:3px solid transparent; transition:color .12s,background .12s,border-color .12s; }
+    .sidebar-nav a:hover { color:var(--text); background:var(--accent-dim); border-left-color:rgba(99,223,78,.4); }
+    .sidebar-nav a.active { color:var(--accent); border-left-color:var(--accent); background:var(--accent-dim); }
+    .sidebar-footer { padding:12px 16px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+    .footer-btn { width:100%; display:flex; align-items:center; gap:7px; padding:7px 12px; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); font-size:12px; font-weight:500; cursor:pointer; transition:all .15s; font-family:inherit; }
+    .footer-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+    .footer-btn.danger:hover { border-color:#ef4444; color:#ef4444; background:rgba(239,68,68,.06); }
+
+    /* ── Copy FAB ── */
+    .copy-fab { position:fixed; top:16px; right:20px; z-index:200; display:flex; align-items:center; gap:6px; padding:7px 12px 7px 10px; background:var(--sidebar-bg); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); font-size:12px; font-weight:500; cursor:pointer; transition:all .15s; font-family:inherit; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+    .copy-fab:hover { border-color:var(--accent); color:var(--accent); background:#032030; }
+    .copy-fab.copied { border-color:var(--accent); color:var(--accent); }
+
+    /* ── Main ── */
+    .main { flex:1; overflow-y:auto; scroll-behavior:smooth; }
+    .main-inner { padding:36px 52px 80px; max-width:880px; }
+    .section { padding-bottom:52px; border-bottom:1px solid var(--border); margin-bottom:40px; }
+    .section:last-child { border-bottom:none; }
+    .section-label { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+    h2 { font-size:22px; font-weight:700; margin-bottom:20px; scroll-margin-top:20px; }
+    h3.group-header { font-size:15px; font-weight:600; color:var(--accent); }
+    p { margin:8px 0; }
+
+    /* ── Tables ── */
+    table.data-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:13px; }
+    table.data-table th { background:var(--table-header); text-align:left; padding:8px 10px; font-weight:600; font-size:11px; letter-spacing:.04em; text-transform:uppercase; border-bottom:2px solid var(--border); color:var(--text-muted); }
+    table.data-table td { padding:6px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    table.data-table tr:nth-child(even) td { background:var(--table-stripe); }
+    table.data-table tr:hover td { background:rgba(99,223,78,0.03); }
+
+    /* ── Form controls ── */
+    .field-input { width:100%; background:transparent; border:none; border-bottom:1px solid transparent; color:var(--text); font:inherit; font-size:13px; padding:3px 2px; outline:none; border-radius:3px; transition:border-color .15s,background .15s; }
+    .field-input:hover { border-bottom-color:var(--border); }
+    .field-input:focus { border-bottom-color:var(--edit-ring); background:rgba(99,223,78,0.04); }
+    textarea.field-input { resize:vertical; min-height:48px; line-height:1.5; }
+
+    /* ── Tag pill ── */
+    .tag-pill { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; border:1px solid transparent; transition:opacity .15s; user-select:none; white-space:nowrap; }
+    .tag-pill .chv-sm { font-size:8px; opacity:.7; }
+    .tag-pill:hover { opacity:.8; }
+    .tag-pill[data-color="red"]    { background:var(--tag-red-bg);    color:var(--tag-red-tx);    border-color:rgba(239,68,68,.3); }
+    .tag-pill[data-color="blue"]   { background:var(--tag-blue-bg);   color:var(--tag-blue-tx);   border-color:rgba(82,184,255,.3); }
+    .tag-pill[data-color="green"]  { background:var(--tag-green-bg);  color:var(--tag-green-tx);  border-color:rgba(99,223,78,.3); }
+    .tag-pill[data-color="amber"]  { background:var(--tag-amber-bg);  color:var(--tag-amber-tx);  border-color:rgba(245,158,11,.3); }
+    .tag-pill[data-color="purple"] { background:var(--tag-purple-bg); color:var(--tag-purple-tx); border-color:rgba(191,113,242,.3); }
+    .tag-pill[data-color="teal"]   { background:var(--tag-teal-bg);   color:var(--tag-teal-tx);   border-color:rgba(20,184,166,.3); }
+
+    /* ── Tag picker popup ── */
+    .tag-picker-popup { position:fixed; background:var(--sidebar-bg); border:1px solid var(--border); border-radius:8px; z-index:500; min-width:160px; box-shadow:0 4px 16px rgba(0,0,0,.4); overflow:hidden; }
+    .tag-picker-popup .tp-item { display:flex; align-items:center; gap:8px; padding:7px 12px; cursor:pointer; font-size:12px; transition:background .1s; }
+    .tag-picker-popup .tp-item:hover { background:var(--accent-dim); }
+    .tag-picker-popup .tp-item .tag-pill { pointer-events:none; }
+    .tag-picker-popup .tp-divider { height:1px; background:var(--border); margin:4px 0; }
+    .tag-picker-popup .tp-new { padding:8px 12px; }
+    .tag-picker-popup .tp-new input { width:100%; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text); font:12px inherit; padding:4px 8px; outline:none; }
+    .tag-picker-popup .tp-new input:focus { border-color:var(--edit-ring); }
+    .tag-picker-popup .tp-swatches { display:flex; gap:5px; margin:6px 0; }
+    .tag-picker-popup .tp-swatch { width:16px; height:16px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:border-color .1s; }
+    .tag-picker-popup .tp-swatch.selected { border-color:var(--text); }
+    .tag-picker-popup .tp-add-btn { width:100%; padding:4px 8px; background:var(--accent-dim); border:1px solid rgba(99,223,78,.3); border-radius:4px; color:var(--accent); font:12px inherit; cursor:pointer; margin-top:2px; }
+    .tag-picker-popup .tp-add-btn:hover { background:rgba(99,223,78,.15); }
+
+    /* ── Cards (challenges) ── */
+    .challenge-card { background:var(--card-bg); border-left:3px solid var(--tag-red-tx); border-radius:0 8px 8px 0; padding:14px 16px; margin:10px 0; position:relative; }
+    .challenge-card[data-priority-color="amber"] { border-left-color:var(--tag-amber-tx); }
+    .challenge-card[data-priority-color="blue"]  { border-left-color:var(--tag-blue-tx); }
+    .challenge-card[data-priority-color="green"] { border-left-color:var(--tag-green-tx); }
+    .challenge-card[data-priority-color="purple"]{ border-left-color:var(--tag-purple-tx); }
+    .challenge-card[data-priority-color="teal"]  { border-left-color:var(--tag-teal-tx); }
+    .card-title-row { display:flex; align-items:flex-start; gap:8px; margin-bottom:6px; }
+    .card-title-row .field-input { font-weight:600; font-size:14px; }
+    .card-meta { margin-top:10px; display:flex; align-items:center; gap:8px; }
+
+    /* ── Collapsibles ── */
+    .collapsible-header { cursor:pointer; user-select:none; display:flex; align-items:center; gap:8px; margin:20px 0 10px; }
+    .collapsible-header .chv { display:inline-flex; width:14px; height:14px; transition:transform .2s; color:var(--text-muted); flex-shrink:0; }
+    .collapsible-header.open .chv { transform:rotate(90deg); }
+    .collapsible-body { display:none; }
+    .collapsible-body.open { display:block; }
+    /* group header editable title */
+    .group-name-input { background:transparent; border:none; border-bottom:1px solid transparent; color:var(--accent); font:600 15px inherit; outline:none; padding:1px 2px; min-width:80px; }
+    .group-name-input:focus { border-bottom-color:var(--edit-ring); }
+    .group-name-input:hover { border-bottom-color:rgba(99,223,78,.3); }
+
+    /* ── Question list ── */
+    .question-list { list-style:none; padding:0; }
+    .question-list li { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); }
+    .question-list li:last-child { border-bottom:none; }
+    .question-list li.has-answer { flex-direction:column; align-items:stretch; gap:6px; padding:10px 0; }
+    .q-main-row { display:flex; align-items:center; gap:8px; }
+    .q-answer-row { display:flex; align-items:center; gap:8px; padding-left:22px; }
+    .q-answer-row .q-arrow { color:var(--tag-green-tx); font-size:13px; flex-shrink:0; }
+    .q-answer-row .q-source { flex:0 0 200px; color:var(--text-muted); font-size:12px; font-style:italic; }
+
+    /* ── Brief boxes ── */
+    .brief-box { background:var(--card-bg); border-radius:8px; padding:20px 22px; margin:12px 0; border:1px solid var(--border); }
+    .brief-box h3 { font-size:14px; font-weight:600; color:var(--accent); margin-bottom:10px; }
+    .brief-list { list-style:none; padding:0; }
+    .brief-list li { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid var(--border); }
+    .brief-list li:last-child { border-bottom:none; }
+
+    /* ── Utility buttons ── */
+    .del-btn { flex-shrink:0; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; line-height:1; padding:2px 4px; border-radius:3px; transition:color .12s; opacity:0; }
+    li:hover .del-btn, tr:hover .del-btn, .challenge-card:hover .del-btn { opacity:1; }
+    .del-btn:hover { color:#ef4444; }
+    .add-row-btn { display:flex; align-items:center; gap:6px; margin-top:10px; padding:6px 12px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font:12px inherit; cursor:pointer; transition:all .15s; width:100%; justify-content:center; }
+    .add-row-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+    .add-group-btn { display:flex; align-items:center; gap:6px; margin-top:20px; padding:8px 14px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font:12px inherit; cursor:pointer; transition:all .15s; }
+    .add-group-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+    .col-add-th { background:var(--table-header); border-bottom:2px solid var(--border); }
+    .col-add-btn { background:transparent; border:1px dashed rgba(99,223,78,.3); border-radius:4px; color:var(--text-muted); font:11px inherit; cursor:pointer; padding:2px 8px; transition:all .15s; }
+    .col-add-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .del-col-btn { background:transparent; border:none; color:transparent; cursor:pointer; font-size:10px; padding:0 2px; transition:color .12s; }
+    th:hover .del-col-btn { color:var(--text-muted); }
+    th:hover .del-col-btn:hover { color:#ef4444; }
+    .del-group-btn { background:transparent; border:none; color:var(--text-muted); font-size:13px; cursor:pointer; padding:2px 4px; border-radius:3px; opacity:0; transition:color .12s; }
+    .collapsible-header:hover .del-group-btn { opacity:1; }
+    .del-group-btn:hover { color:#ef4444; }
+
+    /* ── Toast / flash ── */
+    .saved-flash { position:fixed; bottom:20px; right:20px; background:#042a3d; border:1px solid var(--accent); color:var(--accent); font-size:12px; font-weight:500; padding:6px 14px; border-radius:6px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:300; }
+    .saved-flash.show { opacity:1; }
+    .toast { position:fixed; bottom:48px; left:50%; transform:translateX(-50%) translateY(6px); background:#1a3d52; border:1px solid var(--accent); color:var(--accent); font-size:13px; font-weight:500; padding:8px 18px; border-radius:6px; opacity:0; transition:opacity .2s,transform .2s; pointer-events:none; white-space:nowrap; z-index:300; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  </style>
+</head>
+<body>
+
+<!--
+  AGENT INSTRUCTIONS — do not delete this comment block
+  =====================================================
+  Fill every {{PLACEHOLDER}} with real content.
+  The #structured-data block is the source of truth.
+  Do NOT write separate .md files.
+
+  JSON shape for #structured-data:
+  {
+    "featureName": "Visitor RSVP",
+    "date": "2026-07-10",
+    "status": "draft",
+    "customTags": [
+      {"id":"blocker",  "label":"BLOCKER",   "color":"red"  },
+      {"id":"context",  "label":"CONTEXT",   "color":"blue" },
+      {"id":"confirmed","label":"Confirmed", "color":"green"},
+      {"id":"tbd",      "label":"TBD",       "color":"amber"},
+      {"id":"risk",     "label":"Risk",      "color":"amber"}
+    ],
+    "faqColumns":  ["Question","Answer","Status","Channel"],
+    "tbdColumns":  ["Question","Blocked By"],
+    "brief": {
+      "proposing":    "...",
+      "whyItMatters": "...",
+      "whatWeNeed":   ["ask 1","ask 2"],
+      "nextSteps":    [{"step":"1","what":"...","when":"..."}]
+    },
+    "challenges": [
+      {"id":"abc123","title":"...","riskIfWrong":"...","priority":"blocker"}
+    ],
+    "questions": {
+      "User Needs":   [{"id":"def456","label":"blocker","text":"..."}],
+      "Current State":[{"id":"ghi789","label":"context","text":"..."}, {"id":"jkl456","label":"confirmed","text":"...","answer":"...","source":"..."}]
+    },
+    "faq": {
+      "Will this change how I work?": [
+        {"id":"jkl012","question":"...","answer":"...","status":"confirmed","channel":"Help doc"}
+      ]
+    },
+    "tbdSummary": [
+      {"id":"mno345","question":"...","blocked_by":"..."}
+    ]
+  }
+
+  Priority/label/status values are tag IDs from customTags.
+  Generate short random IDs (6 alphanumeric chars) for all id fields.
+  Question "answer"/"source" fields are optional — only set them when label is "confirmed".
+-->
+
+<script id="structured-data" type="application/json">
+{{STRUCTURED_JSON}}
+</script>
+
+<!-- Copy FAB -->
+<button class="copy-fab" id="copyFab" onclick="exportMarkdown()" title="Export Markdown">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+  </svg>
+  <span id="fabLabel">Export Markdown</span>
+</button>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">ServiceNow PoC</div>
+      <div class="sidebar-title" id="featureNameEl">{{FEATURE_NAME}}</div>
+      <span class="status-pill" id="statusPill">{{STATUS}}</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">Client</div>
+      <a href="#brief">Client Brief</a>
+      <div class="nav-group">Team Prep</div>
+      <a href="#challenges">Challenge Points</a>
+      <a href="#questions">Discovery Questions</a>
+      <a href="#faq">Customer FAQ</a>
+      <a href="#tbd">TBD Summary</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="footer-btn" onclick="saveHTML()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Save HTML
+      </button>
+      <button class="footer-btn danger" onclick="resetEdits()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3.67"></path></svg>
+        Reset to Original
+      </button>
+    </div>
+  </aside>
+
+  <main class="main" id="mainScroll">
+    <div class="main-inner">
+      <div id="brief"      class="section"></div>
+      <div id="challenges" class="section"></div>
+      <div id="questions"  class="section"></div>
+      <div id="faq"        class="section"></div>
+      <div id="tbd"        class="section"></div>
+    </div>
+  </main>
+</div>
+
+<div class="saved-flash" id="savedFlash">Saved</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   BOOTSTRAP — load DOC from structured-data + localStorage
+══════════════════════════════════════════════════ */
+const STORAGE_KEY = 'sn-poc-discovery';
+
+const DEFAULT_TAGS = [
+  {id:'blocker',  label:'BLOCKER',   color:'red'  },
+  {id:'context',  label:'CONTEXT',   color:'blue' },
+  {id:'confirmed',label:'Confirmed', color:'green'},
+  {id:'tbd',      label:'TBD',       color:'amber'},
+  {id:'risk',     label:'Risk',      color:'amber'},
+];
+
+let DOC = {};
+
+function loadDOC() {
+  // 1. Parse baked-in JSON
+  try {
+    const raw = document.getElementById('structured-data').textContent;
+    DOC = JSON.parse(raw);
+  } catch(e) {
+    DOC = {};
+  }
+  // 2. Merge localStorage on top (user edits win)
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) DOC = JSON.parse(saved);
+  } catch(e) {}
+  // 3. Seed missing fields
+  if (!DOC.customTags || !DOC.customTags.length) DOC.customTags = DEFAULT_TAGS;
+  if (!DOC.faqColumns)  DOC.faqColumns = ['Question','Answer','Status','Channel'];
+  if (!DOC.tbdColumns)  DOC.tbdColumns = ['Question','Blocked By'];
+  if (!DOC.challenges)  DOC.challenges = [];
+  if (!DOC.questions)   DOC.questions  = {};
+  if (!DOC.faq)         DOC.faq        = {};
+  if (!DOC.tbdSummary)  DOC.tbdSummary = [];
+  if (!DOC.brief)       DOC.brief = {proposing:'',whyItMatters:'',whatWeNeed:[],nextSteps:[]};
+  // Ensure all items have IDs
+  ensureIds();
+}
+
+function ensureIds() {
+  DOC.challenges.forEach(c => { if(!c.id) c.id = uid(); });
+  Object.values(DOC.questions).forEach(arr => arr.forEach(q => { if(!q.id) q.id = uid(); }));
+  Object.values(DOC.faq).forEach(arr => arr.forEach(r => { if(!r.id) r.id = uid(); }));
+  DOC.tbdSummary.forEach(r => { if(!r.id) r.id = uid(); });
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2,8);
+}
+
+/* ══════════════════════════════════════════════════
+   PERSISTENCE
+══════════════════════════════════════════════════ */
+let saveTimer = null;
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DOC));
+  const el = document.getElementById('savedFlash');
+  el.classList.add('show');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+/* ══════════════════════════════════════════════════
+   TAG HELPERS
+══════════════════════════════════════════════════ */
+function getTag(id) {
+  return DOC.customTags.find(t => t.id === id) || {id, label: id.toUpperCase(), color:'blue'};
+}
+
+function tagPillHTML(tagId, {onclick='', extraData=''} = {}) {
+  const t = getTag(tagId);
+  return `<span class="tag-pill" data-color="${t.color}" ${extraData} ${onclick ? `onclick="${onclick}"` : ''}>
+    ${t.label} <span class="chv-sm">▾</span>
+  </span>`;
+}
+
+/* ══════════════════════════════════════════════════
+   TAG PICKER (singleton)
+══════════════════════════════════════════════════ */
+let _picker = null;
+let _pickerCallback = null;
+
+const SWATCH_COLORS = ['red','blue','green','amber','purple','teal'];
+
+function openTagPicker(triggerEl, onSelect) {
+  closeTagPicker();
+  _pickerCallback = onSelect;
+
+  const popup = document.createElement('div');
+  popup.className = 'tag-picker-popup';
+  popup.id = '__tag-picker';
+
+  let newTagColor = 'blue';
+
+  function buildPopup() {
+    popup.innerHTML = DOC.customTags.map(t => `
+      <div class="tp-item" data-tag="${t.id}">
+        ${tagPillHTML(t.id)}
+      </div>
+    `).join('') + `
+    <div class="tp-divider"></div>
+    <div class="tp-new">
+      <input id="tp-new-label" type="text" placeholder="New tag label…" maxlength="24">
+      <div class="tp-swatches">
+        ${SWATCH_COLORS.map(c => `
+          <div class="tp-swatch ${c === newTagColor ? 'selected' : ''}" data-c="${c}"
+            style="background:var(--tag-${c}-tx)" title="${c}"></div>
+        `).join('')}
+      </div>
+      <button class="tp-add-btn">+ Add tag</button>
+    </div>`;
+
+    popup.querySelectorAll('.tp-item').forEach(el => {
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        const id = el.dataset.tag;
+        closeTagPicker();
+        _pickerCallback && _pickerCallback(id);
+      });
+    });
+
+    popup.querySelectorAll('.tp-swatch').forEach(sw => {
+      sw.addEventListener('click', e => {
+        e.stopPropagation();
+        newTagColor = sw.dataset.c;
+        buildPopup();
+        popup.querySelector('#tp-new-label').focus();
+      });
+    });
+
+    popup.querySelector('.tp-add-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      const label = popup.querySelector('#tp-new-label').value.trim();
+      if (!label) return;
+      const id = label.toLowerCase().replace(/\s+/g,'-');
+      if (!DOC.customTags.find(t => t.id === id)) {
+        DOC.customTags.push({id, label: label.toUpperCase(), color: newTagColor});
+        save();
+      }
+      buildPopup();
+      popup.querySelector('#tp-new-label').focus();
+    });
+
+    popup.querySelector('#tp-new-label')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') popup.querySelector('.tp-add-btn').click();
+    });
+  }
+
+  buildPopup();
+  document.body.appendChild(popup);
+  _picker = popup;
+
+  // Position below trigger
+  const rect = triggerEl.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom;
+  if (spaceBelow > 200) {
+    popup.style.top  = (rect.bottom + 4) + 'px';
+    popup.style.left = rect.left + 'px';
+  } else {
+    popup.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+    popup.style.left   = rect.left + 'px';
+  }
+
+  setTimeout(() => document.addEventListener('click', closeTagPicker, {once: true}), 0);
+}
+
+function closeTagPicker() {
+  if (_picker) { _picker.remove(); _picker = null; }
+}
+
+/* ══════════════════════════════════════════════════
+   CHV SVG
+══════════════════════════════════════════════════ */
+const CHV = `<svg class="chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+
+/* ══════════════════════════════════════════════════
+   RENDER: BRIEF
+══════════════════════════════════════════════════ */
+function renderBrief() {
+  const el = document.getElementById('brief');
+  const b  = DOC.brief;
+
+  el.innerHTML = `
+    <div class="section-label">Client</div>
+    <h2>Client Brief</h2>
+
+    <div class="brief-box">
+      <h3>What We're Proposing</h3>
+      <textarea class="field-input" rows="3" data-bf="proposing">${esc(b.proposing||'')}</textarea>
+    </div>
+
+    <div class="brief-box">
+      <h3>Why This Matters</h3>
+      <textarea class="field-input" rows="3" data-bf="whyItMatters">${esc(b.whyItMatters||'')}</textarea>
+    </div>
+
+    <div class="brief-box">
+      <h3>What We Need From You</h3>
+      <ul class="brief-list" id="brief-needs">
+        ${(b.whatWeNeed||[]).map((item,i) => `
+          <li>
+            <input type="text" class="field-input" value="${esc(item)}" data-ni="${i}" placeholder="Ask…">
+            <button class="del-btn" data-del-need="${i}" title="Remove">×</button>
+          </li>`).join('')}
+      </ul>
+      <button class="add-row-btn" id="add-need-btn">+ Add item</button>
+    </div>
+
+    <div class="brief-box">
+      <h3>What Happens Next</h3>
+      <table class="data-table">
+        <thead><tr><th>Step</th><th>What</th><th>When</th><th style="width:30px"></th></tr></thead>
+        <tbody id="brief-next">
+          ${(b.nextSteps||[]).map((s,i) => `
+            <tr>
+              <td><input type="text" class="field-input" value="${esc(s.step)}"  data-ns="${i}" data-nf="step"  placeholder="#"></td>
+              <td><input type="text" class="field-input" value="${esc(s.what)}"  data-ns="${i}" data-nf="what"  placeholder="What happens"></td>
+              <td><input type="text" class="field-input" value="${esc(s.when)}"  data-ns="${i}" data-nf="when"  placeholder="When"></td>
+              <td><button class="del-btn" data-del-step="${i}" title="Remove">×</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      <button class="add-row-btn" id="add-step-btn">+ Add step</button>
+    </div>`;
+
+  // Wire events
+  el.querySelectorAll('[data-bf]').forEach(inp => {
+    inp.addEventListener('input', () => { DOC.brief[inp.dataset.bf] = inp.value; save(); });
+  });
+  el.querySelectorAll('[data-ni]').forEach(inp => {
+    inp.addEventListener('input', () => { DOC.brief.whatWeNeed[+inp.dataset.ni] = inp.value; save(); });
+  });
+  el.querySelectorAll('[data-del-need]').forEach(btn => {
+    btn.addEventListener('click', () => { DOC.brief.whatWeNeed.splice(+btn.dataset.delNeed,1); save(); renderBrief(); });
+  });
+  el.querySelector('#add-need-btn').addEventListener('click', () => {
+    DOC.brief.whatWeNeed.push(''); save(); renderBrief();
+    el.querySelectorAll('[data-ni]').length && el.querySelectorAll('[data-ni]')[el.querySelectorAll('[data-ni]').length-1].focus();
+  });
+  el.querySelectorAll('[data-ns]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      DOC.brief.nextSteps[+inp.dataset.ns][inp.dataset.nf] = inp.value; save();
+    });
+  });
+  el.querySelectorAll('[data-del-step]').forEach(btn => {
+    btn.addEventListener('click', () => { DOC.brief.nextSteps.splice(+btn.dataset.delStep,1); save(); renderBrief(); });
+  });
+  el.querySelector('#add-step-btn').addEventListener('click', () => {
+    DOC.brief.nextSteps.push({step:String(DOC.brief.nextSteps.length+1),what:'',when:''}); save(); renderBrief();
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   RENDER: CHALLENGES
+══════════════════════════════════════════════════ */
+function renderChallenges() {
+  const el = document.getElementById('challenges');
+  el.innerHTML = `
+    <div class="section-label">Team Prep</div>
+    <h2>Challenge Points</h2>
+    <div id="ch-list">
+      ${DOC.challenges.map((c,i) => {
+        const t = getTag(c.priority || 'blocker');
+        return `
+        <div class="challenge-card" data-ch="${c.id}" data-priority-color="${t.color}">
+          <div class="card-title-row">
+            <input type="text" class="field-input" style="font-weight:600;font-size:14px" value="${esc(c.title)}" data-chi="${i}" data-chf="title" placeholder="Assumption being challenged…">
+            <button class="del-btn" style="opacity:0" data-del-ch="${c.id}" title="Remove challenge">×</button>
+          </div>
+          <textarea class="field-input" rows="2" data-chi="${i}" data-chf="riskIfWrong" placeholder="Risk if wrong…">${esc(c.riskIfWrong)}</textarea>
+          <div class="card-meta">
+            ${tagPillHTML(c.priority||'blocker', {onclick:`pickChTag(event,'${c.id}')`})}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="add-group-btn" id="add-ch-btn">+ Add Challenge</button>`;
+
+  el.querySelectorAll('[data-chi]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      DOC.challenges[+inp.dataset.chi][inp.dataset.chf] = inp.value; save();
+      if (inp.dataset.chf === 'priority') renderChallenges();
+    });
+  });
+  el.querySelectorAll('[data-del-ch]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      DOC.challenges = DOC.challenges.filter(c => c.id !== btn.dataset.delCh);
+      save(); renderChallenges();
+    });
+  });
+  el.querySelector('#add-ch-btn').addEventListener('click', () => {
+    DOC.challenges.push({id:uid(),title:'',riskIfWrong:'',priority:'blocker'});
+    save(); renderChallenges();
+    el.querySelectorAll('[data-chf="title"]').length && el.querySelectorAll('[data-chf="title"]')[el.querySelectorAll('[data-chf="title"]').length-1].focus();
+  });
+
+  // show del-btn on card hover via CSS — ensure opacity controlled
+  el.querySelectorAll('.challenge-card').forEach(card => {
+    card.addEventListener('mouseenter', () => { card.querySelector('.del-btn').style.opacity='1'; });
+    card.addEventListener('mouseleave', () => { card.querySelector('.del-btn').style.opacity='0'; });
+  });
+}
+
+window.pickChTag = function(e, chId) {
+  e.stopPropagation();
+  openTagPicker(e.currentTarget, tagId => {
+    const c = DOC.challenges.find(x => x.id === chId);
+    if (c) { c.priority = tagId; save(); renderChallenges(); }
+  });
+};
+
+/* ══════════════════════════════════════════════════
+   RENDER: QUESTIONS
+══════════════════════════════════════════════════ */
+function renderQuestions() {
+  const el = document.getElementById('questions');
+  const themes = Object.keys(DOC.questions);
+  const isFirst = idx => idx === 0;
+
+  el.innerHTML = `
+    <h2>Discovery Questions</h2>
+    <div id="q-list">
+      ${themes.map((theme,ti) => `
+        <div class="collapsible-header ${isFirst(ti)?'open':''}" data-th="${ti}">
+          ${CHV}
+          <input type="text" class="group-name-input" value="${esc(theme)}" data-rename-q="${ti}" placeholder="Group name…"
+            onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')this.blur()">
+          <button class="del-group-btn" data-del-qg="${theme}" title="Delete group" onclick="event.stopPropagation()">×</button>
+        </div>
+        <div class="collapsible-body ${isFirst(ti)?'open':''}">
+          <ul class="question-list" data-theme="${theme}">
+            ${(DOC.questions[theme]||[]).map(q => {
+              const isConfirmed = q.label === 'confirmed';
+              return `
+              <li data-qid="${q.id}" class="${isConfirmed?'has-answer':''}">
+                <div class="q-main-row">
+                  <button class="del-btn" data-del-q="${q.id}" data-q-theme="${theme}" title="Delete question">×</button>
+                  ${tagPillHTML(q.label||'context', {onclick:`pickQTag(event,'${theme}','${q.id}')`})}
+                  <input type="text" class="field-input" value="${esc(q.text)}" data-q="${q.id}" data-q-theme="${theme}" placeholder="Question…">
+                </div>
+                ${isConfirmed ? `
+                <div class="q-answer-row">
+                  <span class="q-arrow">→</span>
+                  <input type="text" class="field-input" value="${esc(q.answer||'')}" data-q-answer="${q.id}" data-q-theme="${theme}" placeholder="Answer…">
+                  <input type="text" class="field-input q-source" value="${esc(q.source||'')}" data-q-source="${q.id}" data-q-theme="${theme}" placeholder="Source…">
+                </div>` : ''}
+              </li>`;
+            }).join('')}
+          </ul>
+          <button class="add-row-btn" data-add-q="${theme}">+ Add Question</button>
+        </div>`).join('')}
+    </div>
+    <button class="add-group-btn" id="add-qg-btn">+ Add Group</button>`;
+
+  wireQuestions(el);
+}
+
+function wireQuestions(el) {
+  // Collapsibles
+  el.querySelectorAll('.collapsible-header[data-th]').forEach(h => {
+    h.addEventListener('click', () => { h.classList.toggle('open'); h.nextElementSibling.classList.toggle('open'); });
+  });
+  // Question text edit
+  el.querySelectorAll('[data-q]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const theme = inp.dataset.qTheme;
+      const q = DOC.questions[theme]?.find(x => x.id === inp.dataset.q);
+      if (q) { q.text = inp.value; save(); }
+    });
+  });
+  // Confirmed-answer edit
+  el.querySelectorAll('[data-q-answer]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const theme = inp.dataset.qTheme;
+      const q = DOC.questions[theme]?.find(x => x.id === inp.dataset.qAnswer);
+      if (q) { q.answer = inp.value; save(); }
+    });
+  });
+  // Confirmed-source edit
+  el.querySelectorAll('[data-q-source]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const theme = inp.dataset.qTheme;
+      const q = DOC.questions[theme]?.find(x => x.id === inp.dataset.qSource);
+      if (q) { q.source = inp.value; save(); }
+    });
+  });
+  // Delete question
+  el.querySelectorAll('[data-del-q]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const theme = btn.dataset.qTheme;
+      DOC.questions[theme] = (DOC.questions[theme]||[]).filter(q => q.id !== btn.dataset.delQ);
+      save(); renderQuestions();
+    });
+  });
+  // Add question
+  el.querySelectorAll('[data-add-q]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const theme = btn.dataset.addQ;
+      if (!DOC.questions[theme]) DOC.questions[theme] = [];
+      DOC.questions[theme].push({id:uid(),label:'context',text:''});
+      save(); renderQuestions();
+    });
+  });
+  // Rename group
+  el.querySelectorAll('[data-rename-q]').forEach(inp => {
+    inp.addEventListener('blur', () => {
+      const idx = +inp.dataset.renameQ;
+      const themes = Object.keys(DOC.questions);
+      const old = themes[idx];
+      const nw  = inp.value.trim() || old;
+      if (nw !== old) {
+        const newQ = {};
+        themes.forEach((t,i) => { newQ[i===idx ? nw : t] = DOC.questions[t]; });
+        DOC.questions = newQ;
+        save();
+      }
+    });
+  });
+  // Delete group
+  el.querySelectorAll('[data-del-qg]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!confirm(`Delete group "${btn.dataset.delQg}" and all its questions?`)) return;
+      delete DOC.questions[btn.dataset.delQg];
+      save(); renderQuestions();
+    });
+  });
+  // Add group
+  el.querySelector('#add-qg-btn').addEventListener('click', () => {
+    const name = prompt('Group name:');
+    if (!name?.trim()) return;
+    DOC.questions[name.trim()] = [];
+    save(); renderQuestions();
+  });
+}
+
+window.pickQTag = function(e, theme, qid) {
+  e.stopPropagation();
+  openTagPicker(e.currentTarget, tagId => {
+    const q = DOC.questions[theme]?.find(x => x.id === qid);
+    if (q) { q.label = tagId; save(); renderQuestions(); }
+  });
+};
+
+/* ══════════════════════════════════════════════════
+   RENDER: FAQ
+══════════════════════════════════════════════════ */
+function renderFAQ() {
+  const el = document.getElementById('faq');
+  const groups = Object.keys(DOC.faq);
+  const cols = DOC.faqColumns;
+  const isFirst = idx => idx === 0;
+
+  function rowHTML(row, gi) {
+    return `<tr data-fid="${row.id}">
+      ${cols.map((col,ci) => {
+        const key = colKey(col);
+        const val = row[key] ?? '';
+        if (col === 'Status') {
+          return `<td>${tagPillHTML(val||'tbd', {onclick:`pickFaqTag(event,'${groups[gi]}','${row.id}')`})}</td>`;
+        }
+        return `<td><input type="text" class="field-input" value="${esc(val)}" data-fq="${row.id}" data-fg="${groups[gi]}" data-fc="${key}" placeholder="${esc(col)}…"></td>`;
+      }).join('')}
+      <td style="width:24px"><button class="del-btn" data-del-fr="${row.id}" data-del-fg="${groups[gi]}" title="Delete row">×</button></td>
+    </tr>`;
+  }
+
+  el.innerHTML = `
+    <h2>Customer FAQ</h2>
+    <div id="faq-list">
+      ${groups.map((group,gi) => `
+        <div class="collapsible-header ${isFirst(gi)?'open':''}" data-fgi="${gi}">
+          ${CHV}
+          <input type="text" class="group-name-input" value="${esc(group)}" data-rename-fg="${gi}" placeholder="Group name…"
+            onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')this.blur()">
+          <button class="del-group-btn" data-del-fg-grp="${group}" title="Delete group" onclick="event.stopPropagation()">×</button>
+        </div>
+        <div class="collapsible-body ${isFirst(gi)?'open':''}">
+          <table class="data-table">
+            <thead><tr>
+              ${cols.map((col,ci) => `<th>${esc(col)} <button class="del-col-btn" data-del-fcol="${ci}" title="Remove column">×</button></th>`).join('')}
+              <th class="col-add-th"><button class="col-add-btn" id="add-fcol-btn">+</button></th>
+              <th style="width:24px"></th>
+            </tr></thead>
+            <tbody data-fgroup="${group}">
+              ${(DOC.faq[group]||[]).map(row => rowHTML(row,gi)).join('')}
+            </tbody>
+          </table>
+          <button class="add-row-btn" data-add-fr="${group}">+ Add Row</button>
+        </div>`).join('')}
+    </div>
+    <button class="add-group-btn" id="add-faq-group-btn">+ Add Group</button>`;
+
+  wireFAQ(el, groups, cols);
+}
+
+function colKey(colName) {
+  const map = {'Question':'question','Answer':'answer','Status':'status','Channel':'channel'};
+  return map[colName] || colName.toLowerCase().replace(/\s+/g,'_');
+}
+
+function wireFAQ(el, groups, cols) {
+  el.querySelectorAll('.collapsible-header[data-fgi]').forEach(h => {
+    h.addEventListener('click', () => { h.classList.toggle('open'); h.nextElementSibling.classList.toggle('open'); });
+  });
+  // Cell text
+  el.querySelectorAll('[data-fq]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const group = inp.dataset.fg;
+      const row   = DOC.faq[group]?.find(r => r.id === inp.dataset.fq);
+      if (row) { row[inp.dataset.fc] = inp.value; save(); }
+    });
+  });
+  // Delete row
+  el.querySelectorAll('[data-del-fr]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const group = btn.dataset.delFg;
+      DOC.faq[group] = (DOC.faq[group]||[]).filter(r => r.id !== btn.dataset.delFr);
+      save(); renderFAQ();
+    });
+  });
+  // Add row
+  el.querySelectorAll('[data-add-fr]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const group = btn.dataset.addFr;
+      if (!DOC.faq[group]) DOC.faq[group] = [];
+      DOC.faq[group].push({id:uid(),question:'',answer:'',status:'tbd',channel:''});
+      save(); renderFAQ();
+    });
+  });
+  // Delete column
+  el.querySelectorAll('[data-del-fcol]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const ci = +btn.dataset.delFcol;
+      if (DOC.faqColumns.length <= 1) return;
+      const key = colKey(DOC.faqColumns[ci]);
+      DOC.faqColumns.splice(ci,1);
+      // strip that field from all rows
+      Object.values(DOC.faq).forEach(rows => rows.forEach(r => delete r[key]));
+      save(); renderFAQ();
+    });
+  });
+  // Add column
+  el.querySelector('#add-fcol-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    const name = prompt('New column name:');
+    if (!name?.trim()) return;
+    DOC.faqColumns.push(name.trim());
+    save(); renderFAQ();
+  });
+  // Rename group
+  el.querySelectorAll('[data-rename-fg]').forEach(inp => {
+    inp.addEventListener('blur', () => {
+      const idx = +inp.dataset.renameFg;
+      const grps = Object.keys(DOC.faq);
+      const old  = grps[idx];
+      const nw   = inp.value.trim() || old;
+      if (nw !== old) {
+        const nf = {};
+        grps.forEach((g,i) => { nf[i===idx ? nw : g] = DOC.faq[g]; });
+        DOC.faq = nf;
+        save();
+      }
+    });
+  });
+  // Delete group
+  el.querySelectorAll('[data-del-fg-grp]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!confirm(`Delete FAQ group "${btn.dataset.delFgGrp}"?`)) return;
+      delete DOC.faq[btn.dataset.delFgGrp];
+      save(); renderFAQ();
+    });
+  });
+  // Add group
+  el.querySelector('#add-faq-group-btn').addEventListener('click', () => {
+    const name = prompt('FAQ group name:');
+    if (!name?.trim()) return;
+    DOC.faq[name.trim()] = [];
+    save(); renderFAQ();
+  });
+}
+
+window.pickFaqTag = function(e, group, rowId) {
+  e.stopPropagation();
+  openTagPicker(e.currentTarget, tagId => {
+    const row = DOC.faq[group]?.find(r => r.id === rowId);
+    if (row) { row.status = tagId; save(); renderFAQ(); }
+  });
+};
+
+/* ══════════════════════════════════════════════════
+   RENDER: TBD
+══════════════════════════════════════════════════ */
+function renderTBD() {
+  const el   = document.getElementById('tbd');
+  const cols = DOC.tbdColumns;
+
+  el.innerHTML = `
+    <h2>TBD Summary</h2>
+    <table class="data-table">
+      <thead><tr>
+        ${cols.map((col,ci) => `<th>${esc(col)} <button class="del-col-btn" data-del-tcol="${ci}" title="Remove column">×</button></th>`).join('')}
+        <th class="col-add-th"><button class="col-add-btn" id="add-tcol-btn">+</button></th>
+        <th style="width:24px"></th>
+      </tr></thead>
+      <tbody id="tbd-body">
+        ${DOC.tbdSummary.map(row => `
+          <tr data-tid="${row.id}">
+            ${cols.map(col => {
+              const key = colKey(col);
+              return `<td><input type="text" class="field-input" value="${esc(row[key]??'')}" data-td="${row.id}" data-tc="${key}" placeholder="${esc(col)}…"></td>`;
+            }).join('')}
+            <td><button class="del-btn" data-del-tr="${row.id}" title="Delete row">×</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+    <button class="add-row-btn" id="add-tbd-row-btn">+ Add Row</button>`;
+
+  el.querySelectorAll('[data-td]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const row = DOC.tbdSummary.find(r => r.id === inp.dataset.td);
+      if (row) { row[inp.dataset.tc] = inp.value; save(); }
+    });
+  });
+  el.querySelectorAll('[data-del-tr]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      DOC.tbdSummary = DOC.tbdSummary.filter(r => r.id !== btn.dataset.delTr);
+      save(); renderTBD();
+    });
+  });
+  el.querySelector('#add-tbd-row-btn').addEventListener('click', () => {
+    const row = {id:uid()};
+    cols.forEach(c => { row[colKey(c)] = ''; });
+    DOC.tbdSummary.push(row);
+    save(); renderTBD();
+  });
+  el.querySelectorAll('[data-del-tcol]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ci = +btn.dataset.delTcol;
+      if (DOC.tbdColumns.length <= 1) return;
+      const key = colKey(DOC.tbdColumns[ci]);
+      DOC.tbdColumns.splice(ci,1);
+      DOC.tbdSummary.forEach(r => delete r[key]);
+      save(); renderTBD();
+    });
+  });
+  el.querySelector('#add-tcol-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    const name = prompt('New column name:');
+    if (!name?.trim()) return;
+    DOC.tbdColumns.push(name.trim());
+    DOC.tbdSummary.forEach(r => { r[colKey(name.trim())] = ''; });
+    save(); renderTBD();
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════ */
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ══════════════════════════════════════════════════
+   EXPORT MARKDOWN — pure DOC → string
+══════════════════════════════════════════════════ */
+function tagLabel(id) {
+  return getTag(id).label;
+}
+
+function buildMarkdown() {
+  const name   = DOC.featureName || document.getElementById('featureNameEl').textContent.trim();
+  const date   = new Date().toISOString().slice(0,10);
+  const status = DOC.status || 'draft';
+  const lines  = [];
+
+  // ── discovery-brief.md ──
+  lines.push(`<!-- discovery-brief.md -->`);
+  lines.push(`# Discovery Brief: ${name}`, ``);
+  lines.push(`**Prepared:** ${date}`);
+  lines.push(`**Status:** ${status}`, ``);
+  lines.push(`## What We're Looking At`, ``);
+  lines.push(DOC.brief.proposing || '', ``);
+  lines.push(`---`, ``);
+  lines.push(`## Challenge Points`, ``);
+  DOC.challenges.forEach((c,i) => {
+    lines.push(`### ${i+1}. ${c.title}`, ``);
+    lines.push(`**Risk if wrong:** ${c.riskIfWrong}`, ``);
+    lines.push(`**Priority:** ${tagLabel(c.priority)}`, ``);
+  });
+  lines.push(`---`, ``);
+  lines.push(`## Discovery Questions`, ``);
+  Object.entries(DOC.questions).forEach(([theme, qs]) => {
+    lines.push(`### ${theme}`, ``);
+    qs.forEach(q => {
+      if (q.label === 'confirmed' && q.answer) {
+        lines.push(`- [CONFIRMED from ${q.source||'unknown source'}] ${q.text} → ${q.answer}`);
+      } else {
+        lines.push(`- [${tagLabel(q.label)}] ${q.text}`);
+      }
+    });
+    lines.push(``);
+  });
+  lines.push(`---`, ``);
+
+  // ── customer-faq.md ──
+  lines.push(`<!-- customer-faq.md -->`);
+  lines.push(`# Customer FAQ: ${name}`, ``);
+  lines.push(`**Prepared:** ${date}`, ``);
+  lines.push(`---`, ``);
+
+  const faqCols = DOC.faqColumns;
+  Object.entries(DOC.faq).forEach(([group, rows]) => {
+    lines.push(`## ${group}`, ``);
+    lines.push(`| ${faqCols.join(' | ')} |`);
+    lines.push(`| ${faqCols.map(() => '---').join(' | ')} |`);
+    rows.forEach(row => {
+      const cells = faqCols.map(col => {
+        const key = colKey(col);
+        if (col === 'Status') return tagLabel(row[key] || 'tbd');
+        return String(row[key] || '');
+      });
+      lines.push(`| ${cells.join(' | ')} |`);
+    });
+    lines.push(``);
+  });
+
+  lines.push(`## TBD Summary`, ``);
+  const tbdCols = DOC.tbdColumns;
+  lines.push(`| ${tbdCols.join(' | ')} |`);
+  lines.push(`| ${tbdCols.map(() => '---').join(' | ')} |`);
+  DOC.tbdSummary.forEach(row => {
+    lines.push(`| ${tbdCols.map(c => String(row[colKey(c)]||'')).join(' | ')} |`);
+  });
+  lines.push(``, `---`, ``);
+
+  // ── client-brief.md ──
+  lines.push(`<!-- client-brief.md -->`);
+  lines.push(`# ${name} — Project Brief`, ``);
+  lines.push(`**Prepared for:** [Client Name]`);
+  lines.push(`**Date:** ${date}`, ``);
+  lines.push(`---`, ``);
+  lines.push(`## What We're Proposing`, ``);
+  lines.push(DOC.brief.proposing || '', ``);
+  lines.push(`## Why This Matters`, ``);
+  lines.push(DOC.brief.whyItMatters || '', ``);
+  lines.push(`## What We Need From You`, ``);
+  (DOC.brief.whatWeNeed||[]).forEach(item => lines.push(`- ${item}`));
+  lines.push(``);
+  lines.push(`## What Happens Next`, ``);
+  lines.push(`| Step | What | When |`);
+  lines.push(`| --- | --- | --- |`);
+  (DOC.brief.nextSteps||[]).forEach(s => lines.push(`| ${s.step} | ${s.what} | ${s.when} |`));
+  lines.push(``);
+  lines.push(`---`, ``);
+  lines.push(`*Prepared by Foundry. Questions? Contact your account team.*`);
+
+  return lines.join('\n');
+}
+
+function exportMarkdown() {
+  const md = buildMarkdown();
+  navigator.clipboard.writeText(md).then(() => {
+    const fab = document.getElementById('copyFab');
+    const lbl = document.getElementById('fabLabel');
+    fab.classList.add('copied');
+    lbl.textContent = 'Copied!';
+    showToast('Markdown copied — paste into your .md files');
+    setTimeout(() => { fab.classList.remove('copied'); lbl.textContent = 'Export Markdown'; }, 2400);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   SAVE HTML
+══════════════════════════════════════════════════ */
+function saveHTML() {
+  const clone = document.documentElement.cloneNode(true);
+  // Write current DOC into the structured-data block
+  const sd = clone.querySelector('#structured-data');
+  if (sd) sd.textContent = '\n' + JSON.stringify(DOC, null, 2) + '\n';
+  // Clear any rendered sections — they'll re-render from DOC on load
+  const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+  const blob  = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'discovery-index.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('HTML saved — edits baked in');
+}
+
+/* ══════════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════════ */
+function resetEdits() {
+  if (!confirm('Discard all local edits and restore the original agent-generated content?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  showToast('Edits cleared — reloading…');
+  setTimeout(() => location.reload(), 800);
+}
+
+/* ══════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════ */
+let _toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ══════════════════════════════════════════════════
+   ACTIVE NAV HIGHLIGHT
+══════════════════════════════════════════════════ */
+function initNav() {
+  const sections = document.querySelectorAll('.section[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const link = document.querySelector(`.sidebar-nav a[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, {rootMargin:'-10% 0px -80% 0px'});
+  sections.forEach(s => obs.observe(s));
+}
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+loadDOC();
+renderBrief();
+renderChallenges();
+renderQuestions();
+renderFAQ();
+renderTBD();
+initNav();
+</script>
+
+</body>
+</html>

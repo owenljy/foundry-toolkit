@@ -17,8 +17,8 @@
       "description": "Skills for the full ServiceNow AI Agent lifecycle — build, audit, dataset, eval-runner, and trace analysis. Pairs with now-mcp for live-instance reads and script execution."
     },
     {
-      "name": "sn-poc-intake",
-      "source": "./plugins/sn-poc-intake",
+      "name": "sn-poc",
+      "source": "./plugins/sn-poc",
       "description": "Discovery-to-planning workflow for ServiceNow PoC features — challenge ideas, write specs, and decompose into implementation-ready stories."
     }
   ]

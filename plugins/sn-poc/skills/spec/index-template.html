@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spec — {{FEATURE_NAME}}</title>
+  <style>
+    /* ── ServiceNow brand: Infinite Blue base, Bright Purple accent (spec) ── */
+    :root {
+      --bg:            #032D42;
+      --sidebar-bg:    #021f30;
+      --border:        #0a4060;
+      --text:          #e8f0f5;
+      --text-muted:    #7a9bb0;
+      --accent:        #BF71F2;
+      --accent-rgb:    191,113,242;
+      --accent-dim:    rgba(191,113,242,0.08);
+      --tech-accent:   #52B8FF;
+      --tech-accent-rgb: 82,184,255;
+      --card-bg:       #042a3d;
+      --table-header:  #021f30;
+      --table-stripe:  #052f45;
+      --edit-ring:     rgba(191,113,242,0.5);
+      --tbd-tx:        #BF71F2; --tbd-bg: rgba(191,113,242,0.15);
+      --confirmed-tx:  #63DF4E; --confirmed-bg: rgba(99,223,78,0.15);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font:14px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); }
+    .layout { display:flex; height:100vh; overflow:hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar { width:246px; background:var(--sidebar-bg); border-right:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+    .sidebar-header { padding:20px 16px 14px; border-bottom:1px solid var(--border); }
+    .logo { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+    .sidebar-title { font-size:14px; font-weight:700; line-height:1.3; margin-bottom:8px; }
+    .status-pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; background:var(--accent-dim); color:var(--accent); border:1px solid rgba(var(--accent-rgb),0.25); }
+    .sidebar-nav { flex:1; overflow-y:auto; padding:6px 0; }
+    .nav-group { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:14px 16px 4px; }
+    .nav-group-poc { color:var(--accent); }
+    .nav-group-tech { color:var(--tech-accent); }
+    .sidebar-nav a { display:block; padding:6px 16px; color:var(--text-muted); text-decoration:none; font-size:13px; border-left:3px solid transparent; transition:color .12s,background .12s,border-color .12s; }
+    .sidebar-nav a:hover { color:var(--text); background:var(--accent-dim); border-left-color:rgba(var(--accent-rgb),.4); }
+    .sidebar-nav a.active { color:var(--accent); border-left-color:var(--accent); background:var(--accent-dim); }
+    .sidebar-footer { padding:12px 16px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+    .footer-btn { width:100%; display:flex; align-items:center; gap:7px; padding:7px 12px; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); font-size:12px; font-weight:500; cursor:pointer; transition:all .15s; font-family:inherit; }
+    .footer-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+    .footer-btn.danger:hover { border-color:#ef4444; color:#ef4444; background:rgba(239,68,68,.06); }
+    .footer-btn.toggle-btn.on { border-color:var(--tech-accent); color:var(--tech-accent); }
+
+    /* ── Copy FAB ── */
+    .copy-fab { position:fixed; top:16px; right:20px; z-index:200; display:flex; align-items:center; gap:6px; padding:7px 12px 7px 10px; background:var(--sidebar-bg); border:1px solid var(--border); border-radius:8px; color:var(--text-muted); font-size:12px; font-weight:500; cursor:pointer; transition:all .15s; font-family:inherit; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+    .copy-fab:hover { border-color:var(--accent); color:var(--accent); background:#032030; }
+    .copy-fab.copied { border-color:var(--accent); color:var(--accent); }
+
+    /* ── Main ── */
+    .main { flex:1; overflow-y:auto; scroll-behavior:smooth; }
+    .main-inner { padding:36px 52px 80px; max-width:920px; }
+    .section { padding-bottom:52px; border-bottom:1px solid var(--border); margin-bottom:40px; }
+    .section:last-child { border-bottom:none; }
+    .section-label { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+    .section-label.tech { color:var(--tech-accent); }
+    h2 { font-size:22px; font-weight:700; margin-bottom:20px; scroll-margin-top:20px; }
+    h3.subhead { font-size:15px; font-weight:600; color:var(--accent); margin:28px 0 10px; }
+    .section-label.tech ~ h3.subhead, .tech h3.subhead { color:var(--tech-accent); }
+    p { margin:8px 0; }
+    .hint { color:var(--text-muted); font-size:12px; margin:4px 0 10px; }
+
+    /* ── Tables ── */
+    table.data-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:13px; }
+    table.data-table th { background:var(--table-header); text-align:left; padding:8px 10px; font-weight:600; font-size:11px; letter-spacing:.04em; text-transform:uppercase; border-bottom:2px solid var(--border); color:var(--text-muted); }
+    table.data-table td { padding:6px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    table.data-table tr:nth-child(even) td { background:var(--table-stripe); }
+    table.data-table tr:hover td { background:rgba(var(--accent-rgb),0.03); }
+
+    /* ── Form controls ── */
+    .field-input { width:100%; background:transparent; border:none; border-bottom:1px solid transparent; color:var(--text); font:inherit; font-size:13px; padding:3px 2px; outline:none; border-radius:3px; transition:border-color .15s,background .15s; }
+    .field-input:hover { border-bottom-color:var(--border); }
+    .field-input:focus { border-bottom-color:var(--edit-ring); background:rgba(var(--accent-rgb),0.04); }
+    textarea.field-input { resize:vertical; min-height:48px; line-height:1.5; }
+    .field-input.title-input { font-weight:600; font-size:14px; }
+
+    /* ── Cards (generic) ── */
+    .obj-card { background:var(--card-bg); border-radius:8px; padding:18px 20px; margin:12px 0; border:1px solid var(--border); position:relative; }
+    .obj-card .del-card-btn { position:absolute; top:10px; right:10px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:15px; line-height:1; padding:2px 4px; border-radius:3px; opacity:0; transition:opacity .12s,color .12s; }
+    .obj-card:hover .del-card-btn { opacity:1; }
+    .obj-card .del-card-btn:hover { color:#ef4444; }
+    .obj-card-row { display:flex; gap:12px; margin-bottom:8px; }
+    .obj-card-row > div { flex:1; }
+    .obj-card-label { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-muted); margin-bottom:3px; }
+
+    /* ── User story card ── */
+    .story-card { background:var(--card-bg); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:16px 20px; margin:12px 0; position:relative; }
+    .story-card .story-statement { color:var(--text-muted); font-size:13px; margin:6px 0 12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    .story-card .story-statement input { flex:1; min-width:140px; }
+    .story-card .ac-list { list-style:none; padding:0; }
+    .story-card .ac-list li { display:flex; align-items:center; gap:8px; font-size:13px; margin:4px 0; }
+    .story-card .ac-list li::before { content:'☐'; color:var(--accent); flex-shrink:0; }
+
+    /* ── Screen description card ── */
+    .screen-card { background:var(--card-bg); border-radius:8px; padding:20px 24px; margin:12px 0; border:1px solid var(--border); position:relative; }
+    .screen-card h4 { font-size:14px; font-weight:600; margin-bottom:12px; color:var(--accent); }
+
+    /* ── ADR card ── */
+    .adr-card { background:var(--card-bg); border-left:3px solid var(--tech-accent); border-radius:0 8px 8px 0; padding:18px 20px; margin:14px 0; position:relative; }
+
+    /* ── Mermaid diagram wrapper ── */
+    .mermaid-wrap { background:var(--card-bg); border-radius:8px; padding:24px; margin:12px 0; border:1px solid var(--border); overflow-x:auto; }
+    .mermaid-src { width:100%; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); font:12px/1.5 'SF Mono','Monaco',monospace; padding:10px; outline:none; resize:vertical; min-height:70px; margin-bottom:10px; }
+    .mermaid-src:focus { border-color:var(--edit-ring); }
+
+    /* ── Badges ── */
+    .badge { display:inline-flex; align-items:center; padding:2px 9px; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; border:1px solid transparent; user-select:none; white-space:nowrap; }
+    .badge-tbd { background:var(--tbd-bg); color:var(--tbd-tx); border-color:rgba(191,113,242,.3); }
+    .badge-confirmed { background:var(--confirmed-bg); color:var(--confirmed-tx); border-color:rgba(99,223,78,.3); }
+
+    /* ── Collapsibles (Technical group, collapsed by default) ── */
+    /* !important needed: .sidebar-nav a and .nav-group are more specific than a bare .tech-collapsible */
+    .tech-collapsible { display:none !important; }
+    .tech-collapsible.expanded { display:block !important; }
+
+    /* ── Utility buttons ── */
+    .del-btn { flex-shrink:0; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; line-height:1; padding:2px 4px; border-radius:3px; transition:color .12s; opacity:0; }
+    li:hover .del-btn, tr:hover .del-btn { opacity:1; }
+    .del-btn:hover { color:#ef4444; }
+    .add-row-btn { display:flex; align-items:center; gap:6px; margin-top:10px; padding:6px 12px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font:12px inherit; cursor:pointer; transition:all .15s; width:100%; justify-content:center; }
+    .add-row-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+    .add-group-btn { display:flex; align-items:center; gap:6px; margin-top:14px; padding:8px 14px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font:12px inherit; cursor:pointer; transition:all .15s; }
+    .add-group-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+
+    /* ── Brief boxes (prose) ── */
+    .brief-box { background:var(--card-bg); border-radius:8px; padding:20px 22px; margin:12px 0; border:1px solid var(--border); }
+    .brief-list { list-style:none; padding:0; }
+    .brief-list li { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid var(--border); }
+    .brief-list li:last-child { border-bottom:none; }
+
+    /* ── Toast / flash ── */
+    .saved-flash { position:fixed; bottom:20px; right:20px; background:#042a3d; border:1px solid var(--accent); color:var(--accent); font-size:12px; font-weight:500; padding:6px 14px; border-radius:6px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:300; }
+    .saved-flash.show { opacity:1; }
+    .toast { position:fixed; bottom:48px; left:50%; transform:translateX(-50%) translateY(6px); background:#1a2d52; border:1px solid var(--accent); color:var(--accent); font-size:13px; font-weight:500; padding:8px 18px; border-radius:6px; opacity:0; transition:opacity .2s,transform .2s; pointer-events:none; white-space:nowrap; z-index:300; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  </style>
+</head>
+<body>
+
+<!--
+  AGENT INSTRUCTIONS — do not delete this comment block
+  =====================================================
+  Fill every {{PLACEHOLDER}}. The #structured-data block is the source of truth.
+  Do NOT write separate poc-spec.md / technical-spec.md / diagrams.md files —
+  this single index.html is the only spec output artifact.
+
+  Phase A (PoC spec approval gate) populates ONLY `pocSpec`.
+  Phase B (after the user approves Phase A) populates `techSpec` and `diagrams`
+  into this SAME file (read it back, merge into #structured-data, rewrite it).
+
+  Full JSON shape for #structured-data — see agents/spec-agent.md for the
+  authoritative field-by-field schema. Skeleton:
+  {
+    "featureName": "Visitor RSVP",
+    "date": "2026-07-10",
+    "status": "draft",
+    "pocSpec": {
+      "overview": "...", "problemStatement": "...", "howItWorksToday": "...",
+      "personas": [{"id":"p1","name":"...","who":"...","caresAbout":"...","interacts":"..."}],
+      "scope": {"inScope": ["..."], "outScope": [{"item":"...","reason":"..."}]},
+      "userStories": [{"id":"s1","title":"...","persona":"...","capability":"...","benefit":"...","acceptanceCriteria":["..."]}],
+      "userFlows": [{"id":"f1","name":"...","actor":"...","trigger":"...","steps":["..."],"mermaid":"flowchart TD; A to B"}],
+      "screens": [{"id":"sc1","name":"...","whoSees":"...","when":"...","elements":["..."],"actions":[{"action":"...","result":"..."}]}],
+      "notifications": [{"id":"n1","event":"...","who":"...","channel":"...","content":"..."}], "notificationsNote": "",
+      "settings": [{"id":"st1","setting":"...","whoControls":"...","options":"...","default":"..."}], "settingsNote": "",
+      "edgeCases": [{"id":"e1","scenario":"...","whatHappens":"..."}],
+      "successMetrics": [{"id":"m1","metric":"...","target":"..."}],
+      "openQuestions": [{"id":"q1","question":"...","context":"...","impact":"..."}]
+    },
+    "techSpec": { "...": "populated in Phase B — see spec-agent.md B7 schema" },
+    "diagrams": [{"id":"d1","title":"Component Diagram","mermaid":"graph TD; A to B"}]
+  }
+
+  Generate short random IDs (6 alphanumeric chars) for all id fields.
+-->
+
+<script id="structured-data" type="application/json">
+{{STRUCTURED_JSON}}
+</script>
+
+<!-- Copy FAB -->
+<button class="copy-fab" id="copyFab" onclick="exportMarkdown()" title="Export Markdown">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+  </svg>
+  <span id="fabLabel">Export Markdown</span>
+</button>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">ServiceNow PoC</div>
+      <div class="sidebar-title" id="featureNameEl">{{FEATURE_NAME}}</div>
+      <span class="status-pill" id="statusPill">{{STATUS}}</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group nav-group-poc">PoC Specification</div>
+      <a href="#p-overview">Overview</a>
+      <a href="#p-problem">Problem Statement</a>
+      <a href="#p-current-state">How It Works Today</a>
+      <a href="#p-personas">Users &amp; Personas</a>
+      <a href="#p-scope">Scope</a>
+      <a href="#p-stories">User Stories</a>
+      <a href="#p-flows">User Flows</a>
+      <a href="#p-screens">Screen Descriptions</a>
+      <a href="#p-notifications">Notifications &amp; Communications</a>
+      <a href="#p-settings">Configuration &amp; Settings</a>
+      <a href="#p-edge-cases">Edge Cases &amp; Error States</a>
+      <a href="#p-success-metrics">Success Metrics</a>
+      <a href="#p-open-questions">Open Questions</a>
+
+      <div class="nav-group nav-group-tech tech-collapsible">Technical Specification</div>
+      <a href="#t-overview" class="tech-nav tech-collapsible">Overview</a>
+      <a href="#t-existing-arch" class="tech-nav tech-collapsible">Existing Architecture</a>
+      <a href="#t-data-model" class="tech-nav tech-collapsible">Data Model</a>
+      <a href="#t-business-logic" class="tech-nav tech-collapsible">Business Logic</a>
+      <a href="#t-security" class="tech-nav tech-collapsible">Security</a>
+      <a href="#t-ui" class="tech-nav tech-collapsible">User Interface</a>
+      <a href="#t-automation" class="tech-nav tech-collapsible">Automation</a>
+      <a href="#t-notifications" class="tech-nav tech-collapsible">Notifications</a>
+      <a href="#t-configuration" class="tech-nav tech-collapsible">Configuration</a>
+      <a href="#t-integrations" class="tech-nav tech-collapsible">Integrations</a>
+      <a href="#t-verification" class="tech-nav tech-collapsible">Verification Checklist</a>
+      <a href="#t-traceability" class="tech-nav tech-collapsible">Traceability</a>
+      <a href="#t-adrs" class="tech-nav tech-collapsible">Architecture Decisions</a>
+      <a href="#t-impl-plan" class="tech-nav tech-collapsible">Implementation Plan</a>
+      <a href="#t-diagrams" class="tech-nav tech-collapsible">Diagrams</a>
+      <a href="#t-open-questions" class="tech-nav tech-collapsible">Open Questions</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="footer-btn toggle-btn" id="toggleTechBtn" onclick="toggleTech()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        <span id="toggleTechLabel">Show Technical Spec</span>
+      </button>
+      <button class="footer-btn" onclick="saveHTML()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Save HTML
+      </button>
+      <button class="footer-btn danger" onclick="resetEdits()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3.67"></path></svg>
+        Reset to Original
+      </button>
+    </div>
+  </aside>
+
+  <main class="main" id="mainScroll">
+    <div class="main-inner">
+      <div id="p-overview" class="section"></div>
+      <div id="p-problem" class="section"></div>
+      <div id="p-current-state" class="section"></div>
+      <div id="p-personas" class="section"></div>
+      <div id="p-scope" class="section"></div>
+      <div id="p-stories" class="section"></div>
+      <div id="p-flows" class="section"></div>
+      <div id="p-screens" class="section"></div>
+      <div id="p-notifications" class="section"></div>
+      <div id="p-settings" class="section"></div>
+      <div id="p-edge-cases" class="section"></div>
+      <div id="p-success-metrics" class="section"></div>
+      <div id="p-open-questions" class="section"></div>
+
+      <div id="t-overview" class="section tech-collapsible"></div>
+      <div id="t-existing-arch" class="section tech-collapsible"></div>
+      <div id="t-data-model" class="section tech-collapsible"></div>
+      <div id="t-business-logic" class="section tech-collapsible"></div>
+      <div id="t-security" class="section tech-collapsible"></div>
+      <div id="t-ui" class="section tech-collapsible"></div>
+      <div id="t-automation" class="section tech-collapsible"></div>
+      <div id="t-notifications" class="section tech-collapsible"></div>
+      <div id="t-configuration" class="section tech-collapsible"></div>
+      <div id="t-integrations" class="section tech-collapsible"></div>
+      <div id="t-verification" class="section tech-collapsible"></div>
+      <div id="t-traceability" class="section tech-collapsible"></div>
+      <div id="t-adrs" class="section tech-collapsible"></div>
+      <div id="t-impl-plan" class="section tech-collapsible"></div>
+      <div id="t-diagrams" class="section tech-collapsible"></div>
+      <div id="t-open-questions" class="section tech-collapsible"></div>
+    </div>
+  </main>
+</div>
+
+<div class="saved-flash" id="savedFlash">Saved</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  window.mermaid = mermaid;
+  mermaid.initialize({ startOnLoad:false, theme:'dark' });
+  window.__mermaidReady = true;
+  window.__renderAllMermaid && window.__renderAllMermaid();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════
+   BOOTSTRAP
+══════════════════════════════════════════════════ */
+const STORAGE_KEY = 'sn-poc-spec';
+
+let DOC = {};
+
+function emptyPocSpec() {
+  return { overview:'', problemStatement:'', howItWorksToday:'', personas:[], scope:{inScope:[],outScope:[]},
+    userStories:[], userFlows:[], screens:[], notifications:[], notificationsNote:'', settings:[], settingsNote:'',
+    edgeCases:[], successMetrics:[], openQuestions:[] };
+}
+function emptyTechSpec() {
+  return {
+    overview:'',
+    existingArchitecture:{ description:'', dataModelMermaid:'', components:[] },
+    dataModel:{ newTables:[], modifiedTables:[], relationshipsMermaid:'', indexes:[] },
+    businessLogic:{ scriptIncludes:[], businessRules:[] },
+    security:{ roles:[], aclsByTable:[], fieldLevelSecurity:[] },
+    ui:{ portalPages:[], widgets:[], clientScripts:[] },
+    automation:{ flows:[], events:[] },
+    notificationsTech:{ eventRegistrations:[], rules:[] },
+    configuration:{ systemProperties:[] },
+    integrations:{ inboundApis:[] },
+    verification:{ happyPath:[], aclSpotChecks:[], edgeCaseChecks:[], demoData:[] },
+    traceability:[],
+    adrs:[],
+    implementationPlan:{ phases:[], mermaid:'' },
+    openQuestions:[]
+  };
+}
+
+function loadDOC() {
+  try {
+    const raw = document.getElementById('structured-data').textContent;
+    DOC = JSON.parse(raw);
+  } catch(e) { DOC = {}; }
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) DOC = JSON.parse(saved);
+  } catch(e) {}
+  if (!DOC.pocSpec) DOC.pocSpec = emptyPocSpec();
+  if (!DOC.techSpec) DOC.techSpec = emptyTechSpec();
+  if (!DOC.diagrams) DOC.diagrams = [];
+  const ps = DOC.pocSpec, ts = DOC.techSpec;
+  ps.personas ||= []; ps.scope ||= {inScope:[],outScope:[]}; ps.scope.inScope ||= []; ps.scope.outScope ||= [];
+  ps.userStories ||= []; ps.userFlows ||= []; ps.screens ||= [];
+  ps.notifications ||= []; ps.settings ||= []; ps.edgeCases ||= []; ps.successMetrics ||= []; ps.openQuestions ||= [];
+  ts.existingArchitecture ||= {description:'',dataModelMermaid:'',components:[]};
+  ts.existingArchitecture.components ||= [];
+  ts.dataModel ||= {newTables:[],modifiedTables:[],relationshipsMermaid:'',indexes:[]};
+  ts.dataModel.newTables ||= []; ts.dataModel.modifiedTables ||= []; ts.dataModel.indexes ||= [];
+  ts.businessLogic ||= {scriptIncludes:[],businessRules:[]};
+  ts.businessLogic.scriptIncludes ||= []; ts.businessLogic.businessRules ||= [];
+  ts.security ||= {roles:[],aclsByTable:[],fieldLevelSecurity:[]};
+  ts.security.roles ||= []; ts.security.aclsByTable ||= []; ts.security.fieldLevelSecurity ||= [];
+  ts.ui ||= {portalPages:[],widgets:[],clientScripts:[]};
+  ts.ui.portalPages ||= []; ts.ui.widgets ||= []; ts.ui.clientScripts ||= [];
+  ts.automation ||= {flows:[],events:[]}; ts.automation.flows ||= []; ts.automation.events ||= [];
+  ts.notificationsTech ||= {eventRegistrations:[],rules:[]};
+  ts.notificationsTech.eventRegistrations ||= []; ts.notificationsTech.rules ||= [];
+  ts.configuration ||= {systemProperties:[]}; ts.configuration.systemProperties ||= [];
+  ts.integrations ||= {inboundApis:[]}; ts.integrations.inboundApis ||= [];
+  ts.verification ||= {happyPath:[],aclSpotChecks:[],edgeCaseChecks:[],demoData:[]};
+  ts.verification.happyPath ||= []; ts.verification.aclSpotChecks ||= [];
+  ts.verification.edgeCaseChecks ||= []; ts.verification.demoData ||= [];
+  ts.traceability ||= []; ts.adrs ||= [];
+  ts.implementationPlan ||= {phases:[],mermaid:''}; ts.implementationPlan.phases ||= [];
+  ts.openQuestions ||= [];
+  ensureIds();
+}
+
+function ensureIds() {
+  const walk = (arr) => (arr||[]).forEach(o => { if (o && typeof o === 'object' && !o.id) o.id = uid(); });
+  const ps = DOC.pocSpec, ts = DOC.techSpec;
+  walk(ps.personas); walk(ps.userStories); walk(ps.userFlows); walk(ps.screens);
+  walk(ps.notifications); walk(ps.settings); walk(ps.edgeCases); walk(ps.successMetrics); walk(ps.openQuestions);
+  walk(ts.existingArchitecture.components);
+  walk(ts.dataModel.newTables); walk(ts.dataModel.modifiedTables); walk(ts.dataModel.indexes);
+  walk(ts.businessLogic.scriptIncludes); walk(ts.businessLogic.businessRules);
+  walk(ts.security.roles); walk(ts.security.aclsByTable); walk(ts.security.fieldLevelSecurity);
+  walk(ts.ui.portalPages); walk(ts.ui.widgets); walk(ts.ui.clientScripts);
+  walk(ts.automation.flows); walk(ts.automation.events);
+  walk(ts.notificationsTech.eventRegistrations); walk(ts.notificationsTech.rules);
+  walk(ts.configuration.systemProperties); walk(ts.integrations.inboundApis);
+  walk(ts.verification.happyPath); walk(ts.verification.aclSpotChecks);
+  walk(ts.verification.edgeCaseChecks); walk(ts.verification.demoData);
+  walk(ts.traceability); walk(ts.adrs); walk(ts.implementationPlan.phases); walk(ts.openQuestions);
+  walk(DOC.diagrams);
+}
+
+function uid() { return Math.random().toString(36).slice(2,8); }
+
+/* ══════════════════════════════════════════════════
+   PERSISTENCE
+══════════════════════════════════════════════════ */
+let saveTimer = null;
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DOC));
+  const el = document.getElementById('savedFlash');
+  el.classList.add('show');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+function esc(s) {
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ══════════════════════════════════════════════════
+   GENERIC UI HELPERS
+══════════════════════════════════════════════════ */
+function proseSection(id, label, heading, obj, key, placeholder, rows, isTech) {
+  const el = document.getElementById(id);
+  el.innerHTML = `
+    <div class="section-label${isTech?' tech':''}">${isTech?'Technical':'PoC'}</div>
+    <h2>${esc(heading)}</h2>
+    <div class="brief-box"><textarea class="field-input" rows="${rows||4}" data-field="1" placeholder="${esc(placeholder||'')}">${esc(obj[key])}</textarea></div>`;
+  el.querySelector('[data-field]').addEventListener('input', e => { obj[key] = e.target.value; save(); });
+}
+
+function tableSection(el, rows, cols, opts) {
+  opts = opts || {};
+  function paint() {
+    el.innerHTML = `<table class="data-table">
+      <thead><tr>${cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}<th style="width:24px"></th></tr></thead>
+      <tbody>
+        ${rows.map((row,i)=>`<tr data-i="${i}">
+          ${cols.map(c=>`<td>${c.textarea
+            ? `<textarea class="field-input" rows="2" data-k="${c.key}" data-i="${i}" placeholder="${esc(c.label)}…">${esc(row[c.key])}</textarea>`
+            : `<input type="text" class="field-input" value="${esc(row[c.key])}" data-k="${c.key}" data-i="${i}" placeholder="${esc(c.label)}…">`}</td>`).join('')}
+          <td><button class="del-btn" data-del="${i}" title="Remove row">×</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <button class="add-row-btn" data-add>+ ${esc(opts.addLabel||'Add Row')}</button>`;
+
+    el.querySelectorAll('[data-k]').forEach(inp => {
+      inp.addEventListener('input', () => { rows[+inp.dataset.i][inp.dataset.k] = inp.value; save(); });
+    });
+    el.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => { rows.splice(+btn.dataset.del,1); save(); paint(); });
+    });
+    el.querySelector('[data-add]').addEventListener('click', () => {
+      const row = {}; cols.forEach(c => row[c.key]=''); rows.push(row); save(); paint();
+    });
+  }
+  paint();
+}
+
+function listEditor(el, items, placeholder, addLabel) {
+  function paint() {
+    el.innerHTML = `<ul class="brief-list">
+      ${items.map((v,i)=>`<li>
+        <input type="text" class="field-input" value="${esc(v)}" data-i="${i}" placeholder="${esc(placeholder||'Item…')}">
+        <button class="del-btn" data-del="${i}" title="Remove">×</button>
+      </li>`).join('')}
+    </ul>
+    <button class="add-row-btn" data-add>+ ${esc(addLabel||'Add Item')}</button>`;
+
+    el.querySelectorAll('[data-i]').forEach(inp => {
+      inp.addEventListener('input', () => { items[+inp.dataset.i] = inp.value; save(); });
+    });
+    el.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => { items.splice(+btn.dataset.del,1); save(); paint(); });
+    });
+    el.querySelector('[data-add]').addEventListener('click', () => { items.push(''); save(); paint(); });
+  }
+  paint();
+}
+
+function wireFields(bodyEl, item) {
+  bodyEl.querySelectorAll('[data-field]').forEach(inp => {
+    inp.addEventListener('input', () => { item[inp.dataset.field] = inp.value; save(); });
+  });
+}
+
+function cardsEditor(el, items, opts) {
+  function paint() {
+    if (!items.length) {
+      el.innerHTML = `<p class="hint">${esc(opts.emptyHint||'None yet.')}</p>`;
+    } else {
+      el.innerHTML = items.map((item,i) => `
+        <div class="${opts.cardClass||'obj-card'}" data-idx="${i}">
+          <button class="del-card-btn" data-delcard="${i}" title="Remove">×</button>
+          <div data-body="${i}"></div>
+        </div>`).join('');
+    }
+    const addBtnHTML = `<button class="add-group-btn" data-addcard>+ ${esc(opts.addLabel||'Add')}</button>`;
+    el.insertAdjacentHTML('beforeend', addBtnHTML);
+
+    items.forEach((item,i) => opts.buildCard(el.querySelector(`[data-body="${i}"]`), item, i));
+    el.querySelectorAll('[data-delcard]').forEach(btn => {
+      btn.addEventListener('click', () => { items.splice(+btn.dataset.delcard,1); save(); paint(); });
+    });
+    el.querySelector('[data-addcard]').addEventListener('click', () => {
+      items.push(opts.makeEmpty()); save(); paint();
+    });
+  }
+  paint();
+}
+
+function noteOrTable(tableEl, noteEl, rows, cols, note, notePath, addLabel) {
+  tableSection(tableEl, rows, cols, {addLabel});
+  noteEl.innerHTML = `<div class="hint">If none apply, say so here instead of adding rows:</div>
+    <textarea class="field-input" rows="2" data-note placeholder="e.g. No notifications required — this feature has no async events.">${esc(note)}</textarea>`;
+  noteEl.querySelector('[data-note]').addEventListener('input', e => { notePath(e.target.value); save(); });
+}
+
+const _mermaidBlocks = []; // {el, getCode} — re-rendered once mermaid finishes loading
+let _mermaidSeq = 0;
+let _mermaidChain = Promise.resolve(); // mermaid.render() calls are serialized — parallel calls collide on its internal id counter
+function paintMermaid(el, code) {
+  el.textContent = code || '';
+  if (!window.__mermaidReady) return; // deferred — __renderAllMermaid() re-runs every block once the CDN module loads
+  const id = `mmd-${++_mermaidSeq}`;
+  const src = code || '';
+  _mermaidChain = _mermaidChain
+    .then(() => window.mermaid.render(id, src))
+    .then(({ svg }) => { el.innerHTML = svg; })
+    .catch(() => {});
+}
+window.__renderAllMermaid = () => {
+  _mermaidBlocks.forEach(({el, getCode}) => paintMermaid(el, getCode()));
+};
+
+function mermaidBlock(container, getCode, setCode) {
+  container.innerHTML = `
+    <textarea class="mermaid-src" data-src placeholder="Mermaid diagram source…">${esc(getCode())}</textarea>
+    <div class="mermaid-wrap"><div class="mermaid" data-render></div></div>`;
+  const src = container.querySelector('[data-src]');
+  const render = container.querySelector('[data-render]');
+  _mermaidBlocks.push({ el: render, getCode });
+  paintMermaid(render, getCode());
+  src.addEventListener('input', () => { setCode(src.value); save(); });
+  src.addEventListener('blur', () => paintMermaid(render, getCode()));
+}
+
+/* ══════════════════════════════════════════════════
+   COLUMN DEFINITIONS
+══════════════════════════════════════════════════ */
+const COLS = {
+  outScope:        [{label:'Excluded Capability',key:'item'},{label:'Reason',key:'reason'}],
+  action:          [{label:'Action',key:'action'},{label:'Result',key:'result'}],
+  notification:    [{label:'Event',key:'event'},{label:'Who Gets Notified',key:'who'},{label:'Channel',key:'channel'},{label:'Content Summary',key:'content'}],
+  setting:         [{label:'Setting',key:'setting'},{label:'Who Controls It',key:'whoControls'},{label:'Options',key:'options'},{label:'Default',key:'default'}],
+  edgeCase:        [{label:'Scenario',key:'scenario'},{label:'What Happens',key:'whatHappens'}],
+  successMetric:   [{label:'Metric',key:'metric'},{label:'Target',key:'target'}],
+  openQuestionP:   [{label:'Question',key:'question'},{label:'Context',key:'context'},{label:'Impact',key:'impact'}],
+  component:       [{label:'Component',key:'name'},{label:'Type',key:'type'},{label:'Purpose',key:'purpose'}],
+  tableField:      [{label:'Field',key:'name'},{label:'Type',key:'type'},{label:'Max Length',key:'maxLength'},{label:'Mandatory',key:'mandatory'},{label:'Default',key:'default'},{label:'Reference',key:'reference'},{label:'Description',key:'description'}],
+  tableChange:     [{label:'Change',key:'change'},{label:'Field',key:'field'},{label:'Details',key:'details'}],
+  index:           [{label:'Table',key:'table'},{label:'Fields',key:'fields'},{label:'Type',key:'type'},{label:'Reason',key:'reason'}],
+  method:          [{label:'Method',key:'name'},{label:'Parameters',key:'params'},{label:'Returns',key:'returns'},{label:'Description',key:'description'}],
+  role:            [{label:'Role',key:'role'},{label:'Contains',key:'contains'},{label:'Description',key:'description'}],
+  fls:             [{label:'Table',key:'table'},{label:'Field',key:'field'},{label:'Read',key:'read'},{label:'Write',key:'write'},{label:'Condition',key:'condition'}],
+  widgetRef:       [{label:'Widget',key:'widget'},{label:'Position',key:'position'},{label:'Purpose',key:'purpose'}],
+  event:           [{label:'Event Name',key:'event'},{label:'Fired By',key:'firedBy'},{label:'Parameters',key:'params'},{label:'Consumed By',key:'consumedBy'}],
+  eventReg:        [{label:'Event',key:'event'},{label:'Table',key:'table'},{label:'Description',key:'description'}],
+  sysProp:         [{label:'Property Name',key:'name'},{label:'Type',key:'type'},{label:'Default',key:'default'},{label:'Description',key:'description'},{label:'Used By',key:'usedBy'}],
+  endpoint:        [{label:'Method',key:'method'},{label:'Endpoint',key:'endpoint'},{label:'Response',key:'response'},{label:'Auth',key:'auth'}],
+  happyPath:       [{label:'Flow',key:'flow'},{label:'Steps',key:'steps',textarea:true},{label:'Pass Condition',key:'passCondition'}],
+  aclSpot:         [{label:'Table',key:'table'},{label:'Operation',key:'operation'},{label:'Role',key:'role'},{label:'Expected Result',key:'expected'}],
+  edgeCheck:       [{label:'Scenario',key:'scenario'},{label:'Steps',key:'steps',textarea:true},{label:'Expected Behavior',key:'expected'}],
+  demoData:        [{label:'Table',key:'table'},{label:'Description',key:'description'},{label:'Key Values',key:'keyValues'},{label:'Purpose',key:'purpose'}],
+  traceability:    [{label:'User Story',key:'story'},{label:'Acceptance Criterion',key:'ac'},{label:'Implementing Components',key:'components'},{label:'Layer',key:'layer'}],
+  alternative:     [{label:'Alternative',key:'option'},{label:'Pros',key:'pros'},{label:'Cons',key:'cons'}],
+  phaseComponent:  [{label:'Component',key:'name'},{label:'Type',key:'type'},{label:'Complexity',key:'complexity'}],
+  openQuestionT:   [{label:'Question',key:'question'},{label:'Context',key:'context'},{label:'Impact',key:'impact'},{label:'Status',key:'status'}],
+};
+
+const ACL_OPS = ['Read','Write','Create','Delete','Report View'];
+function newAclBlock() { return { id:uid(), table:'', acls: ACL_OPS.map(op => ({operation:op, role:'', condition:''})) }; }
+
+/* ══════════════════════════════════════════════════
+   POC SPEC — RENDER
+══════════════════════════════════════════════════ */
+function renderPoc() {
+  const ps = DOC.pocSpec;
+
+  proseSection('p-overview', 'PoC', 'Overview', ps, 'overview', '2-3 sentence elevator pitch — no technical terms.', 3);
+  proseSection('p-problem', 'PoC', 'Problem Statement', ps, 'problemStatement', 'What pain, friction, or gap exists today?', 4);
+  proseSection('p-current-state', 'PoC', 'How It Works Today', ps, 'howItWorksToday', 'What do people do now? What tools or workarounds?', 4);
+
+  const personasEl = document.getElementById('p-personas');
+  personasEl.innerHTML = `<div class="section-label">PoC</div><h2>Users &amp; Personas</h2><div data-slot></div>`;
+  cardsEditor(personasEl.querySelector('[data-slot]'), ps.personas, {
+    addLabel: 'Add Persona',
+    emptyHint: 'No personas defined yet.',
+    makeEmpty: () => ({id:uid(), name:'', who:'', caresAbout:'', interacts:''}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Persona name…">
+        <table class="data-table" style="margin-top:10px">
+          <tbody>
+            <tr><td style="width:160px;color:var(--text-muted)">Who they are</td><td><input type="text" class="field-input" data-field="who" value="${esc(item.who)}"></td></tr>
+            <tr><td style="color:var(--text-muted)">What they care about</td><td><input type="text" class="field-input" data-field="caresAbout" value="${esc(item.caresAbout)}"></td></tr>
+            <tr><td style="color:var(--text-muted)">How they interact</td><td><input type="text" class="field-input" data-field="interacts" value="${esc(item.interacts)}"></td></tr>
+          </tbody>
+        </table>`;
+      wireFields(body, item);
+    }
+  });
+
+  const scopeEl = document.getElementById('p-scope');
+  scopeEl.innerHTML = `<div class="section-label">PoC</div><h2>Scope</h2>
+    <h3 class="subhead">In Scope</h3><div data-slot="in"></div>
+    <h3 class="subhead">Out of Scope</h3><div data-slot="out"></div>`;
+  listEditor(scopeEl.querySelector('[data-slot="in"]'), ps.scope.inScope, 'Capability that IS included…', 'Add Capability');
+  tableSection(scopeEl.querySelector('[data-slot="out"]'), ps.scope.outScope, COLS.outScope, {addLabel:'Add Exclusion'});
+
+  const storiesEl = document.getElementById('p-stories');
+  storiesEl.innerHTML = `<div class="section-label">PoC</div><h2>User Stories</h2><div data-slot></div>`;
+  cardsEditor(storiesEl.querySelector('[data-slot]'), ps.userStories, {
+    cardClass: 'story-card', addLabel: 'Add Story', emptyHint: 'No user stories yet.',
+    makeEmpty: () => ({id:uid(), title:'', persona:'', capability:'', benefit:'', acceptanceCriteria:[]}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <input type="text" class="field-input title-input" data-field="title" value="${esc(item.title)}" placeholder="Story title…">
+        <div class="story-statement">
+          As a <input type="text" class="field-input" data-field="persona" value="${esc(item.persona)}" placeholder="persona">,
+          I want <input type="text" class="field-input" data-field="capability" value="${esc(item.capability)}" placeholder="capability">,
+          so that <input type="text" class="field-input" data-field="benefit" value="${esc(item.benefit)}" placeholder="benefit">.
+        </div>
+        <div class="obj-card-label">Acceptance Criteria</div>
+        <div data-ac></div>`;
+      wireFields(body, item);
+      const acEl = body.querySelector('[data-ac]');
+      function paintAC() {
+        acEl.innerHTML = `<ul class="ac-list">${item.acceptanceCriteria.map((v,i)=>`<li>
+          <input type="text" class="field-input" data-i="${i}" value="${esc(v)}" placeholder="Specific, testable condition…">
+          <button class="del-btn" data-del="${i}">×</button></li>`).join('')}</ul>
+          <button class="add-row-btn" data-add>+ Add Criterion</button>`;
+        acEl.querySelectorAll('[data-i]').forEach(inp => inp.addEventListener('input', () => { item.acceptanceCriteria[+inp.dataset.i]=inp.value; save(); }));
+        acEl.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', () => { item.acceptanceCriteria.splice(+btn.dataset.del,1); save(); paintAC(); }));
+        acEl.querySelector('[data-add]').addEventListener('click', () => { item.acceptanceCriteria.push(''); save(); paintAC(); });
+      }
+      paintAC();
+    }
+  });
+
+  const flowsEl = document.getElementById('p-flows');
+  flowsEl.innerHTML = `<div class="section-label">PoC</div><h2>User Flows</h2><div data-slot></div>`;
+  cardsEditor(flowsEl.querySelector('[data-slot]'), ps.userFlows, {
+    addLabel: 'Add Flow', emptyHint: 'No user flows yet.',
+    makeEmpty: () => ({id:uid(), name:'', actor:'', trigger:'', steps:[], mermaid:'flowchart TD\n    A[Trigger] --> B[Step]'}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Flow name…">
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Actor</div><input type="text" class="field-input" data-field="actor" value="${esc(item.actor)}"></div>
+          <div><div class="obj-card-label">Trigger</div><input type="text" class="field-input" data-field="trigger" value="${esc(item.trigger)}"></div>
+        </div>
+        <div class="obj-card-label">Steps</div><div data-steps></div>
+        <div class="obj-card-label" style="margin-top:14px">Diagram</div><div data-diagram></div>`;
+      wireFields(body, item);
+      listEditor(body.querySelector('[data-steps]'), item.steps, 'What the user sees or does…', 'Add Step');
+      mermaidBlock(body.querySelector('[data-diagram]'), () => item.mermaid, v => item.mermaid = v);
+    }
+  });
+
+  const screensEl = document.getElementById('p-screens');
+  screensEl.innerHTML = `<div class="section-label">PoC</div><h2>Screen Descriptions</h2><div data-slot></div>`;
+  cardsEditor(screensEl.querySelector('[data-slot]'), ps.screens, {
+    cardClass: 'screen-card', addLabel: 'Add Screen', emptyHint: 'No screens described yet.',
+    makeEmpty: () => ({id:uid(), name:'', whoSees:'', when:'', elements:[], actions:[]}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <h4><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Screen name…"></h4>
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Who sees it</div><input type="text" class="field-input" data-field="whoSees" value="${esc(item.whoSees)}"></div>
+          <div><div class="obj-card-label">When</div><input type="text" class="field-input" data-field="when" value="${esc(item.when)}"></div>
+        </div>
+        <div class="obj-card-label">What's on the screen</div><div data-elements></div>
+        <div class="obj-card-label" style="margin-top:14px">What the user can do</div><div data-actions></div>`;
+      wireFields(body, item);
+      listEditor(body.querySelector('[data-elements]'), item.elements, 'Element on screen…', 'Add Element');
+      tableSection(body.querySelector('[data-actions]'), item.actions, COLS.action, {addLabel:'Add Action'});
+    }
+  });
+
+  const notifEl = document.getElementById('p-notifications');
+  notifEl.innerHTML = `<div class="section-label">PoC</div><h2>Notifications &amp; Communications</h2><div data-table></div><div data-note></div>`;
+  noteOrTable(notifEl.querySelector('[data-table]'), notifEl.querySelector('[data-note]'), ps.notifications, COLS.notification, ps.notificationsNote, v => ps.notificationsNote = v, 'Add Notification');
+
+  const settingsEl = document.getElementById('p-settings');
+  settingsEl.innerHTML = `<div class="section-label">PoC</div><h2>Configuration &amp; Settings</h2><div data-table></div><div data-note></div>`;
+  noteOrTable(settingsEl.querySelector('[data-table]'), settingsEl.querySelector('[data-note]'), ps.settings, COLS.setting, ps.settingsNote, v => ps.settingsNote = v, 'Add Setting');
+
+  const edgeEl = document.getElementById('p-edge-cases');
+  edgeEl.innerHTML = `<div class="section-label">PoC</div><h2>Edge Cases &amp; Error States</h2><div data-slot></div>`;
+  tableSection(edgeEl.querySelector('[data-slot]'), ps.edgeCases, COLS.edgeCase, {addLabel:'Add Edge Case'});
+
+  const metricsEl = document.getElementById('p-success-metrics');
+  metricsEl.innerHTML = `<div class="section-label">PoC</div><h2>Success Metrics</h2><div data-slot></div>`;
+  tableSection(metricsEl.querySelector('[data-slot]'), ps.successMetrics, COLS.successMetric, {addLabel:'Add Metric'});
+
+  const oqEl = document.getElementById('p-open-questions');
+  oqEl.innerHTML = `<div class="section-label">PoC</div><h2>Open Questions</h2><div data-slot></div>`;
+  tableSection(oqEl.querySelector('[data-slot]'), ps.openQuestions, COLS.openQuestionP, {addLabel:'Add Question'});
+}
+
+/* ══════════════════════════════════════════════════
+   TECH SPEC — RENDER
+══════════════════════════════════════════════════ */
+function renderTech() {
+  const ts = DOC.techSpec;
+
+  proseSection('t-overview', 'Technical', 'Overview', ts, 'overview', 'What is being built, what it touches, how it fits the current architecture.', 4, true);
+
+  const archEl = document.getElementById('t-existing-arch');
+  archEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Existing Architecture</h2>
+    <div class="brief-box"><textarea class="field-input" rows="4" data-field="1" placeholder="Current state of the system this feature will touch or extend.">${esc(ts.existingArchitecture.description)}</textarea></div>
+    <h3 class="subhead">Current Data Model</h3><div data-diagram></div>
+    <h3 class="subhead">Current Components</h3><div data-components></div>`;
+  archEl.querySelector('[data-field]').addEventListener('input', e => { ts.existingArchitecture.description = e.target.value; save(); });
+  mermaidBlock(archEl.querySelector('[data-diagram]'), () => ts.existingArchitecture.dataModelMermaid || 'erDiagram\n    TABLE_A ||--o{ TABLE_B : "relationship"', v => ts.existingArchitecture.dataModelMermaid = v);
+  tableSection(archEl.querySelector('[data-components]'), ts.existingArchitecture.components, COLS.component, {addLabel:'Add Component'});
+
+  const dmEl = document.getElementById('t-data-model');
+  dmEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Data Model</h2>
+    <h3 class="subhead">New Tables</h3><div data-newtables></div>
+    <h3 class="subhead">Modified Tables</h3><div data-modtables></div>
+    <h3 class="subhead">Relationships</h3><div data-rel></div>
+    <h3 class="subhead">Indexes</h3><div data-indexes></div>`;
+  cardsEditor(dmEl.querySelector('[data-newtables]'), ts.dataModel.newTables, {
+    addLabel:'Add Table', emptyHint:'No new tables yet.',
+    makeEmpty: () => ({id:uid(), name:'', label:'', extends:'', fields:[]}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Table Name</div><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="u_scope_table_name"></div>
+          <div><div class="obj-card-label">Label</div><input type="text" class="field-input" data-field="label" value="${esc(item.label)}"></div>
+          <div><div class="obj-card-label">Extends</div><input type="text" class="field-input" data-field="extends" value="${esc(item.extends)}" placeholder="Base table"></div>
+        </div>
+        <div class="obj-card-label" style="margin-top:10px">Fields</div><div data-fields></div>`;
+      wireFields(body, item);
+      tableSection(body.querySelector('[data-fields]'), item.fields, COLS.tableField, {addLabel:'Add Field'});
+    }
+  });
+  cardsEditor(dmEl.querySelector('[data-modtables]'), ts.dataModel.modifiedTables, {
+    addLabel:'Add Modified Table', emptyHint:'No modified tables.',
+    makeEmpty: () => ({id:uid(), table:'', changes:[]}),
+    buildCard: (body, item) => {
+      body.innerHTML = `<div class="obj-card-label">Table</div><input type="text" class="field-input title-input" data-field="table" value="${esc(item.table)}">
+        <div class="obj-card-label" style="margin-top:10px">Changes</div><div data-changes></div>`;
+      wireFields(body, item);
+      tableSection(body.querySelector('[data-changes]'), item.changes, COLS.tableChange, {addLabel:'Add Change'});
+    }
+  });
+  mermaidBlock(dmEl.querySelector('[data-rel]'), () => ts.dataModel.relationshipsMermaid || 'erDiagram\n    TABLE_A ||--o{ TABLE_B : "has many"', v => ts.dataModel.relationshipsMermaid = v);
+  tableSection(dmEl.querySelector('[data-indexes]'), ts.dataModel.indexes, COLS.index, {addLabel:'Add Index'});
+
+  const blEl = document.getElementById('t-business-logic');
+  blEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Business Logic</h2>
+    <h3 class="subhead">Script Includes</h3><div data-si></div>
+    <h3 class="subhead">Business Rules</h3><div data-br></div>`;
+  cardsEditor(blEl.querySelector('[data-si]'), ts.businessLogic.scriptIncludes, {
+    addLabel:'Add Script Include', emptyHint:'No Script Includes yet.',
+    makeEmpty: () => ({id:uid(), name:'', clientCallable:'No', purpose:'', methods:[]}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Name</div><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}"></div>
+          <div><div class="obj-card-label">Client Callable</div><input type="text" class="field-input" data-field="clientCallable" value="${esc(item.clientCallable)}" placeholder="Yes / No"></div>
+        </div>
+        <div class="obj-card-label">Purpose</div><textarea class="field-input" rows="2" data-field="purpose">${esc(item.purpose)}</textarea>
+        <div class="obj-card-label" style="margin-top:10px">Methods</div><div data-methods></div>`;
+      wireFields(body, item);
+      tableSection(body.querySelector('[data-methods]'), item.methods, COLS.method, {addLabel:'Add Method'});
+    }
+  });
+  cardsEditor(blEl.querySelector('[data-br]'), ts.businessLogic.businessRules, {
+    addLabel:'Add Business Rule', emptyHint:'No Business Rules yet.',
+    makeEmpty: () => ({id:uid(), name:'', table:'', when:'before', insert:'No', update:'No', delete:'No', condition:'None', logic:''}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Business Rule name…">
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Table</div><input type="text" class="field-input" data-field="table" value="${esc(item.table)}"></div>
+          <div><div class="obj-card-label">When</div><input type="text" class="field-input" data-field="when" value="${esc(item.when)}" placeholder="before / after / async / display"></div>
+        </div>
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Insert</div><input type="text" class="field-input" data-field="insert" value="${esc(item.insert)}"></div>
+          <div><div class="obj-card-label">Update</div><input type="text" class="field-input" data-field="update" value="${esc(item.update)}"></div>
+          <div><div class="obj-card-label">Delete</div><input type="text" class="field-input" data-field="delete" value="${esc(item.delete)}"></div>
+          <div><div class="obj-card-label">Condition</div><input type="text" class="field-input" data-field="condition" value="${esc(item.condition)}"></div>
+        </div>
+        <div class="obj-card-label">Logic (plain language, not code)</div><textarea class="field-input" rows="3" data-field="logic">${esc(item.logic)}</textarea>`;
+      wireFields(body, item);
+    }
+  });
+
+  const secEl = document.getElementById('t-security');
+  secEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Security</h2>
+    <h3 class="subhead">Roles</h3><div data-roles></div>
+    <h3 class="subhead">ACLs</h3><p class="hint">Every new table needs 5 ACLs — Read, Write, Create, Delete, Report View.</p><div data-acls></div>
+    <h3 class="subhead">Field-Level Security</h3><p class="hint">Only needed if field-level security applies.</p><div data-fls></div>`;
+  tableSection(secEl.querySelector('[data-roles]'), ts.security.roles, COLS.role, {addLabel:'Add Role'});
+  cardsEditor(secEl.querySelector('[data-acls]'), ts.security.aclsByTable, {
+    addLabel:'Add Table ACL Block', emptyHint:'No ACL blocks yet.',
+    makeEmpty: newAclBlock,
+    buildCard: (body, item) => {
+      body.innerHTML = `<div class="obj-card-label">Table</div><input type="text" class="field-input title-input" data-field="table" value="${esc(item.table)}">
+        <table class="data-table" style="margin-top:10px">
+          <thead><tr><th>Operation</th><th>Role Required</th><th>Condition</th></tr></thead>
+          <tbody>${item.acls.map((a,i)=>`<tr>
+            <td>${esc(a.operation)}</td>
+            <td><input type="text" class="field-input" data-acl-i="${i}" data-acl-k="role" value="${esc(a.role)}"></td>
+            <td><input type="text" class="field-input" data-acl-i="${i}" data-acl-k="condition" value="${esc(a.condition)}" placeholder="None"></td>
+          </tr>`).join('')}</tbody>
+        </table>`;
+      wireFields(body, item);
+      body.querySelectorAll('[data-acl-i]').forEach(inp => {
+        inp.addEventListener('input', () => { item.acls[+inp.dataset.aclI][inp.dataset.aclK] = inp.value; save(); });
+      });
+    }
+  });
+  tableSection(secEl.querySelector('[data-fls]'), ts.security.fieldLevelSecurity, COLS.fls, {addLabel:'Add Field Rule'});
+
+  const uiEl = document.getElementById('t-ui');
+  uiEl.innerHTML = `<div class="section-label tech">Technical</div><h2>User Interface</h2>
+    <h3 class="subhead">Portal Pages</h3><div data-pages></div>
+    <h3 class="subhead">Widgets</h3><div data-widgets></div>
+    <h3 class="subhead">Client Scripts</h3><div data-cs></div>`;
+  cardsEditor(uiEl.querySelector('[data-pages]'), ts.ui.portalPages, {
+    addLabel:'Add Portal Page', emptyHint:'No portal pages yet.',
+    makeEmpty: () => ({id:uid(), name:'', url:'', whoSees:'', widgets:[]}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Page Name</div><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}"></div>
+          <div><div class="obj-card-label">URL</div><input type="text" class="field-input" data-field="url" value="${esc(item.url)}" placeholder="/portal/page"></div>
+          <div><div class="obj-card-label">Who sees it</div><input type="text" class="field-input" data-field="whoSees" value="${esc(item.whoSees)}"></div>
+        </div>
+        <div class="obj-card-label" style="margin-top:10px">Widgets</div><div data-widgetrefs></div>`;
+      wireFields(body, item);
+      tableSection(body.querySelector('[data-widgetrefs]'), item.widgets, COLS.widgetRef, {addLabel:'Add Widget'});
+    }
+  });
+  cardsEditor(uiEl.querySelector('[data-widgets]'), ts.ui.widgets, {
+    addLabel:'Add Widget', emptyHint:'No widgets yet.',
+    makeEmpty: () => ({id:uid(), name:'', serverScript:'', clientScript:'', dependencies:''}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Widget name…">
+        <div class="obj-card-label">Server Script</div><textarea class="field-input" rows="2" data-field="serverScript" placeholder="Plain language description of data logic">${esc(item.serverScript)}</textarea>
+        <div class="obj-card-label">Client Script</div><textarea class="field-input" rows="2" data-field="clientScript" placeholder="Plain language description of client behavior">${esc(item.clientScript)}</textarea>
+        <div class="obj-card-label">Dependencies</div><input type="text" class="field-input" data-field="dependencies" value="${esc(item.dependencies)}">`;
+      wireFields(body, item);
+    }
+  });
+  cardsEditor(uiEl.querySelector('[data-cs]'), ts.ui.clientScripts, {
+    addLabel:'Add Client Script', emptyHint:'No client scripts yet.',
+    makeEmpty: () => ({id:uid(), name:'', table:'', type:'onChange', field:'', logic:''}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Client Script name…">
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Table</div><input type="text" class="field-input" data-field="table" value="${esc(item.table)}"></div>
+          <div><div class="obj-card-label">Type</div><input type="text" class="field-input" data-field="type" value="${esc(item.type)}" placeholder="onChange / onLoad / onSubmit"></div>
+          <div><div class="obj-card-label">Field</div><input type="text" class="field-input" data-field="field" value="${esc(item.field)}"></div>
+        </div>
+        <div class="obj-card-label">Logic (from the user's perspective)</div><textarea class="field-input" rows="2" data-field="logic">${esc(item.logic)}</textarea>`;
+      wireFields(body, item);
+    }
+  });
+
+  const autoEl = document.getElementById('t-automation');
+  autoEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Automation</h2><p class="hint">Only needed if the feature requires Flows, Scheduled Jobs, or Events.</p>
+    <h3 class="subhead">Flows</h3><div data-flows></div>
+    <h3 class="subhead">Events</h3><div data-events></div>`;
+  cardsEditor(autoEl.querySelector('[data-flows]'), ts.automation.flows, {
+    addLabel:'Add Flow', emptyHint:'No flows yet.',
+    makeEmpty: () => ({id:uid(), name:'', trigger:'', runAs:'System', steps:[]}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Flow name…">
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Trigger</div><input type="text" class="field-input" data-field="trigger" value="${esc(item.trigger)}"></div>
+          <div><div class="obj-card-label">Run As</div><input type="text" class="field-input" data-field="runAs" value="${esc(item.runAs)}" placeholder="System / Current User"></div>
+        </div>
+        <div class="obj-card-label">Steps</div><div data-steps></div>`;
+      wireFields(body, item);
+      listEditor(body.querySelector('[data-steps]'), item.steps, 'Action…', 'Add Step');
+    }
+  });
+  tableSection(autoEl.querySelector('[data-events]'), ts.automation.events, COLS.event, {addLabel:'Add Event'});
+
+  const notifTEl = document.getElementById('t-notifications');
+  notifTEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Notifications</h2><p class="hint">Only needed if the PoC spec defines notifications.</p>
+    <h3 class="subhead">Event Registrations</h3><div data-reg></div>
+    <h3 class="subhead">Notification Rules</h3><div data-rules></div>`;
+  tableSection(notifTEl.querySelector('[data-reg]'), ts.notificationsTech.eventRegistrations, COLS.eventReg, {addLabel:'Add Registration'});
+  cardsEditor(notifTEl.querySelector('[data-rules]'), ts.notificationsTech.rules, {
+    addLabel:'Add Notification Rule', emptyHint:'No notification rules yet.',
+    makeEmpty: () => ({id:uid(), name:'', event:'', recipients:'', channel:'Email', condition:'None', subject:'', bodySummary:''}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Notification name…">
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Event</div><input type="text" class="field-input" data-field="event" value="${esc(item.event)}"></div>
+          <div><div class="obj-card-label">Recipients</div><input type="text" class="field-input" data-field="recipients" value="${esc(item.recipients)}"></div>
+          <div><div class="obj-card-label">Channel</div><input type="text" class="field-input" data-field="channel" value="${esc(item.channel)}"></div>
+          <div><div class="obj-card-label">Condition</div><input type="text" class="field-input" data-field="condition" value="${esc(item.condition)}"></div>
+        </div>
+        <div class="obj-card-label">Subject</div><input type="text" class="field-input" data-field="subject" value="${esc(item.subject)}">
+        <div class="obj-card-label">Body Summary</div><textarea class="field-input" rows="2" data-field="bodySummary">${esc(item.bodySummary)}</textarea>`;
+      wireFields(body, item);
+    }
+  });
+
+  const cfgEl = document.getElementById('t-configuration');
+  cfgEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Configuration</h2><p class="hint">Only needed if the PoC spec defines configurable settings.</p>
+    <h3 class="subhead">System Properties</h3><div data-slot></div>`;
+  tableSection(cfgEl.querySelector('[data-slot]'), ts.configuration.systemProperties, COLS.sysProp, {addLabel:'Add Property'});
+
+  const intEl = document.getElementById('t-integrations');
+  intEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Integrations</h2><p class="hint">Only needed if the feature has API requirements.</p>
+    <h3 class="subhead">Inbound REST APIs</h3><div data-slot></div>`;
+  cardsEditor(intEl.querySelector('[data-slot]'), ts.integrations.inboundApis, {
+    addLabel:'Add API', emptyHint:'No inbound APIs yet.',
+    makeEmpty: () => ({id:uid(), name:'', basePath:'', endpoints:[]}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">API Name</div><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}"></div>
+          <div><div class="obj-card-label">Base Path</div><input type="text" class="field-input" data-field="basePath" value="${esc(item.basePath)}" placeholder="/api/scope/resource"></div>
+        </div>
+        <div class="obj-card-label" style="margin-top:10px">Endpoints</div><div data-endpoints></div>`;
+      wireFields(body, item);
+      tableSection(body.querySelector('[data-endpoints]'), item.endpoints, COLS.endpoint, {addLabel:'Add Endpoint'});
+    }
+  });
+
+  const verEl = document.getElementById('t-verification');
+  verEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Verification Checklist</h2><p class="hint">Step-by-step manual checks a developer or demonstrator can walk through.</p>
+    <h3 class="subhead">Happy Path Verification</h3><div data-hp></div>
+    <h3 class="subhead">ACL Spot-Checks</h3><div data-acl></div>
+    <h3 class="subhead">Edge Case Checks</h3><div data-edge></div>
+    <h3 class="subhead">Demo Data</h3><div data-demo></div>`;
+  tableSection(verEl.querySelector('[data-hp]'), ts.verification.happyPath, COLS.happyPath, {addLabel:'Add Flow Check'});
+  tableSection(verEl.querySelector('[data-acl]'), ts.verification.aclSpotChecks, COLS.aclSpot, {addLabel:'Add Spot-Check'});
+  tableSection(verEl.querySelector('[data-edge]'), ts.verification.edgeCaseChecks, COLS.edgeCheck, {addLabel:'Add Edge Check'});
+  tableSection(verEl.querySelector('[data-demo]'), ts.verification.demoData, COLS.demoData, {addLabel:'Add Demo Record'});
+
+  const traceEl = document.getElementById('t-traceability');
+  traceEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Traceability</h2><p class="hint">Every AC from the PoC spec must appear here.</p><div data-slot></div>`;
+  tableSection(traceEl.querySelector('[data-slot]'), ts.traceability, COLS.traceability, {addLabel:'Add Mapping'});
+
+  const adrEl = document.getElementById('t-adrs');
+  adrEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Architecture Decisions</h2><div data-slot></div>`;
+  cardsEditor(adrEl.querySelector('[data-slot]'), ts.adrs, {
+    cardClass: 'adr-card', addLabel: 'Add ADR', emptyHint: 'No architecture decisions recorded yet.',
+    makeEmpty: () => ({id:uid(), title:'', status:'Accepted', context:'', decision:'', alternatives:[], consequences:''}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Decision Title</div><input type="text" class="field-input title-input" data-field="title" value="${esc(item.title)}"></div>
+          <div style="flex:0 0 140px"><div class="obj-card-label">Status</div><input type="text" class="field-input" data-field="status" value="${esc(item.status)}"></div>
+        </div>
+        <div class="obj-card-label">Context</div><textarea class="field-input" rows="2" data-field="context" placeholder="What is the technical question?">${esc(item.context)}</textarea>
+        <div class="obj-card-label">Decision</div><textarea class="field-input" rows="2" data-field="decision" placeholder="What was chosen?">${esc(item.decision)}</textarea>
+        <div class="obj-card-label" style="margin-top:10px">Alternatives Considered</div><div data-alts></div>
+        <div class="obj-card-label" style="margin-top:10px">Consequences</div><textarea class="field-input" rows="2" data-field="consequences">${esc(item.consequences)}</textarea>`;
+      wireFields(body, item);
+      tableSection(body.querySelector('[data-alts]'), item.alternatives, COLS.alternative, {addLabel:'Add Alternative'});
+    }
+  });
+
+  const planEl = document.getElementById('t-impl-plan');
+  planEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Implementation Plan</h2>
+    <div data-phases></div>
+    <h3 class="subhead">Phase Dependencies</h3><div data-graph></div>`;
+  cardsEditor(planEl.querySelector('[data-phases]'), ts.implementationPlan.phases, {
+    addLabel:'Add Phase', emptyHint:'No implementation phases yet.',
+    makeEmpty: () => ({id:uid(), name:'', dependsOn:'Nothing — can start immediately', delivers:'', components:[]}),
+    buildCard: (body, item) => {
+      body.innerHTML = `
+        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Phase name…">
+        <div class="obj-card-row">
+          <div><div class="obj-card-label">Depends On</div><input type="text" class="field-input" data-field="dependsOn" value="${esc(item.dependsOn)}"></div>
+          <div><div class="obj-card-label">Delivers</div><input type="text" class="field-input" data-field="delivers" value="${esc(item.delivers)}"></div>
+        </div>
+        <div class="obj-card-label" style="margin-top:10px">Components</div><div data-comp></div>`;
+      wireFields(body, item);
+      tableSection(body.querySelector('[data-comp]'), item.components, COLS.phaseComponent, {addLabel:'Add Component'});
+    }
+  });
+  mermaidBlock(planEl.querySelector('[data-graph]'), () => ts.implementationPlan.mermaid || 'graph LR\n    P1[Phase 1] --> P2[Phase 2]', v => ts.implementationPlan.mermaid = v);
+
+  const diagEl = document.getElementById('t-diagrams');
+  diagEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Diagrams</h2><p class="hint">Component diagrams, sequence diagrams, or decision flowcharts beyond the inline diagrams above.</p><div data-slot></div>`;
+  cardsEditor(diagEl.querySelector('[data-slot]'), DOC.diagrams, {
+    addLabel:'Add Diagram', emptyHint:'No additional diagrams yet.',
+    makeEmpty: () => ({id:uid(), title:'', mermaid:'graph TD\n    A --> B'}),
+    buildCard: (body, item) => {
+      body.innerHTML = `<input type="text" class="field-input title-input" data-field="title" value="${esc(item.title)}" placeholder="Diagram title…">
+        <div style="margin-top:10px" data-diagram></div>`;
+      wireFields(body, item);
+      mermaidBlock(body.querySelector('[data-diagram]'), () => item.mermaid, v => item.mermaid = v);
+    }
+  });
+
+  const oqtEl = document.getElementById('t-open-questions');
+  oqtEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Open Questions</h2><div data-slot></div>`;
+  tableSection(oqtEl.querySelector('[data-slot]'), ts.openQuestions, COLS.openQuestionT, {addLabel:'Add Question'});
+}
+
+/* ══════════════════════════════════════════════════
+   TECHNICAL SPEC TOGGLE
+══════════════════════════════════════════════════ */
+function isTechExpanded() { return !!document.querySelector('.tech-collapsible.expanded'); }
+function setTechExpanded(on) {
+  document.querySelectorAll('.tech-collapsible').forEach(el => el.classList.toggle('expanded', on));
+  document.getElementById('toggleTechBtn').classList.toggle('on', on);
+  document.getElementById('toggleTechLabel').textContent = on ? 'Hide Technical Spec' : 'Show Technical Spec';
+  if (on) window.__renderAllMermaid();
+}
+function toggleTech() { setTechExpanded(!isTechExpanded()); }
+
+function initTechNavLinks() {
+  document.querySelectorAll('a.tech-nav').forEach(a => {
+    a.addEventListener('click', e => {
+      if (!isTechExpanded()) {
+        e.preventDefault();
+        setTechExpanded(true);
+        // wait a frame for layout so scrollIntoView measures the now-visible section
+        requestAnimationFrame(() => {
+          document.querySelector(a.getAttribute('href'))?.scrollIntoView();
+        });
+      }
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   EXPORT MARKDOWN
+══════════════════════════════════════════════════ */
+function mdTable(cols, rows) {
+  const lines = [`| ${cols.map(c=>c.label).join(' | ')} |`, `| ${cols.map(()=>'---').join(' | ')} |`];
+  rows.forEach(r => lines.push(`| ${cols.map(c => String(r[c.key]||'').replace(/\n/g,' ')).join(' | ')} |`));
+  return lines;
+}
+
+function buildMarkdown() {
+  const name = DOC.featureName || document.getElementById('featureNameEl').textContent.trim();
+  const status = DOC.status || 'draft';
+  const ps = DOC.pocSpec, ts = DOC.techSpec;
+  const L = [];
+
+  // ── poc-spec.md ──
+  L.push(`<!-- poc-spec.md -->`);
+  L.push(`# ${name}`, ``);
+  L.push(`**Status:** ${status}`, ``);
+  L.push(`## Overview`, ``, ps.overview||'', ``);
+  L.push(`## Problem Statement`, ``, ps.problemStatement||'', ``);
+  L.push(`## How It Works Today`, ``, ps.howItWorksToday||'', ``);
+  L.push(`## Users & Personas`, ``);
+  ps.personas.forEach(p => {
+    L.push(`### ${p.name}`, ``);
+    L.push(`| Attribute | Description |`, `| --- | --- |`);
+    L.push(`| Who they are | ${p.who} |`, `| What they care about | ${p.caresAbout} |`, `| How they interact | ${p.interacts} |`, ``);
+  });
+  L.push(`## Scope`, ``, `### In Scope`, ``);
+  ps.scope.inScope.forEach(i => L.push(`- ${i}`));
+  L.push(``, `### Out of Scope`, ``);
+  ps.scope.outScope.forEach(o => L.push(`- ${o.item} — ${o.reason}`));
+  L.push(``);
+  L.push(`## User Stories`, ``);
+  ps.userStories.forEach(s => {
+    L.push(`### ${s.title}`, ``);
+    L.push(`**As a** ${s.persona}, **I want** ${s.capability}, **so that** ${s.benefit}.`, ``);
+    L.push(`**Acceptance Criteria:**`, ``);
+    s.acceptanceCriteria.forEach(ac => L.push(`- [ ] ${ac}`));
+    L.push(``);
+  });
+  L.push(`## User Flows`, ``);
+  ps.userFlows.forEach(f => {
+    L.push(`### ${f.name}`, ``);
+    L.push(`**Actor:** ${f.actor}`, `**Trigger:** ${f.trigger}`, ``);
+    f.steps.forEach((s,i) => L.push(`${i+1}. ${s}`));
+    L.push(``, '```mermaid', f.mermaid||'', '```', ``);
+  });
+  L.push(`## Screen Descriptions`, ``);
+  ps.screens.forEach(s => {
+    L.push(`### ${s.name}`, ``);
+    L.push(`**Who sees it:** ${s.whoSees}`, `**When:** ${s.when}`, ``);
+    L.push(`**What's on the screen:**`, ``);
+    s.elements.forEach(e => L.push(`- ${e}`));
+    L.push(``, `**What the user can do:**`, ``);
+    s.actions.forEach(a => L.push(`- ${a.action} → ${a.result}`));
+    L.push(``);
+  });
+  L.push(`## Notifications & Communications`, ``);
+  if (ps.notifications.length) L.push(...mdTable(COLS.notification, ps.notifications));
+  else L.push(ps.notificationsNote || 'No notifications required.');
+  L.push(``);
+  L.push(`## Configuration & Settings`, ``);
+  if (ps.settings.length) L.push(...mdTable(COLS.setting, ps.settings));
+  else L.push(ps.settingsNote || 'No configurable settings.');
+  L.push(``);
+  L.push(`## Edge Cases & Error States`, ``, ...mdTable(COLS.edgeCase, ps.edgeCases), ``);
+  L.push(`## Success Metrics`, ``, ...mdTable(COLS.successMetric, ps.successMetrics), ``);
+  L.push(`## Open Questions`, ``, ...mdTable(COLS.openQuestionP, ps.openQuestions), ``);
+
+  // ── technical-spec.md ──
+  L.push(`<!-- technical-spec.md -->`);
+  L.push(`# ${name} — Technical Specification`, ``);
+  L.push(`## Overview`, ``, ts.overview||'', ``);
+  L.push(`## Existing Architecture`, ``, ts.existingArchitecture.description||'', ``);
+  L.push(`### Current Data Model`, ``, '```mermaid', ts.existingArchitecture.dataModelMermaid||'', '```', ``);
+  L.push(`### Current Components`, ``, ...mdTable(COLS.component, ts.existingArchitecture.components), ``);
+  L.push(`## Data Model`, ``, `### New Tables`, ``);
+  ts.dataModel.newTables.forEach(t => {
+    L.push(`#### ${t.name} (Label: "${t.label}")`, ``);
+    L.push(`**Extends:** ${t.extends}`, ``);
+    L.push(...mdTable(COLS.tableField, t.fields), ``);
+  });
+  L.push(`### Modified Tables`, ``);
+  ts.dataModel.modifiedTables.forEach(t => {
+    L.push(`#### ${t.table}`, ``, ...mdTable(COLS.tableChange, t.changes), ``);
+  });
+  L.push(`### Relationships`, ``, '```mermaid', ts.dataModel.relationshipsMermaid||'', '```', ``);
+  L.push(`### Indexes`, ``, ...mdTable(COLS.index, ts.dataModel.indexes), ``);
+  L.push(`## Business Logic`, ``, `### Script Includes`, ``);
+  ts.businessLogic.scriptIncludes.forEach(si => {
+    L.push(`#### ${si.name}`, ``);
+    L.push(`**Client callable:** ${si.clientCallable}`, `**Purpose:** ${si.purpose}`, ``);
+    L.push(...mdTable(COLS.method, si.methods), ``);
+  });
+  L.push(`### Business Rules`, ``);
+  ts.businessLogic.businessRules.forEach(br => {
+    L.push(`#### ${br.name}`, ``);
+    L.push(`| Attribute | Value |`, `| --- | --- |`);
+    L.push(`| Table | ${br.table} |`, `| When | ${br.when} |`, `| Insert | ${br.insert} |`, `| Update | ${br.update} |`, `| Delete | ${br.delete} |`, `| Condition | ${br.condition} |`, ``);
+    L.push(`**Logic:** ${br.logic}`, ``);
+  });
+  L.push(`## Security`, ``, `### Roles`, ``, ...mdTable(COLS.role, ts.security.roles), ``);
+  L.push(`### ACLs`, ``);
+  ts.security.aclsByTable.forEach(block => {
+    L.push(`#### ${block.table}`, ``);
+    L.push(`| Operation | Role Required | Condition |`, `| --- | --- | --- |`);
+    block.acls.forEach(a => L.push(`| ${a.operation} | ${a.role} | ${a.condition} |`));
+    L.push(``);
+  });
+  L.push(`### Field-Level Security`, ``, ...mdTable(COLS.fls, ts.security.fieldLevelSecurity), ``);
+  L.push(`## User Interface`, ``, `### Portal Pages`, ``);
+  ts.ui.portalPages.forEach(p => {
+    L.push(`#### ${p.name}`, ``);
+    L.push(`**URL:** \`${p.url}\``, `**Who sees it:** ${p.whoSees}`, ``);
+    L.push(...mdTable(COLS.widgetRef, p.widgets), ``);
+  });
+  L.push(`### Widgets`, ``);
+  ts.ui.widgets.forEach(w => {
+    L.push(`#### ${w.name}`, ``);
+    L.push(`**Server Script:** ${w.serverScript}`, `**Client Script:** ${w.clientScript}`, `**Dependencies:** ${w.dependencies}`, ``);
+  });
+  L.push(`### Client Scripts`, ``);
+  ts.ui.clientScripts.forEach(cs => {
+    L.push(`#### ${cs.name}`, ``);
+    L.push(`| Attribute | Value |`, `| --- | --- |`);
+    L.push(`| Table | ${cs.table} |`, `| Type | ${cs.type} |`, `| Field | ${cs.field} |`, ``);
+    L.push(`**Logic:** ${cs.logic}`, ``);
+  });
+  if (ts.automation.flows.length || ts.automation.events.length) {
+    L.push(`## Automation`, ``, `### Flows`, ``);
+    ts.automation.flows.forEach(f => {
+      L.push(`#### ${f.name}`, ``);
+      L.push(`| Attribute | Value |`, `| --- | --- |`);
+      L.push(`| Trigger | ${f.trigger} |`, `| Run As | ${f.runAs} |`, ``);
+      L.push(`**Steps:**`, ``);
+      f.steps.forEach((s,i) => L.push(`${i+1}. ${s}`));
+      L.push(``);
+    });
+    L.push(`### Events`, ``, ...mdTable(COLS.event, ts.automation.events), ``);
+  }
+  if (ts.notificationsTech.eventRegistrations.length || ts.notificationsTech.rules.length) {
+    L.push(`## Notifications`, ``, `### Event Registrations`, ``, ...mdTable(COLS.eventReg, ts.notificationsTech.eventRegistrations), ``);
+    L.push(`### Notification Rules`, ``);
+    ts.notificationsTech.rules.forEach(r => {
+      L.push(`#### ${r.name}`, ``);
+      L.push(`| Attribute | Value |`, `| --- | --- |`);
+      L.push(`| Event | ${r.event} |`, `| Recipients | ${r.recipients} |`, `| Channel | ${r.channel} |`, `| Condition | ${r.condition} |`, ``);
+      L.push(`**Subject:** \`${r.subject}\``, `**Body Summary:** ${r.bodySummary}`, ``);
+    });
+  }
+  if (ts.configuration.systemProperties.length) {
+    L.push(`## Configuration`, ``, `### System Properties`, ``, ...mdTable(COLS.sysProp, ts.configuration.systemProperties), ``);
+  }
+  if (ts.integrations.inboundApis.length) {
+    L.push(`## Integrations`, ``, `### Inbound REST APIs`, ``);
+    ts.integrations.inboundApis.forEach(api => {
+      L.push(`#### ${api.name}`, ``);
+      L.push(`**Base path:** \`${api.basePath}\``, ``);
+      L.push(...mdTable(COLS.endpoint, api.endpoints), ``);
+    });
+  }
+  L.push(`## Verification Checklist`, ``, `### Happy Path Verification`, ``, ...mdTable(COLS.happyPath, ts.verification.happyPath), ``);
+  L.push(`### ACL Spot-Checks`, ``, ...mdTable(COLS.aclSpot, ts.verification.aclSpotChecks), ``);
+  L.push(`### Edge Case Checks`, ``, ...mdTable(COLS.edgeCheck, ts.verification.edgeCaseChecks), ``);
+  L.push(`### Demo Data`, ``, ...mdTable(COLS.demoData, ts.verification.demoData), ``);
+  L.push(`## Traceability`, ``, ...mdTable(COLS.traceability, ts.traceability), ``);
+  L.push(`## Architecture Decisions`, ``);
+  ts.adrs.forEach((adr,i) => {
+    L.push(`### ADR-${String(i+1).padStart(3,'0')}: ${adr.title}`, ``);
+    L.push(`**Status:** ${adr.status}`, ``);
+    L.push(`**Context:** ${adr.context}`, ``);
+    L.push(`**Decision:** ${adr.decision}`, ``);
+    L.push(`**Alternatives Considered:**`, ``, ...mdTable(COLS.alternative, adr.alternatives), ``);
+    L.push(`**Consequences:** ${adr.consequences}`, ``);
+  });
+  L.push(`## Implementation Plan`, ``);
+  ts.implementationPlan.phases.forEach(p => {
+    L.push(`### Phase: ${p.name}`, ``);
+    L.push(`**Depends on:** ${p.dependsOn}`, `**Delivers:** ${p.delivers}`, ``);
+    L.push(...mdTable(COLS.phaseComponent, p.components), ``);
+  });
+  L.push('```mermaid', ts.implementationPlan.mermaid||'', '```', ``);
+  L.push(`## Open Questions`, ``, ...mdTable(COLS.openQuestionT, ts.openQuestions), ``);
+
+  if (DOC.diagrams.length) {
+    L.push(`<!-- diagrams.md -->`);
+    L.push(`# ${name} — Diagrams`, ``);
+    DOC.diagrams.forEach(d => { L.push(`## ${d.title}`, ``, '```mermaid', d.mermaid||'', '```', ``); });
+  }
+
+  return L.join('\n');
+}
+
+function exportMarkdown() {
+  const md = buildMarkdown();
+  navigator.clipboard.writeText(md).then(() => {
+    const fab = document.getElementById('copyFab');
+    const lbl = document.getElementById('fabLabel');
+    fab.classList.add('copied');
+    lbl.textContent = 'Copied!';
+    showToast('Markdown copied — paste into your .md files');
+    setTimeout(() => { fab.classList.remove('copied'); lbl.textContent = 'Export Markdown'; }, 2400);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   SAVE HTML / RESET / TOAST / NAV
+══════════════════════════════════════════════════ */
+function saveHTML() {
+  const clone = document.documentElement.cloneNode(true);
+  const sd = clone.querySelector('#structured-data');
+  if (sd) sd.textContent = '\n' + JSON.stringify(DOC, null, 2) + '\n';
+  const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'spec-index.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('HTML saved — edits baked in');
+}
+
+function resetEdits() {
+  if (!confirm('Discard all local edits and restore the original agent-generated content?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  showToast('Edits cleared — reloading…');
+  setTimeout(() => location.reload(), 800);
+}
+
+let _toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function initNav() {
+  const sections = document.querySelectorAll('.section[id]');
+  const navLinks = document.querySelectorAll('.sidebar-nav a');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const link = document.querySelector(`.sidebar-nav a[href="#${entry.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, {rootMargin:'-10% 0px -80% 0px'});
+  sections.forEach(s => obs.observe(s));
+}
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+loadDOC();
+renderPoc();
+renderTech();
+initNav();
+initTechNavLinks();
+window.saveHTML = saveHTML;
+window.resetEdits = resetEdits;
+window.exportMarkdown = exportMarkdown;
+window.toggleTech = toggleTech;
+</script>
+
+</body>
+</html>

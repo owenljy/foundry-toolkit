@@ -9,7 +9,6 @@
 ```markdown
 # STORY-XXX: <title>
 
-**Feature:** <FEATURE_ID>
 **Status:** draft | ready_for_review
 **Complexity:** S | M | L
 **Depends on:** <STORY IDs or "None">
@@ -26,13 +25,13 @@ So that <value>.
 - [ ] <specific, testable criterion>
 - [ ] <specific, testable criterion>
 
-## Product Spec Traceability
+## PoC Spec Traceability
 
-> Which acceptance criteria from the product specification this story satisfies.
+> Which acceptance criteria from the PoC specification this story satisfies.
 
-| Product Spec Story | Acceptance Criterion |
+| PoC Spec Story | Acceptance Criterion |
 |-------------------|---------------------|
-| <story title from product spec> | <specific AC text> |
+| <story title from PoC spec> | <specific AC text> |
 
 ## Technical Context
 
@@ -105,7 +104,6 @@ So that <value>.
 # Plan Review v<N>
 
 **Date:** <timestamp>
-**Feature:** <FEATURE_ID>
 **Stories:** <count>
 **Implementation Steps:** <total count across all stories>
 
@@ -154,7 +152,6 @@ So that <value>.
 ```markdown
 # Story Dependency Graph
 
-**Feature:** <FEATURE_ID>
 **Generated:** <timestamp>
 
 ## Execution Waves
@@ -189,7 +186,7 @@ STORY-XXX → STORY-XXX → STORY-XXX
 ## plan-summary.md
 
 ```markdown
-# Plan Summary: <FEATURE_ID>
+# Plan Summary
 
 **Generated:** <timestamp>
 **Status:** ready_for_review | has_open_questions | needs_human_review
@@ -254,7 +251,7 @@ The planning output MUST include an HTML page for easy stakeholder review.
 
 ### Required Sections
 
-1. **Header** — Feature ID, title, summary
+1. **Header** — title, summary
 2. **Overview** — Stats (stories, implementation steps, phases, duration), problem statement
 3. **Stories** — Expandable cards with acceptance criteria and implementation steps
 4. **Phases** — Implementation timeline with story groupings
@@ -287,7 +284,7 @@ Stories are **specifications for developers**, not implementation guides.
 - **Interface contracts** — what each implementation step creates (with exact names/signatures) and what it consumes from earlier steps or other stories
 - **Test criteria** (how to verify success)
 - **Dependencies** (what must come before/after — at story level)
-- **Traceability** — which product spec ACs this satisfies, which tech spec section it implements
+- **Traceability** — which PoC spec ACs this satisfies, which tech spec section it implements
 
 ### Content must NEVER contain
 

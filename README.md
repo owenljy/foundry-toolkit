@@ -14,6 +14,7 @@ when to defer to `now-sdk` and when to act on their own.
 |---|---|
 | **[`now-mcp`](plugins/now-mcp/README.md)** | A small, trustworthy, **Fluent-native** [MCP](https://modelcontextprotocol.io) server that lets Claude **operate a running ServiceNow instance** — read/write runtime data, inspect schema, run scripts, manage attachments. Carries the `sn-docs-search` skill and a SessionStart hook that injects the standing Fluent-workflow rules into a Fluent project's `CLAUDE.md`. |
 | **[`aia-toolkit`](plugins/aia-toolkit/README.md)** | Skills for the full **ServiceNow AI Agent lifecycle** — build an agent as now-sdk Fluent, audit it against deployment guardrails, build eval datasets, set up the platform eval pipeline, and analyze runtime execution traces. Skills-only; pairs with `now-mcp` for live-instance reads. |
+| **[`sn-poc`](plugins/sn-poc/README.md)** | Skills that take a **PoC feature idea from a sentence to implementation-ready stories** — challenge the idea, generate client meeting questions, write a client-approvable spec and a technical spec, decompose into stories. Skills-only; start with `/sn-poc:intake`. |
 
 ## The idea in one paragraph
 
@@ -44,13 +45,15 @@ install whichever plugins you want:
 /plugin marketplace add <REPO_URL>
 /plugin install now-mcp@foundry-suite      # the MCP server + Fluent skills/hook
 /plugin install aia-toolkit@foundry-suite  # the AI Agent lifecycle skills (optional)
+/plugin install sn-poc@foundry-suite       # the PoC intake-to-planning skills (optional)
 /reload-plugins
 ```
 
 Install `now-mcp` alone for the data/schema/script tools; add `aia-toolkit` when
-you work on ServiceNow AI Agents. `aia-toolkit` is skills-only (no setup form)
-and uses `now-mcp` for its live-instance reads, so installing both is the usual
-setup.
+you work on ServiceNow AI Agents, and `sn-poc` when you're scoping and planning
+a new PoC feature. Both `aia-toolkit` and `sn-poc` are skills-only (no setup
+form) and use `now-mcp` for their live-instance reads, so installing all three
+is the usual setup.
 
 Neither plugin installs `now-sdk` itself — get the CLI separately from
 [`github.com/ServiceNow/sdk`](https://github.com/ServiceNow/sdk)
@@ -64,6 +67,8 @@ plugin's README:
   safety model.
 - **[`plugins/aia-toolkit/README.md`](plugins/aia-toolkit/README.md)** — the five
   AI Agent skills, where to start, and the eval flow.
+- **[`plugins/sn-poc/README.md`](plugins/sn-poc/README.md)** — the discovery →
+  spec → planning pipeline, where to start, and what each phase produces.
 
 ---
 
@@ -74,7 +79,8 @@ foundry-suite/
 ├── .claude-plugin/marketplace.json   # the marketplace manifest
 ├── plugins/
 │   ├── now-mcp/                       # the MCP server plugin (self-contained)
-│   └── aia-toolkit/                   # the AI Agent skills plugin
+│   ├── aia-toolkit/                   # the AI Agent skills plugin
+│   └── sn-poc/                        # the PoC intake-to-planning skills plugin
 ├── docs/
 ├── LICENSE
 └── README.md                         # you are here

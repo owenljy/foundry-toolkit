@@ -1,16 +1,15 @@
 # Specification Templates
 
-> Reference file for the spec-agent. Defines the exact structure of both output files. Phase A produces `specification.md`; Phase B produces `technical-spec.md`. Follow both templates precisely.
+> Reference file for the spec-agent. `poc-spec.md` and `technical-spec.md` are not saved as separate files — they define the exact content structure that lives inside `index.html`'s `#structured-data` JSON (Phase A populates the PoC spec structure, Phase B the technical spec structure) and what the Export Markdown button must reproduce. Follow both templates precisely.
 
 ---
 
-## specification.md (Phase A — Product Spec)
+## poc-spec.md (Phase A — PoC Spec)
 
 ```markdown
 # <Feature Name>
 
-**Feature ID:** `<feature-id>`
-**Discovery Brief:** `./specs/<FEATURE_ID>/discovery/discovery-brief.md`
+**Discovery Output:** `./intake-docs/discovery/index.html`
 **Status:** draft | approved
 
 ## Overview
@@ -136,9 +135,7 @@ flowchart TD
 ```markdown
 # <Feature Name> — Technical Specification
 
-**Feature ID:** `<feature-id>`
-**Product Specification:** `./specs/<FEATURE_ID>/spec/specification.md`
-**Architecture Diagrams:** `./specs/<FEATURE_ID>/spec/diagrams.md`
+**Spec Output:** `./intake-docs/spec/index.html`
 **Application Scope:** `<scope_name>`
 
 ## Overview
@@ -329,7 +326,7 @@ erDiagram
 **Subject:** `<subject line>`
 **Body Summary:** <what information it contains>
 
-<Only include Notifications section if the product spec defines notifications.>
+<Only include Notifications section if the PoC spec defines notifications.>
 
 ## Configuration
 
@@ -339,7 +336,7 @@ erDiagram
 |---------------|------|---------|-------------|---------|
 | `<scope>.<name>` | <String / Boolean / Integer> | <default> | <what it controls> | <components that read it> |
 
-<Only include if the product spec defines configurable settings.>
+<Only include if the PoC spec defines configurable settings.>
 
 ## Integrations
 
@@ -363,7 +360,7 @@ erDiagram
 
 | Flow | Steps | Pass Condition |
 |------|-------|---------------|
-| <flow name from product spec> | <numbered steps: 1. Navigate to X, 2. Do Y> | <what success looks like> |
+| <flow name from PoC spec> | <numbered steps: 1. Navigate to X, 2. Do Y> | <what success looks like> |
 
 ### ACL Spot-Checks
 
@@ -375,7 +372,7 @@ erDiagram
 
 | Scenario | Steps | Expected Behavior |
 |----------|-------|------------------|
-| <from product spec edge cases> | <how to trigger it> | <what should happen> |
+| <from PoC spec edge cases> | <how to trigger it> | <what should happen> |
 
 ### Demo Data
 
@@ -389,7 +386,7 @@ erDiagram
 |------------|---------------------|------------------------|-------|
 | <story title> | <specific AC> | `<component list>` | <Data / Logic / Security / UI> |
 
-<Every AC from the product spec must appear here. Flag any unmapped ACs as open questions.>
+<Every AC from the PoC spec must appear here. Flag any unmapped ACs as open questions.>
 
 ## Architecture Decisions
 
@@ -443,43 +440,28 @@ graph LR
 
 ## index.html
 
-Generate a self-contained HTML file rendering both specifications in a single navigable page.
+`index.html` is the **only output artifact** for the spec phase — there are no separate `poc-spec.md`, `technical-spec.md`, or `diagrams.md` files. It is the source of truth: the planning-agent reads from it; users edit it inline in the browser; the Export Markdown button derives both `.md` files (and `diagrams.md` if extra diagrams exist) on demand.
 
-### Requirements
+### How to generate
 
-| Requirement | Details |
-|-------------|---------|
-| Self-contained | Single HTML file, inline CSS and JS |
-| No external dependencies | Mermaid loaded from CDN is the only exception |
-| Responsive | Desktop and tablet |
-| Two-audience | Product spec section readable by clients; tech spec section for engineers |
+1. Copy `./plugins/sn-poc/skills/spec/index-template.html` verbatim
+2. Fill every `{{PLACEHOLDER}}` with real content (placeholders and their expected content are documented in the template's comment block)
+3. Populate the `#structured-data` JSON block:
+   - **Phase A** (PoC spec): populate `pocSpec` only. Leave `techSpec` and `diagrams` as empty defaults.
+   - **Phase B** (technical spec, after PoC spec approval): read the existing `index.html` back, merge `techSpec` and `diagrams` into the same JSON object, and rewrite the file — do not create a second file.
+4. Save to `./intake-docs/spec/index.html`
 
-### Required Sections
+See `index-template.html` for the full component reference (story cards, screen cards, ADR blocks, ACL blocks, mermaid diagram editors, editable tables and lists) and [spec-agent.md](../../agents/spec-agent.md) for the authoritative field-by-field JSON schema. The navigation sidebar (grouped PoC / Technical, with Technical collapsed by default per the two-audience requirement below), inline editing, Export Markdown, Save HTML, and Reset are all built into the template — do not reimplement them.
 
-1. **Header** — Feature name, feature ID, status
-2. **Product Specification** — all sections from `specification.md`
-3. **Technical Specification** — all sections from `technical-spec.md`, collapsible by default for client audiences
-4. **Diagrams** — if `diagrams.md` was generated, embed Mermaid blocks inline
+### Two-audience behavior
 
-### Navigation
-
-Sidebar with clear separation between product and technical sections. Technical spec sections collapsed by default.
-
-Use the same dark theme and component styles as the discovery `index.html` template, with accent color `#6c63ff` (purple) to visually distinguish from the discovery step (amber).
-
-### Key UI elements
-
-- `.story-card` — for each user story (border-left accent, checklist ACs)
-- `.screen-card` — for screen descriptions
-- Mermaid blocks in `.mermaid` divs, rendered client-side
-- Tables with striped rows
-- `.badge` elements for status markers (Open Question, TBD, etc.)
+Technical Specification sections are collapsed by default (`.tech-collapsible`, toggled via the "Show Technical Spec" sidebar button) so the page defaults to a client-safe view of just the PoC Specification. Mermaid diagrams (existing architecture, relationships, user flows, implementation plan phases, and any extra diagrams from Phase B8) render client-side via the Mermaid CDN — the one documented exception to "no external dependencies."
 
 ---
 
 ## Writing Guidelines
 
-### Product spec (specification.md)
+### PoC spec (poc-spec.md)
 - **Non-technical language only** — no databases, tables, APIs, scripts, or fields
 - **Describe user experience**, not system behavior
 - **Every AC must be testable** — if you can't write a yes/no test for it, rewrite it
