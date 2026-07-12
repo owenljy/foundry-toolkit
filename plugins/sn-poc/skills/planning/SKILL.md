@@ -1,6 +1,6 @@
 ---
 name: planning
-description: Transform technical specifications into self-contained stories with implementation steps. Triggers on "/sn-poc:planning", "plan this feature", "create stories".
+description: Transform technical specifications into self-contained stories with implementation steps. Triggers on "/sn-poc:planning", "plan this PoC", "create stories".
 context: fork
 agent: planning-agent
 ---

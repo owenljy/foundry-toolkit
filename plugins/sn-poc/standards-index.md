@@ -1,6 +1,6 @@
 # Standards Reference Index
 
-> Routing table for ServiceNow architecture standards docs. Load the doc for each component type you are designing or decomposing — not all of them, only what the current feature touches.
+> Routing table for ServiceNow architecture standards docs. Load the doc for each component type you are designing or decomposing — not all of them, only what the current PoC touches.
 >
 > All paths are relative to `plugins/sn-poc/docs/`.
 

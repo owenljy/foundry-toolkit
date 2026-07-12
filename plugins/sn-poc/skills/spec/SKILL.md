@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Transform discovery findings and client meeting answers into a complete PoC specification (client-approvable) and technical specification (engineering-ready), in one session. Triggers on "/sn-poc:spec", "write the spec", "spec this feature".
+description: Transform discovery findings and client meeting answers into a complete PoC specification (client-approvable) and technical specification (engineering-ready), in one session. Triggers on "/sn-poc:spec", "write the spec", "spec this PoC".
 context: fork
 agent: spec-agent
 ---

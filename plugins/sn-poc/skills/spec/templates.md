@@ -7,14 +7,14 @@
 ## poc-spec.md (Phase A — PoC Spec)
 
 ```markdown
-# <Feature Name>
+# <PoC Name>
 
 **Discovery Output:** `./intake-docs/discovery/index.html`
 **Status:** draft | approved
 
 ## Overview
 
-<2-3 sentence elevator pitch: what this feature does and why it matters. Written so any client stakeholder would understand it — no technical terms.>
+<2-3 sentence elevator pitch: what this PoC does and why it matters. Written so any client stakeholder would understand it — no technical terms.>
 
 ## Problem Statement
 
@@ -22,7 +22,7 @@
 
 ## How It Works Today
 
-<The current experience relevant to this feature. What do people do now? What tools or workarounds do they use? If this is entirely new capability with no existing workflow, state that clearly.>
+<The current experience relevant to this PoC. What do people do now? What tools or workarounds do they use? If this is entirely new capability with no existing workflow, state that clearly.>
 
 ## Users & Personas
 
@@ -133,7 +133,7 @@ flowchart TD
 ## technical-spec.md (Phase B — Tech Spec)
 
 ```markdown
-# <Feature Name> — Technical Specification
+# <PoC Name> — Technical Specification
 
 **Spec Output:** `./intake-docs/spec/index.html`
 **Application Scope:** `<scope_name>`
@@ -144,7 +144,7 @@ flowchart TD
 
 ## Existing Architecture
 
-<Current state of the system this feature will touch or extend.>
+<Current state of the system this PoC will touch or extend.>
 
 ### Current Data Model
 
@@ -302,7 +302,7 @@ erDiagram
 |------------|----------|------------|-------------|
 | `<scope.event_name>` | <component> | `parm1`: <value> | <consumer> |
 
-<Only include Automation section if the feature requires it.>
+<Only include Automation section if the PoC requires it.>
 
 ## Notifications
 
@@ -350,7 +350,7 @@ erDiagram
 |--------|----------|----------|------|
 | <GET/POST/PUT/DELETE> | `/<path>` | <schema summary> | <role or "Public"> |
 
-<Only include if the feature has API requirements.>
+<Only include if the PoC has API requirements.>
 
 ## Verification Checklist
 

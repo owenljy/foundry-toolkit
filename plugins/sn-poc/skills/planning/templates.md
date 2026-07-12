@@ -1,6 +1,6 @@
 # Planning Templates
 
-> Reference file for the planning-agent. These templates define the exact structure of all planning output files. Follow them precisely for consistency across features.
+> Reference file for the planning-agent. These templates define the exact structure of all planning output files. Follow them precisely for consistency across PoCs.
 
 ---
 

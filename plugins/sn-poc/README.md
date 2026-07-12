@@ -1,25 +1,36 @@
 # sn-poc
 
-Claude Code skills that take a ServiceNow PoC feature idea from a rough
-sentence to engineering-ready implementation stories. Part of the
-[`foundry-suite`](../../README.md) marketplace; Phase B of the spec skill uses
-whatever ServiceNow MCP is connected (`now-mcp` is the natural pair) to explore
-the live instance.
+Claude Code skills that take a ServiceNow PoC — starting from whatever project
+context already exists (call notes, sales threads, transcripts) or a rough
+description you give it — to engineering-ready implementation stories. Part of
+the [`foundry-suite`](../../README.md) marketplace; Phase B of the spec skill
+uses whatever ServiceNow MCP is connected (`now-mcp` is the natural pair) to
+explore the live instance.
 
 ---
 
 ## Start here
 
-**New feature, first time using this plugin?** Run:
+**First time using this plugin on a PoC?** Just run:
 
 ```
-/sn-poc:intake <a sentence describing the feature>
+/sn-poc:intake
 ```
 
-That's the only command you need to know to get going. It runs the full
-pipeline — discovery → spec → planning — pausing for your approval at each
-gate, and it's safe to run again later: it detects what's already in
-`./intake-docs/` and resumes from wherever you left off.
+No arguments needed. It will:
+
+1. **Scan the project folder first** for anything that looks like customer
+   call notes, a sales thread, a transcript, or a requirements doc — and ask
+   which (if any) to use before reading them.
+2. If it finds nothing, ask you to describe the PoC in a sentence or two.
+
+You can also skip straight to step 2 by describing the PoC and its context up
+front: `/sn-poc:intake <description of the PoC / project context>`.
+
+Either way, it then runs the full pipeline — discovery → spec → planning —
+pausing for your approval at each gate, and it's safe to run again later: it
+detects what's already in `./intake-docs/` and resumes from wherever you left
+off.
 
 Everything below is for once you're mid-flow and want to jump to a specific
 phase, or want to understand what each phase actually produces.
@@ -28,7 +39,8 @@ phase, or want to understand what each phase actually produces.
 
 ## Prerequisites
 
-- None required to start — `/sn-poc:intake` works from a single sentence.
+- None required to start — `/sn-poc:intake` works with no arguments at all,
+  falling back to a project scan or a one-sentence description.
 - **A ServiceNow MCP** (e.g. `now-mcp`) makes Phase B of the spec step
   (technical design) much better — it lets the agent look at the real instance
   (existing tables, roles, ACLs) instead of designing blind. Optional; the spec
@@ -51,7 +63,7 @@ Install from the `foundry-suite` marketplace:
 ## The pipeline
 
 ```
-   feature idea
+   PoC idea
         │
         ▼
  1. Discovery ──► discovery-brief.md + index.html  ──►  [client meeting]
@@ -76,8 +88,8 @@ approval before crossing it. Nothing runs ahead of you.
 
 | Skill | What it does |
 |---|---|
-| `intake` | **Entry point.** Runs the full pipeline above in one flow, auto-detecting and resuming from wherever the feature currently stands. |
-| `discover` | Stress-tests the feature idea, generates client meeting questions, anticipates end-user FAQ. Can scan the project for existing call notes/transcripts first (asks before reading anything). |
+| `intake` | **Entry point.** Runs the full pipeline above in one flow, auto-detecting and resuming from wherever the PoC currently stands. |
+| `discover` | Stress-tests the PoC idea, generates client meeting questions, anticipates end-user FAQ. Can scan the project for existing call notes/transcripts first (asks before reading anything). |
 | `spec` | Turns client meeting answers into a PoC spec the client can approve, then a technical spec (data model, security, UI, automation) the engineering team can build from. |
 | `planning` | Decomposes the technical spec into numbered stories with ordered implementation steps and exact-name interface contracts between them. |
 
@@ -85,8 +97,8 @@ approval before crossing it. Nothing runs ahead of you.
 
 | Situation | Command |
 |---|---|
-| Brand new feature idea | `/sn-poc:intake <idea>` |
-| Have call notes / sales transcript already in the project | `/sn-poc:intake` — Discovery will find and offer to use them |
+| Brand new PoC, call notes / sales transcript already in the project | `/sn-poc:intake` — it scans first and offers to use them |
+| Brand new PoC, nothing written down yet | `/sn-poc:intake` — it'll ask you to describe it |
 | Just back from the client meeting, discovery already done | `/sn-poc:intake` (auto-resumes at Spec) or `/sn-poc:spec` directly |
 | PoC spec approved, need the tech spec | Continue in the same `/sn-poc:spec` session — Phase B follows automatically |
 | Tech spec done, need a story backlog | `/sn-poc:intake` (auto-resumes at Planning) or `/sn-poc:planning` directly |
@@ -106,5 +118,5 @@ Claude, MCP, or any specific tool — so any engineer can pick them up.
 
 `spec` (Phase B) and `planning` load ServiceNow architecture standards
 on demand from [`standards-index.md`](standards-index.md) — only the docs for
-component types the feature actually touches (tables, ACLs, scoped-app
+component types the PoC actually touches (tables, ACLs, scoped-app
 conventions, integrations), not the whole set every time.

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Spec — {{FEATURE_NAME}}</title>
+  <title>Spec — {{POC_NAME}}</title>
   <style>
     /* ── ServiceNow brand: Infinite Blue base, Bright Purple accent (spec) ── */
     :root {
@@ -162,7 +162,7 @@
   Full JSON shape for #structured-data — see agents/spec-agent.md for the
   authoritative field-by-field schema. Skeleton:
   {
-    "featureName": "Visitor RSVP",
+    "pocName": "Visitor RSVP",
     "date": "2026-07-10",
     "status": "draft",
     "pocSpec": {
@@ -202,7 +202,7 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo">ServiceNow PoC</div>
-      <div class="sidebar-title" id="featureNameEl">{{FEATURE_NAME}}</div>
+      <div class="sidebar-title" id="pocNameEl">{{POC_NAME}}</div>
       <span class="status-pill" id="statusPill">{{STATUS}}</span>
     </div>
     <nav class="sidebar-nav">
@@ -508,7 +508,7 @@ function cardsEditor(el, items, opts) {
 function noteOrTable(tableEl, noteEl, rows, cols, note, notePath, addLabel) {
   tableSection(tableEl, rows, cols, {addLabel});
   noteEl.innerHTML = `<div class="hint">If none apply, say so here instead of adding rows:</div>
-    <textarea class="field-input" rows="2" data-note placeholder="e.g. No notifications required — this feature has no async events.">${esc(note)}</textarea>`;
+    <textarea class="field-input" rows="2" data-note placeholder="e.g. No notifications required — this PoC has no async events.">${esc(note)}</textarea>`;
   noteEl.querySelector('[data-note]').addEventListener('input', e => { notePath(e.target.value); save(); });
 }
 
@@ -715,7 +715,7 @@ function renderTech() {
 
   const archEl = document.getElementById('t-existing-arch');
   archEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Existing Architecture</h2>
-    <div class="brief-box"><textarea class="field-input" rows="4" data-field="1" placeholder="Current state of the system this feature will touch or extend.">${esc(ts.existingArchitecture.description)}</textarea></div>
+    <div class="brief-box"><textarea class="field-input" rows="4" data-field="1" placeholder="Current state of the system this PoC will touch or extend.">${esc(ts.existingArchitecture.description)}</textarea></div>
     <h3 class="subhead">Current Data Model</h3><div data-diagram></div>
     <h3 class="subhead">Current Components</h3><div data-components></div>`;
   archEl.querySelector('[data-field]').addEventListener('input', e => { ts.existingArchitecture.description = e.target.value; save(); });
@@ -872,7 +872,7 @@ function renderTech() {
   });
 
   const autoEl = document.getElementById('t-automation');
-  autoEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Automation</h2><p class="hint">Only needed if the feature requires Flows, Scheduled Jobs, or Events.</p>
+  autoEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Automation</h2><p class="hint">Only needed if the PoC requires Flows, Scheduled Jobs, or Events.</p>
     <h3 class="subhead">Flows</h3><div data-flows></div>
     <h3 class="subhead">Events</h3><div data-events></div>`;
   cardsEditor(autoEl.querySelector('[data-flows]'), ts.automation.flows, {
@@ -921,7 +921,7 @@ function renderTech() {
   tableSection(cfgEl.querySelector('[data-slot]'), ts.configuration.systemProperties, COLS.sysProp, {addLabel:'Add Property'});
 
   const intEl = document.getElementById('t-integrations');
-  intEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Integrations</h2><p class="hint">Only needed if the feature has API requirements.</p>
+  intEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Integrations</h2><p class="hint">Only needed if the PoC has API requirements.</p>
     <h3 class="subhead">Inbound REST APIs</h3><div data-slot></div>`;
   cardsEditor(intEl.querySelector('[data-slot]'), ts.integrations.inboundApis, {
     addLabel:'Add API', emptyHint:'No inbound APIs yet.',
@@ -1049,7 +1049,7 @@ function mdTable(cols, rows) {
 }
 
 function buildMarkdown() {
-  const name = DOC.featureName || document.getElementById('featureNameEl').textContent.trim();
+  const name = DOC.pocName || document.getElementById('pocNameEl').textContent.trim();
   const status = DOC.status || 'draft';
   const ps = DOC.pocSpec, ts = DOC.techSpec;
   const L = [];

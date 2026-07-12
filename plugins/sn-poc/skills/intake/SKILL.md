@@ -1,7 +1,7 @@
 ---
 name: intake
-description: Full PoC intake pipeline — takes a raw feature idea all the way through discovery, spec, and planning in one flow. Auto-detects where the PoC currently stands and resumes from the right phase. Use this as the single entry point; run the individual phase skills (discover/spec/planning) only to re-enter a specific phase mid-flow.
-argument-hint: <feature idea>
+description: Full PoC intake pipeline — takes a raw PoC idea all the way through discovery, spec, and planning in one flow. Auto-detects where the PoC currently stands and resumes from the right phase. Use this as the single entry point; run the individual phase skills (discover/spec/planning) only to re-enter a specific phase mid-flow.
+argument-hint: <PoC idea>
 context: fork
 agent: pipeline-agent
 ---
@@ -10,7 +10,7 @@ agent: pipeline-agent
 
 $ARGUMENTS
 
-If no input was provided above, check `./intake-docs/` for existing progress first. If nothing exists yet, ask the user: "What feature are you working on? Give me a rough idea — even a sentence is enough to start."
+If no input was provided above, check `./intake-docs/` for existing progress first. If nothing exists yet, ask the user: "What PoC are you working on? Give me a rough idea — even a sentence is enough to start."
 
 ## How this works
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Discovery — {{FEATURE_NAME}}</title>
+  <title>Discovery — {{POC_NAME}}</title>
   <style>
     /* ── ServiceNow brand: Infinite Blue base, Wasabi Green accent ── */
     :root {
@@ -182,7 +182,7 @@
 
   JSON shape for #structured-data:
   {
-    "featureName": "Visitor RSVP",
+    "pocName": "Visitor RSVP",
     "date": "2026-07-10",
     "status": "draft",
     "customTags": [
@@ -239,7 +239,7 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo">ServiceNow PoC</div>
-      <div class="sidebar-title" id="featureNameEl">{{FEATURE_NAME}}</div>
+      <div class="sidebar-title" id="pocNameEl">{{POC_NAME}}</div>
       <span class="status-pill" id="statusPill">{{STATUS}}</span>
     </div>
     <nav class="sidebar-nav">
@@ -957,7 +957,7 @@ function tagLabel(id) {
 }
 
 function buildMarkdown() {
-  const name   = DOC.featureName || document.getElementById('featureNameEl').textContent.trim();
+  const name   = DOC.pocName || document.getElementById('pocNameEl').textContent.trim();
   const date   = new Date().toISOString().slice(0,10);
   const status = DOC.status || 'draft';
   const lines  = [];

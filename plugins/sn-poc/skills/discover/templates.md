@@ -7,14 +7,14 @@
 ## discovery-brief.md
 
 ```markdown
-# Discovery Brief: <Feature Name>
+# Discovery Brief: <PoC Name>
 
 **Prepared:** <date>
 **Status:** draft | approved
 
 ## What We're Looking At
 
-<1-2 sentence plain-language summary of the feature idea being evaluated.>
+<1-2 sentence plain-language summary of the PoC idea being evaluated.>
 
 ---
 
@@ -76,7 +76,7 @@
 ## customer-faq.md
 
 ```markdown
-# Customer FAQ: <Feature Name>
+# Customer FAQ: <PoC Name>
 
 **Prepared:** <date>
 
@@ -130,7 +130,7 @@
 ## client-brief.md
 
 ```markdown
-# <Feature Name> — Project Brief
+# <PoC Name> — Project Brief
 
 **Prepared for:** <Client Name / Team>
 **Date:** <date>
@@ -139,13 +139,13 @@
 
 ## What We're Proposing
 
-<2-3 sentences in plain business language describing the feature. No technical terms. Written so someone who has never used the system can understand it.>
+<2-3 sentences in plain business language describing the PoC. No technical terms. Written so someone who has never used the system can understand it.>
 
 ---
 
 ## Why This Matters
 
-<The problem this solves. Be specific about who is affected and what currently happens without this feature.>
+<The problem this solves. Be specific about who is affected and what currently happens without this PoC.>
 
 ---
 

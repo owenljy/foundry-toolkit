@@ -1,18 +1,18 @@
 ---
 name: discover
-description: Pre-meeting discovery — challenge a feature idea, generate client meeting questions, anticipate end-user FAQ, and produce a client-ready brief. Triggers on "/sn-poc:discover", "discover this feature", "prep for client meeting".
-argument-hint: <feature idea or description>
+description: Pre-meeting discovery — challenge a PoC idea, generate client meeting questions, anticipate end-user FAQ, and produce a client-ready brief. Triggers on "/sn-poc:discover", "discover this PoC", "prep for client meeting".
+argument-hint: <PoC idea or description>
 context: fork
 agent: discovery-agent
 ---
 
 # Discover
 
-Prepare for the client meeting on this feature idea:
+Prepare for the client meeting on this PoC idea:
 
 $ARGUMENTS
 
-If no feature idea was provided above, ask the user: "What feature are you planning to discuss with the client? Give me a rough description — even a sentence is enough to start."
+If no PoC idea was provided above, ask the user: "What PoC are you planning to discuss with the client? Give me a rough description — even a sentence is enough to start."
 
 ## How this skill works
 
