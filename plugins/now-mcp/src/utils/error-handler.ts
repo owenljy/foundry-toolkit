@@ -16,12 +16,17 @@ import { type FailureContext, failureHints, renderHints } from './failure-enrich
 import { logger } from './logger.js';
 import { toolText } from './tool-response.js';
 
+/** Shape of a ServiceNow Table/Stats API error response body. */
+interface ServiceNowErrorBody {
+	error?: { message?: string };
+}
+
 /**
  * Transforms an HTTP (non-2xx response) error into a ServiceNow-specific error.
  */
 export function transformHttpError(error: HttpError): ServiceNowError {
 	const { status, data } = error;
-	const servicenowError = data as any;
+	const servicenowError = data as ServiceNowErrorBody | undefined;
 
 	logger.debug('ServiceNow API error', {
 		status,
