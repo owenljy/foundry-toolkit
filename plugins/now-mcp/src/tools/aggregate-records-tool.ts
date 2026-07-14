@@ -12,12 +12,12 @@ import { toolResult } from '../utils/tool-response.js';
 export const AGGREGATE_RECORDS_TOOL = {
 	name: 'sn_aggregate_records',
 	title: 'Aggregate records',
-	description: `What: Compute a count, or avg/sum/min/max, over a table via the Stats API — optionally grouped by one or more fields (group-by supports dot-walking).
+	description: `What: Compute a count, or avg/sum/min/max, over a table via the Stats API — optionally grouped by one or more fields (dot-walking supported).
 When to use: For "how many", "total count", "per group", "grouped by", or numeric rollups — not when you need the actual rows (use sn_query_records for those).
 Preconditions: Table must exist; the account needs read access.
-Produces: Aggregate numbers (a single object, or an array of groups when groupBy is set).
+Produces: Aggregate numbers (a single object, or an array of groups when groupBy is set). Far cheaper than querying rows and reducing client-side.
 
-Computed server-side via the Stats API — far cheaper than querying rows and reducing client-side. groupBy supports dot-walking; having filters post-aggregation (e.g. "count>5"). When grouping by a reference field (assignment_group, caller_id, …) pass displayValue=true so groups come back as names, not sys_ids — otherwise you need a second lookup to resolve them.
+having filters post-aggregation (e.g. "count>5"). When grouping by a reference field (assignment_group, caller_id, …), pass displayValue=true so groups come back as names instead of sys_ids.
 
 Examples:
 - Count P1s per group (as names): tableName="incident", query="priority=1", groupBy=["assignment_group"], count=true, displayValue=true

@@ -18,9 +18,7 @@ export const UPDATE_RECORD_TOOL = {
 	description: `What: Modify an existing record (PATCH partial or PUT full) by sys_id.
 When to use: To change field values on a known record. For app metadata, use the Fluent SDK instead.
 Preconditions: Write-enabled instance (readOnly: false); valid sys_id; field names valid for the table (validated automatically).
-Produces: sys_id plus the fields you changed (not the whole row).
-
-Example: tableName="incident", sysId="abc123...", fields={"state":"2"}, updateType="full"`,
+Produces: sys_id plus the fields you changed (not the whole row).`,
 	inputSchema: UpdateRecordSchema,
 	outputSchema: UpdateRecordOutputSchema,
 };

@@ -23,10 +23,7 @@ export const SWITCH_DEFAULT_INSTANCE_TOOL = {
 	description: `What: Change which configured instance receives calls that omit the 'instance' parameter, for the current session only.
 When to use: When you want subsequent tool calls to target a different instance without passing 'instance' on every call.
 Preconditions: The named instance must already be configured (see sn_sdk_status / your config for available names). Read access is enough — this does not write to any instance.
-Produces: The previous and new default instance names, plus a connectivity probe result (connectivityVerified + detail). This only changes the in-memory session default; it does NOT persist to the config YAML.
-
-Example:
-- instance="dev"`,
+Produces: The previous and new default instance names, plus a connectivity probe result (connectivityVerified + detail). This only changes the in-memory session default; it does NOT persist to the config YAML.`,
 	inputSchema: SwitchDefaultInstanceSchema,
 	outputSchema: SwitchDefaultInstanceOutputSchema,
 };

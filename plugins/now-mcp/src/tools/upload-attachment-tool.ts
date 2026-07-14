@@ -15,10 +15,7 @@ export const UPLOAD_ATTACHMENT_TOOL = {
 	description: `What: Attach a file to a ServiceNow record. File content is passed as a base64-encoded string.
 When to use: To add a file to an existing record.
 Preconditions: Write-enabled instance (readOnly: false); the target record must exist.
-Produces: Attachment metadata (sys_id, size, content type).
-
-Example:
-- fileName="screenshot.png", fileContent="<base64>", tableName="incident", recordSysId="abc123..."`,
+Produces: Attachment metadata (sys_id, size, content type).`,
 	inputSchema: UploadAttachmentSchema,
 	outputSchema: UploadAttachmentOutputSchema,
 };

@@ -18,9 +18,7 @@ export const CREATE_RECORD_TOOL = {
 	description: `What: Insert a new record into a ServiceNow table.
 When to use: To create data records (incident, sys_user, etc.). Do NOT use it to author app metadata (business rules, ACLs, UI policies) — that belongs in the Fluent SDK.
 Preconditions: Write-enabled instance (readOnly: false); field names valid for the table (validated automatically).
-Produces: sys_id plus the fields you set (not the whole freshly-created row).
-
-Example: tableName="incident", fields={"short_description":"Network down","priority":"2"}`,
+Produces: sys_id plus the fields you set (not the whole freshly-created row).`,
 	inputSchema: CreateRecordSchema,
 	outputSchema: CreateRecordOutputSchema,
 };

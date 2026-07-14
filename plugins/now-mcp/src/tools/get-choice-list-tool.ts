@@ -15,11 +15,7 @@ export const GET_CHOICE_LIST_TOOL = {
 	description: `What: Get the valid values for a choice (dropdown) field — label and value pairs, in display order.
 When to use: Before setting a choice field, to learn its allowed values. For all of a table's fields use sn_get_table_schema.
 Preconditions: Table and field must exist; read access.
-Produces: An array of {label, value} choices (cached ~15 min in memory, up to 24h on disk). An empty array means the field isn't a choice field or the name is wrong — check sn_get_table_schema.
-
-Examples:
-- tableName="incident", fieldName="priority"
-- tableName="change_request", fieldName="type"`,
+Produces: An array of {label, value} choices (cached ~15 min in memory, up to 24h on disk). An empty array means the field isn't a choice field or the name is wrong — check sn_get_table_schema.`,
 	inputSchema: GetChoiceListSchema,
 	outputSchema: GetChoiceListOutputSchema,
 };
