@@ -11,10 +11,7 @@ import {
 	GetTableStructureFromDataSchema,
 } from '../schemas/table-structure-schemas.js';
 import type { TableService } from '../services/table-service.js';
-import {
-	analyzeTableStructure,
-	type InferredField,
-} from '../services/table-structure-service.js';
+import { analyzeTableStructure, type InferredField } from '../services/table-structure-service.js';
 import { toolError } from '../utils/error-handler.js';
 import { logger } from '../utils/logger.js';
 import { toolResult } from '../utils/tool-response.js';
