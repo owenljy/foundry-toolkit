@@ -34,10 +34,7 @@ function parseTotalCount(raw: string | undefined): number | null {
 export function shouldFallbackToNowSdkQuery(error: unknown): boolean {
 	if (error instanceof CircuitOpenError || error instanceof NetworkError) return true;
 	if (!(error instanceof ServiceNowError)) return false;
-	return (
-		error.statusCode === 401 ||
-		(error.statusCode !== undefined && error.statusCode >= 500)
-	);
+	return error.statusCode === 401 || (error.statusCode !== undefined && error.statusCode >= 500);
 }
 
 export interface QueryRecordsResult<T extends ServiceNowRecord = ServiceNowRecord> {

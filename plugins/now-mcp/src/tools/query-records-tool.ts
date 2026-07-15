@@ -99,8 +99,13 @@ export function createQueryRecordsTool(tableService: TableService) {
 
 				// Query records
 				const startedAt = Date.now();
-				const { records, totalCount, hasMore: fallbackHasMore, source, fallbackProfile } =
-					await tableService.queryRecordsWithMeta(
+				const {
+					records,
+					totalCount,
+					hasMore: fallbackHasMore,
+					source,
+					fallbackProfile,
+				} = await tableService.queryRecordsWithMeta(
 					validated.tableName,
 					{
 						query: validated.query,

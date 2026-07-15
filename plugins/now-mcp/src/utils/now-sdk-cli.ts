@@ -242,7 +242,9 @@ export function parseNowSdkQueryOutput(output: string): Omit<NowSdkQuerySuccess,
 			nextOffset?: unknown;
 		};
 		if (parsed.ok !== true || !Array.isArray(parsed.records)) return null;
-		if (!parsed.records.every((row) => row !== null && typeof row === 'object' && !Array.isArray(row))) {
+		if (
+			!parsed.records.every((row) => row !== null && typeof row === 'object' && !Array.isArray(row))
+		) {
 			return null;
 		}
 		return {
@@ -317,7 +319,9 @@ export function queryNowSdkWithAlignedProfile(
 		return { ok: false, reason: 'installed now-sdk auth-list format is not verified' };
 	}
 	const target = normalizeHost(instanceUrl);
-	const profile = listNowSdkProfiles().find((candidate) => normalizeHost(candidate.host) === target);
+	const profile = listNowSdkProfiles().find(
+		(candidate) => normalizeHost(candidate.host) === target,
+	);
 	if (!profile) {
 		return { ok: false, reason: 'no now-sdk auth profile matches the selected MCP instance' };
 	}
