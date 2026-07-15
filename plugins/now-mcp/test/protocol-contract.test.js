@@ -25,6 +25,8 @@ const EXPECTED_CORE_TOOLS = [
   'sn_delete_record',
   'sn_get_table_schema',
   'sn_list_tables',
+  'sn_connection_status',
+  'sn_reset_connection',
 ];
 
 test('server advertises a spec-compliant tool list over MCP stdio', { timeout: 30000 }, async () => {

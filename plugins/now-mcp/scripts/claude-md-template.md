@@ -1,13 +1,22 @@
-**Before writing ANY Fluent (`*.now.ts`) code, run `now-sdk explain <topic>`** to
-get the authoritative signature — pass any name related to what you're writing (a
-partial API name, a class, a field type). Don't guess API names or type imports
-from memory:
+## Fluent workflow
+
+**For every Fluent SDK authoring or `*.now.ts` API question, use `now-sdk explain`
+first.** This includes imports, exported names, types, constructors, signatures,
+fields, and code examples—not only the moment immediately before writing code.
+Its installed-version reference is authoritative for Fluent APIs. Pass any name
+related to the task (a partial API name, class, or field type); don't guess from
+memory:
 
 ```
 now-sdk explain --list --format=raw          # full topic index
 now-sdk explain <topic> --peek --format=raw  # preview
 now-sdk explain <topic> --format=raw         # full content
 ```
+
+**Routing precedence:** `now-sdk explain` wins over `sn-docs-search` for Fluent
+SDK/API and `*.now.ts` questions. Use `sn-docs-search` for product behavior,
+administration/configuration, or release documentation outside the SDK API
+reference. Being inside a Fluent app does not by itself justify a docs search.
 
 ## Division of Labor among now-sdk, now-mcp, and skills
 - **Fluent SDK (`now-sdk`) — AUTHOR.** Defines what the application *is*: tables,

@@ -3,8 +3,70 @@
  */
 
 import type { InstanceManager } from '../client/instance-manager.js';
+import { ServiceNowError } from '../types/errors.js';
 import { logger } from '../utils/logger.js';
 import { validateWriteAccess } from '../utils/validators.js';
+
+interface ScriptExecutionResult {
+	success: boolean;
+	output?: string;
+	error?: string;
+}
+
+function errorMessage(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}
+
+function phaseError(
+	phase: string,
+	method: string,
+	endpoint: string,
+	error: unknown,
+	remediation?: string,
+): ServiceNowError {
+	const original = error instanceof ServiceNowError ? error : undefined;
+	const suffix = remediation ? ` ${remediation}` : '';
+	return new ServiceNowError(
+		`Background-script ${phase} failed: ${method} ${endpoint}: ${errorMessage(error)}.${suffix}`,
+		original?.statusCode,
+		original?.servicenowError,
+		'BACKGROUND_SCRIPT_TRANSPORT_ERROR',
+	);
+}
+
+function parseScriptApiResponse(value: unknown, endpoint: string): ScriptExecutionResult {
+	const result = (value as { result?: unknown } | null)?.result;
+	if (
+		typeof result !== 'object' ||
+		result === null ||
+		typeof (result as { success?: unknown }).success !== 'boolean'
+	) {
+		throw new ServiceNowError(
+			`Background-script Scripted REST API returned an invalid response from POST ${endpoint}; expected { result: { success: boolean, output?: string, error?: string } }`,
+			undefined,
+			undefined,
+			'BACKGROUND_SCRIPT_INVALID_RESPONSE',
+		);
+	}
+	const typed = result as ScriptExecutionResult;
+	if (typed.output !== undefined && typeof typed.output !== 'string') {
+		throw new ServiceNowError(
+			`Background-script Scripted REST API returned a non-string output from POST ${endpoint}`,
+			undefined,
+			undefined,
+			'BACKGROUND_SCRIPT_INVALID_RESPONSE',
+		);
+	}
+	if (typed.error !== undefined && typeof typed.error !== 'string') {
+		throw new ServiceNowError(
+			`Background-script Scripted REST API returned a non-string error from POST ${endpoint}`,
+			undefined,
+			undefined,
+			'BACKGROUND_SCRIPT_INVALID_RESPONSE',
+		);
+	}
+	return typed;
+}
 
 export class ScriptService {
 	constructor(private instanceManager: InstanceManager) {}
@@ -46,11 +108,9 @@ export class ScriptService {
 		// Expected contract: POST scriptApiPath {script} → {result: {success, output?, error?}}
 		if (config.scriptApiPath) {
 			try {
-				const response = await client.post<{
-					result: { success: boolean; output?: string; error?: string };
-				}>(config.scriptApiPath, { script });
+				const response = await client.post<unknown>(config.scriptApiPath, { script });
 				const executionTime = Date.now() - startTime;
-				const r = response.result;
+				const r = parseScriptApiResponse(response, config.scriptApiPath);
 				logger.info('Background script completed via Scripted REST', {
 					success: r.success,
 					executionTime,
@@ -59,7 +119,19 @@ export class ScriptService {
 			} catch (error) {
 				const executionTime = Date.now() - startTime;
 				logger.error('Background script failed via Scripted REST', { error, executionTime });
-				throw error;
+				if (
+					error instanceof ServiceNowError &&
+					error.code === 'BACKGROUND_SCRIPT_INVALID_RESPONSE'
+				) {
+					throw error;
+				}
+				throw phaseError(
+					'Scripted REST execution',
+					'POST',
+					config.scriptApiPath,
+					error,
+					'Verify that scriptApiPath matches an installed, active Scripted REST resource and that this user can execute it.',
+				);
 			}
 		}
 
@@ -80,16 +152,33 @@ export class ScriptService {
 			const propKey = `mcp.script.output.${triggerName}`;
 
 			// Step 1: Create the sys_properties mailbox.
-			const propCreate = await client.post<{ result: { sys_id: string } }>(
-				'/api/now/table/sys_properties',
-				{
+			const mailboxEndpoint = '/api/now/table/sys_properties';
+			let propCreate: { result: { sys_id: string } };
+			try {
+				propCreate = await client.post<{ result: { sys_id: string } }>(mailboxEndpoint, {
 					name: propKey,
 					value: JSON.stringify({ status: 'pending' }),
 					description: 'Temporary MCP background-script output buffer — safe to delete',
 					type: 'string',
-				},
-			);
+				});
+			} catch (error) {
+				throw phaseError(
+					'mailbox creation',
+					'POST',
+					mailboxEndpoint,
+					error,
+					'The sys_trigger fallback requires Table API create/read/delete access to sys_properties. Configure a working scriptApiPath when protected system tables are not exposed.',
+				);
+			}
 			const propSysId = propCreate.result.sys_id;
+			if (!propSysId) {
+				throw new ServiceNowError(
+					`Background-script mailbox creation returned no sys_id from POST ${mailboxEndpoint}`,
+					undefined,
+					undefined,
+					'BACKGROUND_SCRIPT_INVALID_RESPONSE',
+				);
+			}
 			logger.debug(`Created sys_properties mailbox: ${propKey}`);
 
 			// Step 2: Build and create the Run Once trigger.
@@ -136,13 +225,33 @@ export class ScriptService {
       `;
 
 			const nowSN = new Date().toISOString().slice(0, 19).replace('T', ' ');
-			await client.post('/api/now/table/sys_trigger', {
-				name: triggerName,
-				trigger_type: '0', // Run Once — scheduler picks up and deletes after execution
-				next_action: nowSN,
-				script: wrappedScript,
-				active: true,
-			});
+			const triggerEndpoint = '/api/now/table/sys_trigger';
+			try {
+				await client.post(triggerEndpoint, {
+					name: triggerName,
+					trigger_type: '0', // Run Once — scheduler picks up and deletes after execution
+					next_action: nowSN,
+					script: wrappedScript,
+					active: true,
+				});
+			} catch (error) {
+				// The trigger was never created, so remove the mailbox immediately.
+				try {
+					await client.delete(`${mailboxEndpoint}/${propSysId}`);
+				} catch (cleanupError) {
+					logger.warn('Failed to clean up mailbox after trigger creation failure', {
+						propKey,
+						error: cleanupError,
+					});
+				}
+				throw phaseError(
+					'trigger creation',
+					'POST',
+					triggerEndpoint,
+					error,
+					'The sys_trigger fallback requires Table API create access to sys_trigger. Configure a working scriptApiPath when this protected table is not exposed.',
+				);
+			}
 			logger.debug(`Created sys_trigger (Run Once): ${triggerName}`);
 
 			// Step 3: Poll sys_properties until status=done or timeout.
@@ -153,10 +262,23 @@ export class ScriptService {
 			while (Date.now() < deadline) {
 				await new Promise((resolve) => setTimeout(resolve, pollInterval));
 
-				const propPoll = await client.get<{ result: { value: string } }>(
-					`/api/now/table/sys_properties/${propSysId}`,
-					{ sysparm_fields: 'value' },
-				);
+				const pollEndpoint = `${mailboxEndpoint}/${propSysId}`;
+				let propPoll: { result: { value: string } };
+				try {
+					propPoll = await client.get<{ result: { value: string } }>(pollEndpoint, {
+						sysparm_fields: 'value',
+					});
+				} catch (error) {
+					try {
+						await client.delete(pollEndpoint);
+					} catch (cleanupError) {
+						logger.warn('Failed to clean up mailbox after polling failure', {
+							propKey,
+							error: cleanupError,
+						});
+					}
+					throw phaseError('mailbox polling', 'GET', pollEndpoint, error);
+				}
 
 				try {
 					const data = JSON.parse(propPoll.result.value);
@@ -171,7 +293,7 @@ export class ScriptService {
 
 			// Step 4: Clean up sys_properties (trigger is already deleted by scheduler).
 			try {
-				await client.delete(`/api/now/table/sys_properties/${propSysId}`);
+				await client.delete(`${mailboxEndpoint}/${propSysId}`);
 				logger.debug(`Cleaned up sys_properties mailbox: ${propKey}`);
 			} catch (cleanupError) {
 				logger.warn('Failed to clean up sys_properties mailbox', { propKey, error: cleanupError });

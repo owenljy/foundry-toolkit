@@ -3,15 +3,20 @@
  */
 
 import { API_ENDPOINTS, HTTP_CONFIG } from '../config/constants.js';
-import { HttpError, NetworkError } from '../types/errors.js';
+import { CircuitOpenError, HttpError, NetworkError } from '../types/errors.js';
 import type { AuthConfig } from '../types/instance.js';
 import { recordWrite } from '../utils/audit.js';
-import { CircuitBreaker } from '../utils/circuit-breaker.js';
+import {
+	CircuitBreaker,
+	type CircuitBreakerSnapshot,
+	type FailureKind,
+} from '../utils/circuit-breaker.js';
 import { isRetryableError, transformError } from '../utils/error-handler.js';
 import { logger } from '../utils/logger.js';
 import { RateLimiter } from '../utils/rate-limiter.js';
 import {
 	type OAuthConfig as AuthOAuthConfig,
+	clearOAuthTokenCache,
 	createBasicAuthHeader,
 	createOAuthHeader,
 	getOAuthToken,
@@ -101,6 +106,19 @@ export class ServiceNowClient {
 			scope: this.authConfig.scope,
 		} as AuthOAuthConfig);
 		return createOAuthHeader(token);
+	}
+
+	private oauthConfig(): AuthOAuthConfig | undefined {
+		if (this.authConfig.type !== 'oauth') return undefined;
+		return {
+			grantType: this.authConfig.grantType,
+			clientId: this.authConfig.clientId,
+			clientSecret: this.authConfig.clientSecret,
+			tokenUrl: this.authConfig.tokenUrl,
+			username: this.authConfig.username,
+			password: this.authConfig.password,
+			scope: this.authConfig.scope,
+		};
 	}
 
 	/** Appends query params to an endpoint path. */
@@ -316,15 +334,44 @@ export class ServiceNowClient {
 	}
 
 	/**
-	 * Classifies a failure as an auth failure (401/403) or generic, for the
-	 * circuit breaker. Auth failures trip the breaker faster to avoid lockout.
+	 * Only authentication and transient availability failures affect the
+	 * instance-level breaker. Authorization/client errors prove that the server
+	 * responded and must not make unrelated tables unavailable.
 	 */
-	private classifyFailure(error: unknown): 'auth' | 'other' {
+	private classifyFailure(error: unknown): FailureKind | undefined {
 		const status =
 			error instanceof HttpError
 				? error.status
 				: (error as { statusCode?: number } | undefined)?.statusCode;
-		return status === 401 || status === 403 ? 'auth' : 'other';
+		if (status === 401) return 'authentication';
+		if (status === 429 || (status !== undefined && status >= 500)) return 'transient';
+		if (error instanceof NetworkError) return 'transient';
+		return undefined;
+	}
+
+	private circuitOpenError(): CircuitOpenError {
+		const snapshot = this.breaker.snapshot();
+		return new CircuitOpenError({
+			instanceUrl: this.instanceUrl,
+			scope: 'instance',
+			reason: snapshot.openedReason,
+			retryAfterMs: snapshot.retryAfterMs,
+			retryAt: new Date(Date.now() + snapshot.retryAfterMs).toISOString(),
+			authType: this.authConfig.type,
+		});
+	}
+
+	private retryDelay(error: unknown, retryCount: number): number {
+		if (error instanceof HttpError && error.status === 429) {
+			const value = error.headers['retry-after'];
+			if (value) {
+				const seconds = Number.parseFloat(value);
+				if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+				const date = Date.parse(value);
+				if (Number.isFinite(date)) return Math.max(0, date - Date.now());
+			}
+		}
+		return HTTP_CONFIG.RETRY_DELAY * 2 ** retryCount;
 	}
 
 	/**
@@ -338,12 +385,12 @@ export class ServiceNowClient {
 	private async requestWithRetry<T>(
 		requestFn: () => Promise<T>,
 		retryCount: number = 0,
+		oauthRefreshAttempted = false,
+		skipBreakerGate = false,
 	): Promise<T> {
 		// Fail fast when the breaker is open — do not retry into a wall.
-		if (!this.breaker.canRequest()) {
-			throw new Error(
-				`Circuit open for ${this.instanceUrl}: backing off to avoid ServiceNow lockout after repeated failures; retry shortly`,
-			);
+		if (!skipBreakerGate && !this.breaker.canRequest()) {
+			throw this.circuitOpenError();
 		}
 
 		try {
@@ -352,14 +399,32 @@ export class ServiceNowClient {
 			this.breaker.recordSuccess();
 			return result;
 		} catch (error) {
-			this.breaker.recordFailure(this.classifyFailure(error));
+			// A cached OAuth token can be revoked before its advertised expiry. Drop
+			// it and replay exactly once with a newly acquired token. Do not count the
+			// stale-token response toward lockout unless the fresh token also fails.
+			if (
+				error instanceof HttpError &&
+				error.status === 401 &&
+				this.authConfig.type === 'oauth' &&
+				!oauthRefreshAttempted
+			) {
+				clearOAuthTokenCache(this.authConfig.clientId, this.authConfig.tokenUrl);
+				logger.warn('OAuth API request returned 401; cleared cached token and retrying once', {
+					instanceUrl: this.instanceUrl,
+				});
+				return this.requestWithRetry(requestFn, retryCount, true, true);
+			}
+
+			const failureKind = this.classifyFailure(error);
+			if (failureKind) this.breaker.recordFailure(failureKind);
+			else this.breaker.recordSuccess();
 
 			const transformedError = transformError(error);
 
 			// Check if we should retry
 			if (retryCount < HTTP_CONFIG.MAX_RETRIES && isRetryableError(error)) {
 				// Calculate delay with exponential backoff
-				const delay = HTTP_CONFIG.RETRY_DELAY * 2 ** retryCount;
+				const delay = this.retryDelay(error, retryCount);
 
 				logger.warn(
 					`Request failed, retrying in ${delay}ms (attempt ${retryCount + 1}/${HTTP_CONFIG.MAX_RETRIES})`,
@@ -372,7 +437,7 @@ export class ServiceNowClient {
 				await this.sleep(delay);
 
 				// Retry the request
-				return this.requestWithRetry(requestFn, retryCount + 1);
+				return this.requestWithRetry(requestFn, retryCount + 1, oauthRefreshAttempted);
 			}
 
 			// Max retries reached or non-retryable error
@@ -392,6 +457,26 @@ export class ServiceNowClient {
 	 */
 	getInstanceUrl(): string {
 		return this.instanceUrl;
+	}
+
+	getAuthType(): 'basic' | 'oauth' {
+		return this.authConfig.type;
+	}
+
+	getConnectionStatus(): CircuitBreakerSnapshot {
+		return this.breaker.snapshot();
+	}
+
+	/** Clear local auth/backoff state after configuration has been repaired. */
+	resetConnection(): CircuitBreakerSnapshot {
+		const oauth = this.oauthConfig();
+		if (oauth) clearOAuthTokenCache(oauth.clientId, oauth.tokenUrl);
+		this.breaker.reset();
+		logger.info('ServiceNow connection state reset', {
+			instanceUrl: this.instanceUrl,
+			authType: this.authConfig.type,
+		});
+		return this.breaker.snapshot();
 	}
 
 	/**

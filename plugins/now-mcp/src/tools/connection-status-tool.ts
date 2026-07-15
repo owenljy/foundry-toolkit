@@ -1,0 +1,69 @@
+import type { InstanceManager } from '../client/instance-manager.js';
+import {
+	ConnectionStatusOutputSchema,
+	ConnectionStatusSchema,
+	ResetConnectionOutputSchema,
+	ResetConnectionSchema,
+} from '../schemas/instance-schemas.js';
+import { toolError } from '../utils/error-handler.js';
+import { toolResult } from '../utils/tool-response.js';
+
+export const CONNECTION_STATUS_TOOL = {
+	name: 'sn_connection_status',
+	title: 'ServiceNow connection status',
+	description: `What: Inspect local authentication/backoff state for configured ServiceNow instances without sending an API request.
+When to use: After a 401, timeout, rate limit, or CIRCUIT_OPEN response to see whether requests are paused and when a trial is allowed.
+Produces: Per-instance auth type, breaker state, failure counters, open reason, and retry delay. Never exposes credentials or tokens.`,
+	inputSchema: ConnectionStatusSchema,
+	outputSchema: ConnectionStatusOutputSchema,
+};
+
+export const RESET_CONNECTION_TOOL = {
+	name: 'sn_reset_connection',
+	title: 'Reset ServiceNow connection state',
+	description: `What: Clear the selected instance's local circuit-breaker state and cached OAuth token.
+When to use: Only after fixing credentials, roles, ACLs, OAuth configuration, or connectivity. For Basic auth, editing env/YAML requires restarting the MCP first because credentials are loaded at startup.
+Produces: The reset local state. This does not change ServiceNow data, unlock an account, or reload Basic credentials.`,
+	inputSchema: ResetConnectionSchema,
+	outputSchema: ResetConnectionOutputSchema,
+};
+
+export function createConnectionStatusTool(instanceManager: InstanceManager) {
+	return {
+		...CONNECTION_STATUS_TOOL,
+		handler: async (params: unknown) => {
+			try {
+				const { instance } = ConnectionStatusSchema.parse(params);
+				const instances = instanceManager.getConnectionStatuses(instance);
+				return toolResult(
+					{ success: true, instances },
+					`connection status: ${instances.length} instance(s)`,
+				);
+			} catch (error) {
+				return toolError(error, { operation: 'inspect connection status' });
+			}
+		},
+	};
+}
+
+export function createResetConnectionTool(instanceManager: InstanceManager) {
+	return {
+		...RESET_CONNECTION_TOOL,
+		handler: async (params: unknown) => {
+			try {
+				const { instance } = ResetConnectionSchema.parse(params);
+				const connection = instanceManager.resetConnection(instance);
+				const note =
+					connection.authType === 'basic'
+						? 'Local backoff was reset. Basic credentials were not reloaded; restart now-mcp after changing env/YAML.'
+						: 'Local backoff and cached OAuth token were cleared; the next API call will acquire a token.';
+				return toolResult(
+					{ success: true, connection, note },
+					`reset connection: ${connection.name}`,
+				);
+			} catch (error) {
+				return toolError(error, { operation: 'reset connection' });
+			}
+		},
+	};
+}

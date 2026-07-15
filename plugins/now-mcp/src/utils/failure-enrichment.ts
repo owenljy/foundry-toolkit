@@ -16,10 +16,19 @@ export interface FailureContext {
 	requiredRoles?: string[];
 }
 
-export type FailureType = '401' | '403' | 'readonly' | '404' | '400' | 'field_error' | 'unknown';
+export type FailureType =
+	| 'circuit_open'
+	| '401'
+	| '403'
+	| 'readonly'
+	| '404'
+	| '400'
+	| 'field_error'
+	| 'unknown';
 
 export function classifyFailure(text: string): FailureType {
 	const t = text.toLowerCase();
+	if (t.includes('circuit_open') || t.includes('circuit open')) return 'circuit_open';
 	if (
 		t.includes('invalid field') ||
 		t.includes('unknown field') ||
@@ -46,6 +55,11 @@ export function classifyFailure(text: string): FailureType {
 export function failureHints(text: string, ctx: FailureContext = {}): string[] {
 	const table = ctx.table ? `'${ctx.table}'` : 'the table';
 	switch (classifyFailure(text)) {
+		case 'circuit_open':
+			return [
+				'This is a local instance-wide anti-lockout pause; no ServiceNow request was sent for this call. Run sn_connection_status for the reason and retryAfterMs.',
+				'Fix the underlying credentials/connectivity first. Then use sn_reset_connection. Basic-auth credential changes require restarting/reconnecting now-mcp because browser login does not update MCP credentials.',
+			];
 		case 'field_error':
 			return [
 				`A field name appears invalid. Run sn_get_table_schema for ${table} to confirm field names`,
@@ -65,7 +79,9 @@ export function failureHints(text: string, ctx: FailureContext = {}): string[] {
 			return [];
 		case '401':
 			return [
-				'Authentication failed. Check the instance credentials (username/password or OAuth client).',
+				'Authentication failed at the API layer. Browser/UI login is a separate session and does not update now-mcp credentials.',
+				'Basic auth: fix the configured env/YAML credentials, then restart/reconnect now-mcp. OAuth: check client/grant/user settings; the client automatically discards a rejected cached token and retries once.',
+				'After the cause is fixed, use sn_reset_connection (or wait for the reported cooldown) before retrying.',
 			];
 		case '404':
 			return [

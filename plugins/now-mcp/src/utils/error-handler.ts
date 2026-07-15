@@ -3,6 +3,7 @@
  */
 
 import {
+	AccessDeniedError,
 	AuthenticationError,
 	HttpError,
 	NetworkError,
@@ -36,9 +37,13 @@ export function transformHttpError(error: HttpError): ServiceNowError {
 	// Handle specific HTTP status codes
 	switch (status) {
 		case 401:
-		case 403:
 			return new AuthenticationError(
 				servicenowError?.error?.message || 'Authentication failed. Please check your credentials.',
+				servicenowError,
+			);
+		case 403:
+			return new AccessDeniedError(
+				servicenowError?.error?.message || 'Access denied. Check roles and ACLs.',
 				servicenowError,
 			);
 

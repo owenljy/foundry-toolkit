@@ -16,8 +16,8 @@
  *
  * Wired in `hooks/hooks.json` as a SessionStart hook. That means it runs on
  * EVERY session start, so it MUST be fast and MUST be a no-op when the rule is
- * already present. It is idempotent by design: a fenced anchor block
- * (BEGIN/END markers) is looked for; if present, exit without touching disk.
+ * already current. It is idempotent by design: a versioned fenced anchor block
+ * is replaced when the shipped workflow changes, then left untouched thereafter.
  *
  * Detection uses process.cwd() — SessionStart hooks run with cwd = the user's
  * working directory (the project they just opened), which is what we want.
@@ -33,7 +33,9 @@ import { dirname, join } from 'node:path';
 // Anchor markers make the injected block re-findable across future runs. If
 // the user hand-edits the block between them, we detect its presence and skip
 // — we never overwrite their edits.
-const BEGIN = '<!-- BEGIN fluent-plugin: workflow -->';
+const WORKFLOW_VERSION = 2;
+const LEGACY_BEGIN = '<!-- BEGIN fluent-plugin: workflow -->';
+const BEGIN = `<!-- BEGIN fluent-plugin: workflow v${WORKFLOW_VERSION} -->`;
 const END = '<!-- END fluent-plugin: workflow -->';
 
 // The injected content is NOT hardcoded here — it lives in an editable markdown
@@ -83,10 +85,11 @@ function main() {
   const existing = existsSync(claudeMd) ? readFileSync(claudeMd, 'utf8') : null;
 
   if (existing !== null) {
-    // Already bootstrapped by this hook — done.
+    // Already on the current managed version — done.
     if (existing.includes(BEGIN)) return 0;
-    // User authored their own Fluent workflow section — respect it, do not stomp.
-    if (/^##\s+Fluent workflow\b/mi.test(existing)) return 0;
+    // User authored their own Fluent workflow section — respect it. A legacy
+    // managed marker is handled below and is safe to upgrade.
+    if (!existing.includes(LEGACY_BEGIN) && /^##\s+Fluent workflow\b/mi.test(existing)) return 0;
   }
 
   // Read the editable template only now (we're in a Fluent project and have no
@@ -99,6 +102,16 @@ function main() {
     if (existing === null) {
       writeFileSync(claudeMd, BLOCK);
       log('created CLAUDE.md with Fluent workflow rules.');
+    } else if (existing.includes(LEGACY_BEGIN)) {
+      const start = existing.indexOf(LEGACY_BEGIN);
+      const end = existing.indexOf(END, start);
+      if (end === -1) {
+        log('WARN: legacy managed workflow block has no end marker; leaving it untouched.');
+        return 0;
+      }
+      const upgraded = existing.slice(0, start) + BLOCK + existing.slice(end + END.length).replace(/^\n/, '');
+      writeFileSync(claudeMd, upgraded);
+      log(`upgraded CLAUDE.md Fluent workflow rules to v${WORKFLOW_VERSION}.`);
     } else {
       const sep = existing.endsWith('\n') ? '\n' : '\n\n';
       appendFileSync(claudeMd, sep + BLOCK);

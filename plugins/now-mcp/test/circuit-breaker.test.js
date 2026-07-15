@@ -116,3 +116,38 @@ test('a success in the closed state resets accumulated failures', () => {
   breaker.recordFailure('other');
   assert.equal(breaker.state(), 'closed'); // would have opened at 3 without the reset
 });
+
+test('snapshot exposes a secret-free reason and remaining cooldown', () => {
+  const { breaker, advance } = makeBreaker({ authFailureThreshold: 2, cooldownMs: 30000 });
+
+  breaker.recordFailure('authentication');
+  breaker.recordFailure('authentication');
+  advance(1250);
+
+  assert.deepEqual(breaker.snapshot(), {
+    state: 'open',
+    failureScore: 0,
+    authFailureScore: 2,
+    openedReason: 'repeated_authentication_failures',
+    lastFailureAt: 0,
+    retryAfterMs: 28750,
+  });
+});
+
+test('reset closes an open breaker and clears all diagnostic state', () => {
+  const { breaker } = makeBreaker({ authFailureThreshold: 1 });
+  breaker.recordFailure('authentication');
+  assert.equal(breaker.state(), 'open');
+
+  breaker.reset();
+
+  assert.deepEqual(breaker.snapshot(), {
+    state: 'closed',
+    failureScore: 0,
+    authFailureScore: 0,
+    openedReason: undefined,
+    lastFailureAt: undefined,
+    retryAfterMs: 0,
+  });
+  assert.equal(breaker.canRequest(), true);
+});

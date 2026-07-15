@@ -1,6 +1,6 @@
 ---
 name: sn-docs-search
-description: Retrieve live ServiceNow product documentation from the public GitHub repo ServiceNow/ServiceNowDocs (markdown, LLM-optimized, ~46k files across 50 publications and 4 release branches). Use whenever the user asks for ServiceNow product documentation, admin/config behavior, release-specific behavior across Australia / Zurich / Yokohama / Xanadu, recently shipped or rarely-discussed platform features, cross-release differences, or anything that needs to be grounded in official docs. Trigger phrases include "what do the ServiceNow docs say", "search ServiceNow docs", "the latest docs on X", "official docs for X", "how do I configure X in ServiceNow", "what changed in <release>", "is X still true in <release>". Do NOT trigger on non-ServiceNow research, or when the question is plainly answerable from material already in the conversation.
+description: Retrieve live ServiceNow product/admin and release documentation from ServiceNow/ServiceNowDocs. Use for documented platform behavior, administration/configuration, release-specific behavior, cross-release differences, or explicit requests to search official product docs. Do NOT use for Fluent SDK authoring or `*.now.ts` API questions (imports, types, constructors, signatures, fields, or code examples); in a Fluent app, run `now-sdk explain` for those instead. Also do not trigger when the answer is already in the conversation.
 user-invocable: true
 allowed-tools: Bash(gh:*), Bash(curl:*), Bash(jq:*), Bash(pandoc:*), Read, Write
 context: fork
@@ -30,6 +30,7 @@ This is much faster and more accurate than the old browser-driven flow: no SPA w
 ## When NOT to use
 
 - The question is answerable from documentation already in the conversation, a prior tool result, or pasted material — search the conversation first
+- The question concerns **Fluent SDK authoring** or a `*.now.ts` API: imports, exported names, types, constructors, object fields, signatures, or code examples. In a Fluent app, `now-sdk explain <topic> --format=raw` is the authoritative source and takes precedence over this skill. Use this docs skill only if the remaining question is about product/admin/release behavior outside the SDK API reference.
 - The question is about non-ServiceNow content — use the user's normal research tools
 - The target is `developer.servicenow.com` (dev portal / API explorer) or `nowlearning.servicenow.com` (training). Those are not in this repo. Tell the user the host is out of scope and let them decide
 

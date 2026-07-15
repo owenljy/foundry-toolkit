@@ -89,6 +89,29 @@ export class AccessDeniedError extends ServiceNowError {
 	}
 }
 
+export interface CircuitOpenDetails {
+	instanceUrl: string;
+	scope: 'instance';
+	reason?: string;
+	retryAfterMs: number;
+	retryAt: string;
+	authType: 'basic' | 'oauth';
+}
+
+/** A local anti-lockout rejection; no HTTP request was sent. */
+export class CircuitOpenError extends ServiceNowError {
+	constructor(details: CircuitOpenDetails) {
+		super(
+			`Requests to this ServiceNow instance are paused for ${Math.ceil(details.retryAfterMs / 1000)}s after repeated failures`,
+			503,
+			details,
+			'CIRCUIT_OPEN',
+		);
+		this.name = 'CircuitOpenError';
+		Object.setPrototypeOf(this, CircuitOpenError.prototype);
+	}
+}
+
 /**
  * Raw transport-level error for a non-2xx HTTP response (a response WAS
  * received). Thrown by the HTTP client and normalized into a ServiceNowError by

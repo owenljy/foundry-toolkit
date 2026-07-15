@@ -232,6 +232,33 @@ Read schema with the MCP → write `*.now.ts` → `now-sdk deploy` (Bash) →
 `sn_query_records` to confirm it landed →
 `sn_execute_background_script` to trigger logic → read `syslog`.
 
+### Background-script prerequisites and 404 troubleshooting
+
+`sn_execute_background_script` supports two execution paths:
+
+1. **Scripted REST (recommended):** set `scriptApiPath` on the instance to an installed,
+   active resource. It must accept `POST { "script": "..." }` and return
+   `{ "result": { "success": true|false, "output"?: string, "error"?: string } }`.
+2. **`sys_trigger` fallback:** when `scriptApiPath` is omitted, now-mcp creates a temporary
+   `sys_properties` mailbox through the Table API, creates a Run Once `sys_trigger`, polls
+   the mailbox, and deletes it. The integration user needs create/read/delete access to
+   `sys_properties`, create access to `sys_trigger`, and an active ServiceNow scheduler.
+
+If ServiceNow reports **“Requested URI does not represent any resource”**, use the phase and
+endpoint in the now-mcp error:
+
+- `POST <scriptApiPath>`: the Scripted REST API is missing, inactive, scoped under another
+  path, or unavailable to the user. Correct the path/install/ACL; now-mcp does not silently
+  fall back because doing so could bypass the intended execution boundary.
+- `POST /api/now/table/sys_properties` or `sys_trigger`: the fallback's protected system
+  table is not exposed through the Table API or the user lacks access. Install/configure a
+  Scripted REST runner instead, or explicitly grant the required least-privilege access.
+- `GET /api/now/table/sys_properties/<sys_id>`: the mailbox was deleted or became unreadable
+  after the trigger was created. Check ACLs and automation that removes temporary properties.
+
+Validate setup first with a harmless script such as `gs.info('hello world')`; only then run
+scripts that mutate data.
+
 **3. Reverse-engineer legacy config into source control.**
 `now-sdk transform --table <t>` to capture to Fluent → MCP reads to verify
 behavior matches after redeploy to dev.

@@ -25,6 +25,7 @@ import { createAggregateRecordsTool } from './aggregate-records-tool.js';
 import { TOOL_ANNOTATIONS } from './annotations.js';
 import { createBatchCreateTool } from './batch-create-tool.js';
 import { createBatchUpdateTool } from './batch-update-tool.js';
+import { createConnectionStatusTool, createResetConnectionTool } from './connection-status-tool.js';
 import { createCreateRecordTool } from './create-record-tool.js';
 import { createDeleteRecordTool } from './delete-record-tool.js';
 import { createDiffRecordsTool } from './diff-records-tool.js';
@@ -181,6 +182,13 @@ export async function registerTools(
 	} else {
 		logger.info('Single instance — sn_switch_default_instance tool disabled');
 	}
+
+	// Local diagnostics/recovery are useful for both single- and multi-instance
+	// configurations and do not make a ServiceNow API request themselves.
+	tools.push(
+		createConnectionStatusTool(instanceManager),
+		createResetConnectionTool(instanceManager),
+	);
 
 	// Fluent SDK bridge: only expose when the now-sdk CLI is actually installed.
 	if (isNowSdkAvailable()) {

@@ -62,6 +62,12 @@ const SESSION_MUTATION: ToolAnnotations = {
 	idempotentHint: true,
 	openWorldHint: true,
 };
+const LOCAL_MUTATION: ToolAnnotations = {
+	readOnlyHint: false,
+	destructiveHint: false,
+	idempotentHint: true,
+	openWorldHint: false,
+};
 
 export const TOOL_ANNOTATIONS: Record<string, ToolAnnotations> = {
 	// Reads
@@ -75,9 +81,11 @@ export const TOOL_ANNOTATIONS: Record<string, ToolAnnotations> = {
 	sn_download_attachment: RO,
 	sn_get_attachment_metadata: RO,
 	sn_sdk_status: SDK_STATUS,
+	sn_connection_status: SDK_STATUS,
 
 	// Session mutation (not a write to the instance, but not read-only either)
 	sn_switch_default_instance: SESSION_MUTATION,
+	sn_reset_connection: LOCAL_MUTATION,
 
 	// Writes (create new state)
 	sn_create_record: WRITE,

@@ -206,4 +206,30 @@ export class InstanceManager {
 	getInstanceCount(): number {
 		return this.clients.size;
 	}
+
+	/** Secret-free runtime connection state for one or every configured instance. */
+	getConnectionStatuses(instanceName?: string) {
+		const names = instanceName ? [this.resolveInstance(instanceName).name] : this.listInstances();
+		return names.map((name) => {
+			const { config, client } = this.resolveInstance(name);
+			return {
+				name,
+				url: config.url,
+				isDefault: name === this.defaultInstance,
+				authType: client.getAuthType(),
+				...client.getConnectionStatus(),
+			};
+		});
+	}
+
+	/** Reset local token/backoff state. Configuration itself is unchanged. */
+	resetConnection(instanceName?: string) {
+		const resolved = this.resolveInstance(instanceName);
+		return {
+			name: resolved.name,
+			url: resolved.config.url,
+			authType: resolved.client.getAuthType(),
+			...resolved.client.resetConnection(),
+		};
+	}
 }
