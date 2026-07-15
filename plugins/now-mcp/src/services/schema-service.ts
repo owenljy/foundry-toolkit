@@ -47,6 +47,23 @@ export class SchemaService {
 
 	constructor(private instanceManager: InstanceManager) {}
 
+	/** Resolve the actual target used when the caller omits `instance`. */
+	resolveInstance(instance?: string): { name: string; url: string } {
+		const target = this.instanceManager.resolveInstance(instance);
+		return { name: target.name, url: target.config.url.replace(/\/+$/, '') };
+	}
+
+	/**
+	 * Cache namespace tied to both profile name and URL. The URL digest prevents
+	 * stale disk data being reused if a profile is repointed to another host.
+	 */
+	private resolveCacheTarget(instance?: string) {
+		const target = this.instanceManager.resolveInstance(instance);
+		const normalizedUrl = target.config.url.replace(/\/+$/, '').toLowerCase();
+		const urlHash = createHash('sha256').update(normalizedUrl).digest('hex').slice(0, 16);
+		return { ...target, cacheNamespace: `${target.name}:${urlHash}` };
+	}
+
 	/**
 	 * Validate a set of field names against a table's schema, returning unknown
 	 * fields with typo suggestions. Returns null if the schema can't be loaded
@@ -91,11 +108,11 @@ export class SchemaService {
 	 */
 	async suggestTableName(tableName: string, instance?: string): Promise<string | undefined> {
 		try {
-			const cacheKey = `tablenames:${instance || 'default'}`;
+			const target = this.resolveCacheTarget(instance);
+			const cacheKey = `tablenames:${target.cacheNamespace}`;
 			let names = this.getFromCache<string[]>(cacheKey);
 			if (!names) {
-				const client = this.instanceManager.getClient(instance);
-				const resp = await client.get<{ result: Array<{ name: string }> }>(
+				const resp = await target.client.get<{ result: Array<{ name: string }> }>(
 					'/api/now/table/sys_db_object',
 					{ sysparm_fields: 'name', sysparm_limit: 10000 },
 				);
@@ -125,7 +142,8 @@ export class SchemaService {
 		// Defense-in-depth: schema discovery bypasses validateTableName, so gate it
 		// here too — a blocked table's structure shouldn't be readable either.
 		assertTableAllowed(tableName);
-		const cacheKey = `schema:${instance || 'default'}:${tableName}:${includeExtended}`;
+		const target = this.resolveCacheTarget(instance);
+		const cacheKey = `schema:${target.cacheNamespace}:${tableName}:${includeExtended}`;
 
 		// Check cache first
 		const cached = this.getFromCache<TableMetadata>(cacheKey);
@@ -137,11 +155,12 @@ export class SchemaService {
 		}
 
 		logger.info(`Fetching table schema: ${tableName}`, {
-			instance: instance || 'default',
+			instance: target.name,
+			instanceUrl: target.config.url,
 			includeExtended,
 		});
 
-		const client = this.instanceManager.getClient(instance);
+		const client = target.client;
 
 		// Query sys_dictionary table for field definitions
 		const query = includeExtended
@@ -221,7 +240,8 @@ export class SchemaService {
 		limit: number = 100,
 		instance?: string,
 	): Promise<TableListItem[]> {
-		const cacheKey = `tables:${instance || 'default'}:${filter || 'all'}:${limit}`;
+		const target = this.resolveCacheTarget(instance);
+		const cacheKey = `tables:${target.cacheNamespace}:${filter || 'all'}:${limit}`;
 
 		// Check cache first
 		const cached = this.getFromCache<TableListItem[]>(cacheKey);
@@ -231,12 +251,13 @@ export class SchemaService {
 		}
 
 		logger.info('Fetching table list', {
-			instance: instance || 'default',
+			instance: target.name,
+			instanceUrl: target.config.url,
 			filter,
 			limit,
 		});
 
-		const client = this.instanceManager.getClient(instance);
+		const client = target.client;
 
 		// Build query for filtering. Honor leading/trailing `*` as anchors:
 		//   incident*  -> STARTSWITH   *incident -> ENDSWITH
@@ -296,7 +317,8 @@ export class SchemaService {
 		instance?: string,
 	): Promise<Array<{ label: string; value: string }>> {
 		assertTableAllowed(tableName);
-		const cacheKey = `choices:${instance || 'default'}:${tableName}:${fieldName}`;
+		const target = this.resolveCacheTarget(instance);
+		const cacheKey = `choices:${target.cacheNamespace}:${tableName}:${fieldName}`;
 
 		// Check cache first
 		const cached = this.getFromCache<Array<{ label: string; value: string }>>(cacheKey);
@@ -306,10 +328,11 @@ export class SchemaService {
 		}
 
 		logger.info(`Fetching choice list: ${tableName}.${fieldName}`, {
-			instance: instance || 'default',
+			instance: target.name,
+			instanceUrl: target.config.url,
 		});
 
-		const client = this.instanceManager.getClient(instance);
+		const client = target.client;
 
 		const response = await client.get<{
 			result: Array<{

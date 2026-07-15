@@ -37,6 +37,7 @@ test('toolResult appends extraText blocks and attaches _meta', () => {
 
 function fakeSchemaService(fields) {
 	return {
+		resolveInstance: () => ({ name: 'dev', url: 'https://dev.service-now.com' }),
 		async getTableSchema() {
 			return { exists: true, name: 'incident', label: 'Incident', extends: 'task', fields };
 		},
@@ -81,6 +82,8 @@ test('get_table_schema compacts fields: name/type always, falsey booleans omitte
 	assert.ok(out.fields.every((f) => !('label' in f)), 'per-field label is dropped');
 	// summary text does not carry the field payload
 	assert.match(res.content[0].text, /2 field\(s\) on incident/);
+	assert.equal(out.instance, 'dev');
+	assert.equal(out.instanceUrl, 'https://dev.service-now.com');
 });
 
 test('create_record echoes sys_id + only the fields the caller set, not the whole row', async () => {

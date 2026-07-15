@@ -60,10 +60,14 @@ function makeStubClient() {
   };
 }
 
-function makeManager(client) {
+function makeManager(client, { name = 'dev', url = 'https://dev.service-now.com' } = {}) {
   return {
     getClient: () => client,
-    getConfig: () => ({ name: 'dev', readOnly: false }),
+    getConfig: () => ({ name, url, readOnly: false }),
+    resolveInstance: (instance) => {
+      const resolvedName = instance || name;
+      return { name: resolvedName, config: { name: resolvedName, url, readOnly: false }, client };
+    },
   };
 }
 
@@ -136,4 +140,57 @@ test('validateFields flags unknown fields using the parsed schema', async () => 
   assert.ok(result);
   assert.equal(result.unknown.length, 1);
   assert.equal(result.unknown[0].field, 'made_up_field');
+});
+
+test('omitted instance follows switched default without reusing the previous instance cache', async () => {
+  function clientFor(label, field) {
+    const state = { dictionaryCalls: 0 };
+    return {
+      state,
+      async get(endpoint) {
+        if (endpoint === '/api/now/table/sys_dictionary') {
+          state.dictionaryCalls++;
+          return { result: [{ element: field, column_label: field, internal_type: 'string', mandatory: 'false', read_only: 'false', max_length: '40', reference: '' }] };
+        }
+        return { result: [{ name: 'incident', label, 'super_class.name': 'task' }] };
+      },
+    };
+  }
+
+  const clients = { a: clientFor('Instance A', 'field_a'), b: clientFor('Instance B', 'field_b') };
+  const configs = {
+    a: { name: 'a', url: 'https://a.service-now.com' },
+    b: { name: 'b', url: 'https://b.service-now.com' },
+  };
+  let defaultName = 'a';
+  const manager = {
+    resolveInstance(instance) {
+      const name = instance || defaultName;
+      return { name, config: configs[name], client: clients[name] };
+    },
+  };
+  const svc = new SchemaService(manager);
+
+  const fromA = await svc.getTableSchema('incident');
+  defaultName = 'b';
+  const fromB = await svc.getTableSchema('incident');
+
+  assert.equal(fromA.label, 'Instance A');
+  assert.equal(fromA.fields[0].name, 'field_a');
+  assert.equal(fromB.label, 'Instance B');
+  assert.equal(fromB.fields[0].name, 'field_b');
+  assert.equal(clients.a.state.dictionaryCalls, 1);
+  assert.equal(clients.b.state.dictionaryCalls, 1, 'new default must query its own client');
+});
+
+test('disk cache identity includes URL when the same profile name is repointed', async () => {
+  const first = makeStubClient();
+  const svc1 = new SchemaService(makeManager(first, { name: 'shared', url: 'https://old.service-now.com' }));
+  await svc1.getTableSchema('incident');
+
+  const second = makeStubClient();
+  const svc2 = new SchemaService(makeManager(second, { name: 'shared', url: 'https://new.service-now.com' }));
+  await svc2.getTableSchema('incident');
+
+  assert.equal(second.state.dictionaryCalls, 1, 'repointed profile must not consume old disk cache');
 });

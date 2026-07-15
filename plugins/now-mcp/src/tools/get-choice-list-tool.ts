@@ -29,16 +29,18 @@ export function createGetChoiceListTool(schemaService: SchemaService) {
 				// Validate input
 				const validated = GetChoiceListSchema.parse(params);
 				tableName = validated.tableName;
+				const target = schemaService.resolveInstance(validated.instance);
 
 				logger.info(`Getting choice list for ${validated.tableName}.${validated.fieldName}`, {
-					instance: validated.instance || 'default',
+					instance: target.name,
+					instanceUrl: target.url,
 				});
 
 				// Get choice list
 				const choices = await schemaService.getChoiceList(
 					validated.tableName,
 					validated.fieldName,
-					validated.instance,
+					target.name,
 				);
 
 				// Format response for LLM
@@ -48,7 +50,8 @@ export function createGetChoiceListTool(schemaService: SchemaService) {
 					field: validated.fieldName,
 					choiceCount: choices.length,
 					choices: choices,
-					instance: validated.instance || 'default',
+					instance: target.name,
+					instanceUrl: target.url,
 				};
 
 				// An empty choice list usually means a misspelled or non-choice field —

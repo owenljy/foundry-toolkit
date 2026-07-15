@@ -34,9 +34,11 @@ export function createListTablesTool(schemaService: SchemaService) {
 			try {
 				// Validate input
 				const validated = ListTablesSchema.parse(params);
+				const target = schemaService.resolveInstance(validated.instance);
 
 				logger.info('Listing tables', {
-					instance: validated.instance || 'default',
+					instance: target.name,
+					instanceUrl: target.url,
 					filter: validated.filter,
 					limit: validated.limit,
 				});
@@ -45,14 +47,15 @@ export function createListTablesTool(schemaService: SchemaService) {
 				const tables = await schemaService.listTables(
 					validated.filter,
 					validated.limit,
-					validated.instance,
+					target.name,
 				);
 
 				const response = {
 					success: true,
 					count: tables.length,
 					filter: validated.filter,
-					instance: validated.instance || 'default',
+					instance: target.name,
+					instanceUrl: target.url,
 					tables: tables,
 				};
 

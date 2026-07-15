@@ -8,6 +8,13 @@ import type { InstanceConfig, InstanceStatus } from '../types/instance.js';
 import { logger } from '../utils/logger.js';
 import { ServiceNowClient } from './servicenow-client.js';
 
+/** A concrete, internally consistent instance selection. */
+export interface ResolvedInstance {
+	name: string;
+	config: InstanceConfig;
+	client: ServiceNowClient;
+}
+
 /**
  * Manages multiple ServiceNow client instances
  */
@@ -78,18 +85,7 @@ export class InstanceManager {
 	 * @throws {ServiceNowError} If the instance name is invalid
 	 */
 	getClient(instanceName?: string): ServiceNowClient {
-		const name = instanceName || this.defaultInstance;
-
-		const client = this.clients.get(name);
-		if (!client) {
-			const availableInstances = Array.from(this.clients.keys()).join(', ');
-			throw new ServiceNowError(
-				`Instance '${name}' not found. Available instances: ${availableInstances}`,
-				400,
-			);
-		}
-
-		return client;
+		return this.resolveInstance(instanceName).client;
 	}
 
 	/**
@@ -98,14 +94,26 @@ export class InstanceManager {
 	 * @returns InstanceConfig for the specified instance
 	 */
 	getConfig(instanceName?: string): InstanceConfig {
+		return this.resolveInstance(instanceName).config;
+	}
+
+	/**
+	 * Resolve an optional selector to one concrete target. Consumers that need
+	 * the client and its identity should use this once rather than independently
+	 * resolving "default" for requests, cache keys, logs, and responses.
+	 */
+	resolveInstance(instanceName?: string): ResolvedInstance {
 		const name = instanceName || this.defaultInstance;
+		const client = this.clients.get(name);
 		const config = this.configs.get(name);
-
-		if (!config) {
-			throw new ServiceNowError(`Instance '${name}' not found`, 400);
+		if (!client || !config) {
+			const availableInstances = Array.from(this.clients.keys()).join(', ');
+			throw new ServiceNowError(
+				`Instance '${name}' not found. Available instances: ${availableInstances}`,
+				400,
+			);
 		}
-
-		return config;
+		return { name, config, client };
 	}
 
 	/**

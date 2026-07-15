@@ -50,9 +50,11 @@ export function createGetTableSchemaTool(schemaService: SchemaService) {
 				// Validate input
 				const validated = GetTableSchemaSchema.parse(params);
 				tableName = validated.tableName;
+				const target = schemaService.resolveInstance(validated.instance);
 
 				logger.info(`Getting schema for table: ${validated.tableName}`, {
-					instance: validated.instance || 'default',
+					instance: target.name,
+					instanceUrl: target.url,
 					includeExtended: validated.includeExtended,
 				});
 
@@ -60,7 +62,7 @@ export function createGetTableSchemaTool(schemaService: SchemaService) {
 				const schema = await schemaService.getTableSchema(
 					validated.tableName,
 					validated.includeExtended,
-					validated.instance,
+					target.name,
 				);
 
 				// Table absent from sys_db_object (and no fields) = doesn't exist or
@@ -112,7 +114,8 @@ export function createGetTableSchemaTool(schemaService: SchemaService) {
 					extends: schema.extends,
 					fieldCount: schema.fields.length,
 					fields,
-					instance: validated.instance || 'default',
+					instance: target.name,
+					instanceUrl: target.url,
 				};
 				if (fieldsTruncated) response.fieldsTruncated = true;
 

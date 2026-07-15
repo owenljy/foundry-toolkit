@@ -128,6 +128,7 @@ export const GetTableSchemaOutputSchema = z.object({
 	// True when a very wide table's fields were capped at a field boundary.
 	fieldsTruncated: z.boolean().optional(),
 	instance: z.string(),
+	instanceUrl: z.string().url(),
 });
 
 /** sn_list_tables */
@@ -136,6 +137,7 @@ export const ListTablesOutputSchema = z.object({
 	count: z.number(),
 	filter: z.string().optional(),
 	instance: z.string(),
+	instanceUrl: z.string().url(),
 	tables: z.array(OpenRecord),
 });
 
@@ -147,6 +149,7 @@ export const GetChoiceListOutputSchema = z.object({
 	choiceCount: z.number(),
 	choices: z.array(OpenRecord),
 	instance: z.string(),
+	instanceUrl: z.string().url(),
 });
 
 /** sn_execute_background_script */
