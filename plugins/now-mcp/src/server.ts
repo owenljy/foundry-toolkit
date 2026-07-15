@@ -10,8 +10,9 @@ import { registerPrompts } from './prompts/index.js';
 import { registerResources } from './resources/index.js';
 import { registerDegradedTools, registerTools } from './tools/index.js';
 import { logger } from './utils/logger.js';
+import { packageVersion } from './utils/package-info.js';
 
-const SERVER_VERSION = '4.0.0';
+const SERVER_VERSION = packageVersion();
 
 /**
  * Guidance surfaced to the assistant in the `initialize` result. The key part is
