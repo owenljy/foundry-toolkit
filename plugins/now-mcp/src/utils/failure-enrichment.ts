@@ -70,9 +70,16 @@ export function failureHints(text: string, ctx: FailureContext = {}): string[] {
 			const roleNote = ctx.requiredRoles?.length
 				? ` This tool requires the ${ctx.requiredRoles.join(' or ')} role.`
 				: '';
-			return [
+			const hints = [
 				`Access denied on ${table}. Likely an ACL — the account may lack the required role, or the field/record is restricted.${roleNote}`,
 			];
+			if (ctx.operation === 'delete') {
+				hints.push(
+					'If deletion works in the UI, compare the authenticated API user with the UI user, including roles, domain/scope, ACL evaluation, and transaction-specific logic. Browser and API sessions are different execution paths; that alone does not prove an undocumented UI-only restriction.',
+					'Use sn_diagnose_mutation for evidence before falling back to sn_execute_background_script.',
+				);
+			}
+			return hints;
 		}
 		case 'readonly':
 			// The read-only write-block message already includes source-aware
@@ -94,7 +101,11 @@ export function failureHints(text: string, ctx: FailureContext = {}): string[] {
 				`Bad request. Check the encoded query syntax${ctx.query ? ` ("${ctx.query}")` : ''} and field values.`,
 			];
 		default:
-			return [];
+			return ctx.operation === 'delete'
+				? [
+						'For a failed delete, verify the record still exists, then use sn_diagnose_mutation. If the UI behaves differently, compare API/UI identity, roles, domain/scope, ACLs, and transaction-specific logic rather than assuming deletion is UI-only.',
+					]
+				: [];
 	}
 }
 

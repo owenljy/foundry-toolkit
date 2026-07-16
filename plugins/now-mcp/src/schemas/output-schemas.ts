@@ -78,6 +78,13 @@ export const UpdateRecordOutputSchema = z.object({
 	sys_id: z.string().optional(),
 	updateType: z.string().optional(),
 	record: OpenRecord,
+	verification: z
+		.object({
+			performed: z.boolean(),
+			persisted: z.boolean().optional(),
+			mismatches: z.array(OpenRecord).optional(),
+		})
+		.optional(),
 });
 
 /** sn_delete_record */
@@ -88,6 +95,7 @@ export const DeleteRecordOutputSchema = z.object({
 	sysId: z.string(),
 	instance: z.string(),
 	warning: z.string().optional(),
+	verification: z.object({ performed: z.boolean(), deleted: z.boolean().optional() }).optional(),
 });
 
 /** Shared batch result envelope (create + update). */
@@ -155,12 +163,24 @@ export const GetChoiceListOutputSchema = z.object({
 /** sn_execute_background_script */
 export const ExecuteScriptOutputSchema = z.object({
 	success: z.boolean(),
+	transportSuccess: z.boolean().optional(),
+	applicationSuccess: z.boolean().optional(),
+	applicationResult: z.unknown().optional(),
 	executionTime: z.number().optional(),
 	output: z.string().nullable().optional(),
 	// True when `output` was shortened to stay under the MCP host's per-call size ceiling.
 	outputTruncated: z.boolean().optional(),
 	error: z.string().nullable().optional(),
 	instance: z.string(),
+	executionPath: z.enum(['scripted-rest', 'sys_trigger']).optional(),
+	outcome: z.enum(['completed', 'script_failed', 'timed_out']).optional(),
+	runtimeContext: z
+		.object({
+			serverRuntime: z.literal('ServiceNow Rhino'),
+			transport: z.string(),
+			writeResultContract: z.string(),
+		})
+		.optional(),
 	schemaCheck: z.array(OpenRecord).optional(),
 	// Present when allowWrites:true and writes were detected — echoes the approved
 	// write calls (and a warning if any hit metadata/config tables).
@@ -169,6 +189,7 @@ export const ExecuteScriptOutputSchema = z.object({
 			calls: z.array(z.string()),
 			metadataWarning: z.string().optional(),
 			lowConfidenceWarning: z.string().optional(),
+			metadataWritesApproved: z.boolean().optional(),
 		})
 		.optional(),
 	warning: z.string().optional(),

@@ -104,4 +104,5 @@ export const TOOL_ANNOTATIONS: Record<string, ToolAnnotations> = {
 		requiredRoles: ['admin'],
 	},
 	sn_get_security_info: { ...RO, requiredRoles: ['admin', 'security_admin'] },
+	sn_diagnose_mutation: { ...RO, requiredRoles: ['admin', 'security_admin'] },
 };

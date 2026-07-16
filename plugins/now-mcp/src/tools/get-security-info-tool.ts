@@ -38,6 +38,8 @@ export function createGetSecurityInfoTool(tableService: TableService) {
 				const instance = validated.instance;
 				const t = validated.tableName;
 				const includeDetails = validated.includeDetails;
+				const operations = validated.operations;
+				const fields = validated.fields;
 
 				logger.info(`Getting security info for ${t}`, {
 					instance: instance || 'default',
@@ -70,28 +72,66 @@ export function createGetSecurityInfoTool(tableService: TableService) {
 					}
 				};
 
-				const [aclResult, dataPolicyResult, businessRuleResult] = await Promise.all([
-					safeQuery(
-						'sys_security_acl',
-						`name=${t}^ORnameLIKE${t}.`,
-						['sys_id', 'name', 'operation', 'type', 'active'],
-						100,
-					),
-					safeQuery(
-						'sys_data_policy2',
-						`model_table=${t}^active=true`,
-						['sys_id', 'short_description', 'enforce_ui', 'enforce_scripting'],
-						50,
-					),
-					safeQuery(
-						'sys_script',
-						`collection=${t}^active=true^scriptLIKEgs.hasRole^ORscriptLIKEgs.getUser`,
-						['sys_id', 'name', 'when', 'collection'],
-						30,
-					),
-				]);
+				const [aclResult, dataPolicyResult, businessRuleResult, beforeBrResult, dictionaryResult] =
+					await Promise.all([
+						safeQuery(
+							'sys_security_acl',
+							`name=${t}^ORnameLIKE${t}.`,
+							['sys_id', 'name', 'operation', 'type', 'active'],
+							100,
+						),
+						safeQuery(
+							'sys_data_policy2',
+							`model_table=${t}^active=true`,
+							['sys_id', 'short_description', 'enforce_ui', 'enforce_scripting'],
+							50,
+						),
+						safeQuery(
+							'sys_script',
+							`collection=${t}^active=true^scriptLIKEgs.hasRole^ORscriptLIKEgs.getUser`,
+							['sys_id', 'name', 'when', 'collection'],
+							30,
+						),
+						safeQuery(
+							'sys_script',
+							`collection=${t}^active=true^when=before`,
+							[
+								'sys_id',
+								'name',
+								'when',
+								'order',
+								'action_update',
+								'action_delete',
+								'filter_condition',
+								'script',
+							],
+							100,
+						),
+						safeQuery(
+							'sys_dictionary',
+							`name=${t}^elementISNOTEMPTY`,
+							[
+								'sys_id',
+								'name',
+								'element',
+								'internal_type',
+								'reference',
+								'reference_cascade_rule',
+								'read_only',
+								'mandatory',
+							],
+							300,
+						),
+					]);
 
-				const aclRecords = aclResult.records;
+				const aclRecords = aclResult.records.filter((acl) => {
+					const operation = String(acl.operation ?? '');
+					const name = String(acl.name ?? '');
+					if (operations?.length && !operations.includes(operation as never)) return false;
+					if (fields?.length && name !== t && !fields.some((f) => name === `${t}.${f}`))
+						return false;
+					return true;
+				});
 				const aclById = new Map(aclRecords.map((acl) => [acl.sys_id, acl]));
 
 				// Resolve role requirements for the ACLs found. displayValue: 'all' turns
@@ -180,6 +220,11 @@ export function createGetSecurityInfoTool(tableService: TableService) {
 					rolesByOperation,
 					dataPolicies: dataPolicyResult.records,
 					securityBusinessRules: businessRuleResult.records,
+					beforeBusinessRules: beforeBrResult.records.map((br) => ({
+						...br,
+						hasAbortAction: String(br.script ?? '').includes('setAbortAction'),
+					})),
+					dictionary: dictionaryResult.records,
 				};
 				if (includeDetails) {
 					acls.details = aclRecords;

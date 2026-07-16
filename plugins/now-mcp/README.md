@@ -138,8 +138,8 @@ call, so you can fix it without a crash loop.
 | `sn_query_records` | Read any table — encoded-query filters, field selection, **dot-walking**, pagination, display values; on MCP auth/transport failure, automatically tries an aligned `now-sdk query` profile |
 | `sn_aggregate_records` | Counts / group-by / avg / sum / min / max via the **Stats API** (server-side, cheap) |
 | `sn_create_record` | Insert a record (with schema field validation + typo hints) |
-| `sn_update_record` | Patch/replace a record by sys_id |
-| `sn_delete_record` | Delete a record by sys_id (destructive) |
+| `sn_update_record` | Patch/replace a record by sys_id; optional post-write reread verification |
+| `sn_delete_record` | Delete a record by sys_id (destructive); optional post-delete verification |
 | `sn_batch_create` / `sn_batch_update` | Create/update many records in concurrency-limited waves (default 50/call, rate-limited; not transactional) |
 | `sn_diff_records` | Compare two records on a table field-by-field; returns only what differs |
 
@@ -151,11 +151,12 @@ call, so you can fix it without a crash loop.
 | `sn_list_tables` | List/filter tables |
 | `sn_get_choice_list` | Valid choice values for a field |
 | `sn_get_security_info` | Consolidated table security posture — ACLs (table + field), role requirements, data policies, security business rules |
+| `sn_diagnose_mutation` | Read-only mutation preflight: record/field capabilities, before BR abort risks, ACLs, and reference dependencies |
 
 ### Execution & files
 | Tool | What it does |
 |---|---|
-| `sn_execute_background_script` | Run server-side JavaScript (exercise deployed logic; read results from logs) |
+| `sn_execute_background_script` | Run server-side JavaScript; reports transport path/outcome and supports a JSON application-result contract |
 | `sn_upload_attachment` / `sn_download_attachment` | Attach / fetch files (base64) |
 | `sn_get_attachment_metadata` | List attachments on a record (name, type, size) **without** downloading content |
 
@@ -290,6 +291,17 @@ to pin the YAML's own `default` instead.
 
 - **Read-only by default.** Every instance is read-only unless you explicitly set
   `readOnly: false`. Write tools return a clear `AccessDeniedError` otherwise.
+- **Verified mutations.** `sn_update_record` and `sn_delete_record` accept
+  `verify: true` to reread state and fail when the requested mutation did not
+  persist. Use `sn_diagnose_mutation` before retrying a failed/aborted write.
+- **Two-step metadata approval.** Background scripts require `allowWrites: true`
+  for data writes and the additional `allowMetadataWrites: true` break-glass
+  approval for metadata/security/config tables such as `sys_security_acl`.
+  Prefer Fluent source control for metadata.
+- **Transport is not business success.** Background-script responses expose
+  `transportSuccess`, `executionPath`, and `outcome`. With `resultMode: "json"`,
+  make the final logged line `{"success":true|false,...}` (or `ok`) so an
+  application-level false becomes an MCP error instead of a misleading success.
 - **Table allow/deny lists.** `SERVICENOW_BLOCKED_TABLES` / `SERVICENOW_ALLOWED_TABLES`
   gate every table operation (data ops *and* schema discovery) — deny wins, an
   allow-list is exclusive when set, trailing-`*` wildcards supported.

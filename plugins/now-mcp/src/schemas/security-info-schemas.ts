@@ -19,6 +19,15 @@ export const GetSecurityInfoSchema = z.object({
 		.describe(
 			'false (default): return only summarized counts and roles grouped by operation — much smaller. true: also include the raw per-ACL detail array and per-ACL role list.',
 		),
+	operations: z
+		.array(z.enum(['create', 'read', 'write', 'update', 'delete']))
+		.optional()
+		.describe('Optional ACL operations to retain, e.g. ["update","delete"].'),
+	fields: z
+		.array(z.string().regex(/^[a-zA-Z0-9_]+$/))
+		.max(50)
+		.optional()
+		.describe('Optional field names; retain table ACLs plus ACLs for these fields.'),
 });
 
 export type GetSecurityInfoInput = z.infer<typeof GetSecurityInfoSchema>;
@@ -47,5 +56,7 @@ export const GetSecurityInfoOutputSchema = z.object({
 	roleRequirements: z.array(OpenRecord).optional(),
 	dataPolicies: z.array(OpenRecord),
 	securityBusinessRules: z.array(OpenRecord),
+	beforeBusinessRules: z.array(OpenRecord).optional(),
+	dictionary: z.array(OpenRecord).optional(),
 	warnings: z.array(z.string()).optional(),
 });

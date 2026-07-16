@@ -55,6 +55,50 @@ export function createUpdateRecordTool(tableService: TableService, schemaService
 					validated.updateType === 'full',
 					validated.instance,
 				);
+				let verification: Record<string, unknown> = { performed: false };
+				if (validated.verify) {
+					const reread = await tableService.getRecord(
+						validated.tableName,
+						validated.sysId,
+						['sys_id', ...Object.keys(validated.fields)],
+						validated.instance,
+					);
+					const normalize = (v: unknown): unknown => {
+						if (typeof v === 'object' && v !== null && 'value' in v)
+							return (v as { value: unknown }).value;
+						if (v === true) return 'true';
+						if (v === false) return 'false';
+						if (v === null || v === undefined) return '';
+						return String(v);
+					};
+					const mismatches = Object.entries(validated.fields)
+						.filter(([field, expected]) => normalize(reread[field]) !== normalize(expected))
+						.map(([field, expected]) => ({ field, expected, actual: reread[field] }));
+					verification = {
+						performed: true,
+						persisted: mismatches.length === 0,
+						...(mismatches.length ? { mismatches } : {}),
+					};
+					if (mismatches.length > 0) {
+						return {
+							content: [
+								{
+									type: 'text' as const,
+									text: `Update API returned, but read-after-write verification failed: ${JSON.stringify(mismatches)}`,
+								},
+							],
+							structuredContent: {
+								success: false,
+								table: validated.tableName,
+								sys_id: validated.sysId,
+								updateType: validated.updateType,
+								record: reread,
+								verification,
+							},
+							isError: true as const,
+						};
+					}
+				}
 
 				// Lean echo: sys_id + the fields the caller changed, not the whole row.
 				const changed: Record<string, unknown> = { sys_id: record.sys_id };
@@ -67,6 +111,7 @@ export function createUpdateRecordTool(tableService: TableService, schemaService
 					sys_id: typeof record.sys_id === 'string' ? record.sys_id : undefined,
 					updateType: validated.updateType,
 					record: changed,
+					verification,
 				};
 
 				return toolResult(response, `updated ${validated.tableName} ${validated.sysId}`);
