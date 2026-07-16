@@ -25,12 +25,12 @@ export const EXECUTE_BACKGROUND_SCRIPT_TOOL = {
 	name: 'sn_execute_background_script',
 	title: 'Execute background script',
 	description: `What: Run server-side JavaScript in ServiceNow via a temporary sys_trigger, then return its logged output.
-When to use: For logic the Table/Stats APIs can't express. Prefer query_records / aggregate_records for plain reads.
+When to use: Only for logic the dedicated Table/Stats tools can't express. Prefer query_records / aggregate_records for plain reads and the create/update/delete record tools for ordinary CRUD. In particular, to remove one known record, call sn_delete_record FIRST; do not substitute GlideRecord.deleteRecord() merely because this tool is more general or runs with elevated privileges.
 Preconditions: A WRITE-ENABLED instance (the tool creates a temporary sys_trigger — itself a write — so it won't run on a read-only instance even for a read-only script) and an admin/elevated role (the script runs with full system privileges). Timeout default 60s, max 2m.
 
 WARNING: executes arbitrary code with full privileges; all executions are logged.
 
-Write policy (governs writes INSIDE the script body, separate from the instance being write-enabled): the body is READ-ONLY by default — a detected insert/update/delete is BLOCKED unless allowWrites:true (set only when the user has confirmed the writes). Writes to metadata/config tables (sys_business_rule, sys_script_include, …) are flagged even under allowWrites — those belong in Fluent source, not ad-hoc scripts. Detection is heuristic (literal GlideRecord table names only); an unresolvable table yields a lowConfidenceWarning — review manually.
+Write policy (governs writes INSIDE the script body): writes require allowWrites:true. Metadata/security/config writes require BOTH allowWrites:true and allowMetadataWrites:true; prefer Fluent source control. Detection is heuristic; unresolved targets yield lowConfidenceWarning.
 
 Runtime (ServiceNow Rhino, NOT Node): call log(...) to return output (gs.log/info/print are rewritten to it; return values are discarded). In scoped contexts prefer gs.info over gs.print (print is global-scope-only). Synchronous only — no import/require, no setTimeout/Promise/await. Use GlideRecordSecure + canWrite() for writes and setLimit() on queries. Referenced table/field names are schema-checked first; unknown ones return in "schemaCheck" (advisory — the script still runs).`,
 	inputSchema: ExecuteBackgroundScriptSchema,
@@ -56,6 +56,20 @@ export function createExecuteBackgroundScriptTool(
 
 				// Write-operation gate: block unless allowWrites is explicitly set.
 				const writeDetection = detectWriteOperations(validated.script);
+				if (validated.allowMetadataWrites && !validated.allowWrites) {
+					return {
+						content: [
+							{
+								type: 'text' as const,
+								text: toolText({
+									blocked: true,
+									reason: 'allowMetadataWrites requires allowWrites:true.',
+								}),
+							},
+						],
+						isError: true as const,
+					};
+				}
 				if (writeDetection.hasWrites && !validated.allowWrites) {
 					const calls = writeDetection.writeCalls.map((c) =>
 						c.table ? `${c.method} on '${c.table}'` : c.method,
@@ -75,6 +89,19 @@ export function createExecuteBackgroundScriptTool(
 								}
 							: {}),
 						hint: 'Set allowWrites: true to explicitly approve this script. Only do so after confirming the writes are intentional.',
+					};
+					return {
+						content: [{ type: 'text' as const, text: toolText(blocked) }],
+						isError: true as const,
+					};
+				}
+				if (writeDetection.metadataTables.length > 0 && !validated.allowMetadataWrites) {
+					const blocked = {
+						blocked: true,
+						reason:
+							'Script writes to metadata/security/config tables and needs a second explicit approval.',
+						metadataTables: writeDetection.metadataTables,
+						hint: 'Prefer Fluent source control. If this exceptional live-instance mutation is intentional, set both allowWrites:true and allowMetadataWrites:true.',
 					};
 					return {
 						content: [{ type: 'text' as const, text: toolText(blocked) }],
@@ -106,14 +133,53 @@ export function createExecuteBackgroundScriptTool(
 					} chars — narrow the script's logging (fewer/shorter gs.info calls, or aggregate before logging)]`;
 				}
 
+				let applicationResult: unknown;
+				let applicationSuccess: boolean | undefined;
+				let resultContractError: string | undefined;
+				if (validated.resultMode === 'json' && result.success) {
+					try {
+						const lastLine = String(result.output ?? '')
+							.trim()
+							.split(/\r?\n/)
+							.filter(Boolean)
+							.at(-1);
+						if (!lastLine) throw new Error('script produced no output');
+						applicationResult = JSON.parse(lastLine);
+						if (applicationResult && typeof applicationResult === 'object') {
+							const contract = applicationResult as { success?: unknown; ok?: unknown };
+							if (typeof contract.success === 'boolean') applicationSuccess = contract.success;
+							else if (typeof contract.ok === 'boolean') applicationSuccess = contract.ok;
+						}
+						if (applicationSuccess === undefined) {
+							resultContractError =
+								"JSON result must contain a boolean 'success' or 'ok' property.";
+						}
+					} catch (error) {
+						resultContractError = `Could not parse the final output line as JSON: ${error instanceof Error ? error.message : String(error)}`;
+					}
+				}
+				const overallSuccess =
+					result.success && applicationSuccess !== false && !resultContractError;
+
 				// Format response for LLM
 				const response = {
-					success: result.success,
+					success: overallSuccess,
+					transportSuccess: result.success,
+					...(applicationSuccess !== undefined ? { applicationSuccess } : {}),
+					...(applicationResult !== undefined ? { applicationResult } : {}),
 					executionTime: result.executionTime,
 					output,
 					...(outputTruncated ? { outputTruncated: true } : {}),
 					error: result.error ?? null,
 					instance: validated.instance || 'default',
+					executionPath: result.executionPath,
+					outcome: result.outcome,
+					runtimeContext: {
+						serverRuntime: 'ServiceNow Rhino' as const,
+						transport: result.executionPath,
+						writeResultContract:
+							'GlideRecord insert/update normally returns a sys_id; deleteRecord returns boolean. A null/false result is not proof of persistence—verify by rereading the record.',
+					},
 					...(schemaCheck ? { schemaCheck } : {}),
 					...(writeDetection.hasWrites && validated.allowWrites
 						? {
@@ -131,18 +197,27 @@ export function createExecuteBackgroundScriptTool(
 												lowConfidenceWarning: `${writeDetection.unresolvedWrites} approved write(s) target a GlideRecord whose table name could not be resolved statically — the metadata-table check could not cover them. Verify none wrote to a protected metadata/config table.`,
 											}
 										: {}),
+									metadataWritesApproved:
+										writeDetection.metadataTables.length > 0 && validated.allowMetadataWrites,
 								},
 							}
 						: {}),
-					warning: result.success
-						? undefined
-						: 'Script execution failed. Check error details above.',
+					warning:
+						resultContractError ??
+						(result.success
+							? applicationSuccess === false
+								? 'Script transport completed, but the declared application result was false.'
+								: undefined
+							: 'Script execution failed. Check error details above.'),
 				};
 
-				return toolResult(
+				const formatted = toolResult(
 					response,
-					result.success ? 'script ran — see output' : 'script failed — see error',
+					overallSuccess
+						? 'script ran — see output'
+						: 'script completed with failure — see outcome',
 				);
+				return overallSuccess ? formatted : { ...formatted, isError: true as const };
 			} catch (error) {
 				logger.error('Error executing background script', error);
 				return toolError(error, {

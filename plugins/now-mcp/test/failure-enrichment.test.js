@@ -47,6 +47,17 @@ test('unknown failures produce no hints', () => {
   assert.deepEqual(failureHints('totally opaque error', {}), []);
 });
 
+test('delete failures avoid unsupported UI-only conclusions and recommend diagnostics', () => {
+  const hints = failureHints('403 Access denied', {
+    table: 'sn_grc_indicator',
+    operation: 'delete',
+  });
+  const text = hints.join(' ');
+  assert.match(text, /authenticated API user/i);
+  assert.match(text, /sn_diagnose_mutation/);
+  assert.match(text, /does not prove.*UI-only/i);
+});
+
 test('zeroResultHints suggest broadening with the query echoed', () => {
   const hints = zeroResultHints({ table: 'incident', query: 'priority=1^state=99' });
   assert.match(hints.join(' '), /broaden/i);

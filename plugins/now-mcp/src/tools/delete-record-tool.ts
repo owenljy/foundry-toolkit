@@ -16,11 +16,11 @@ export const DELETE_RECORD_TOOL = {
 	name: 'sn_delete_record',
 	title: 'Delete record',
 	description: `What: Permanently delete a record by sys_id (destructive).
-When to use: To remove a specific record.
+When to use: This is the FIRST and preferred tool for removing a specific data record. Use it before attempting GlideRecord.deleteRecord() in sn_execute_background_script; the dedicated Table API path is simpler, auditable, and verified by a read-after-delete by default.
 Preconditions: Write-enabled instance (readOnly: false); valid sys_id.
 Produces: A deletion confirmation.
 
-WARNING: permanent hard delete. There is no trash/undo — recovery is only possible via a rollback context on audited tables or a database backup, so do not assume it's reversible. Verify the sys_id first; consider deactivating (active=false) instead of deleting. This deletes a DATA record — app config/metadata is managed via the Fluent SDK. Business rules or missing permissions may block the delete.`,
+WARNING: permanent hard delete. There is no trash/undo — recovery is only possible via a rollback context on audited tables or a database backup, so do not assume it's reversible. Verify the sys_id first; consider deactivating (active=false) instead of deleting. This deletes a DATA record — app config/metadata is managed via the Fluent SDK. Business rules or missing permissions may block the delete. If API deletion fails while UI deletion succeeds, compare the actual API and UI users, roles, domain/scope, ACLs, and transaction-specific logic; do not infer an undocumented "UI-only" restriction without evidence.`,
 	inputSchema: DeleteRecordSchema,
 	outputSchema: DeleteRecordOutputSchema,
 };
@@ -53,6 +53,42 @@ export function createDeleteRecordTool(tableService: TableService) {
 					validated.sysId,
 					validated.instance,
 				);
+				let verification: { performed: boolean; deleted?: boolean } = { performed: false };
+				if (validated.verify) {
+					let deleted = false;
+					try {
+						await tableService.getRecord(
+							validated.tableName,
+							validated.sysId,
+							['sys_id'],
+							validated.instance,
+						);
+					} catch (error) {
+						const text = String(error).toLowerCase();
+						if (text.includes('404') || text.includes('not found') || text.includes('no record'))
+							deleted = true;
+						else throw error;
+					}
+					verification = { performed: true, deleted };
+					if (!deleted) {
+						return {
+							content: [
+								{
+									type: 'text' as const,
+									text: 'Delete API returned, but the record still exists.',
+								},
+							],
+							structuredContent: {
+								success: false,
+								tableName: validated.tableName,
+								sysId: validated.sysId,
+								instance: validated.instance || 'default',
+								verification,
+							},
+							isError: true as const,
+						};
+					}
+				}
 
 				// Format response for LLM
 				const response = {
@@ -62,6 +98,7 @@ export function createDeleteRecordTool(tableService: TableService) {
 					sysId: validated.sysId,
 					instance: validated.instance || 'default',
 					warning: 'Record has been permanently deleted',
+					verification,
 				};
 
 				return toolResult(response, `deleted ${validated.sysId} from ${validated.tableName}`);

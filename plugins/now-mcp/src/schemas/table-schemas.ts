@@ -140,6 +140,11 @@ export const UpdateRecordSchema = z.object({
 		.describe('Field-value pairs to update'),
 	updateType: updateTypeField,
 	skipFieldValidation: skipFieldValidationField.default(false),
+	verify: z
+		.boolean()
+		.optional()
+		.default(true)
+		.describe('Read the record back and verify requested values persisted (default true).'),
 });
 
 export type UpdateRecordInput = z.infer<typeof UpdateRecordSchema>;
@@ -151,6 +156,11 @@ export const DeleteRecordSchema = z.object({
 	instance: instanceField,
 	tableName: tableNameField(),
 	sysId: sysIdField(),
+	verify: z
+		.boolean()
+		.optional()
+		.default(true)
+		.describe('Verify the record no longer exists after deletion (default true).'),
 });
 
 export type DeleteRecordInput = z.infer<typeof DeleteRecordSchema>;

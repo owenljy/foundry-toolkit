@@ -28,6 +28,7 @@ import { createBatchUpdateTool } from './batch-update-tool.js';
 import { createConnectionStatusTool, createResetConnectionTool } from './connection-status-tool.js';
 import { createCreateRecordTool } from './create-record-tool.js';
 import { createDeleteRecordTool } from './delete-record-tool.js';
+import { createDiagnoseMutationTool } from './diagnose-mutation-tool.js';
 import { createDiffRecordsTool } from './diff-records-tool.js';
 import { createDownloadAttachmentTool } from './download-attachment-tool.js';
 import { createExecuteBackgroundScriptTool } from './execute-background-script-tool.js';
@@ -160,6 +161,7 @@ export async function registerTools(
 		// Comparison & security posture (read-only observation)
 		createDiffRecordsTool(tableService),
 		createGetSecurityInfoTool(tableService),
+		createDiagnoseMutationTool(scriptService),
 
 		// Script execution (with advisory schema pre-flight on referenced fields)
 		createExecuteBackgroundScriptTool(scriptService, schemaService),

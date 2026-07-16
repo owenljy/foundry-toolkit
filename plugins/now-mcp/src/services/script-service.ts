@@ -90,6 +90,8 @@ export class ScriptService {
 		output?: string;
 		error?: string;
 		executionTime: number;
+		executionPath: 'scripted-rest' | 'sys_trigger';
+		outcome: 'completed' | 'script_failed' | 'timed_out';
 	}> {
 		validateWriteAccess(this.instanceManager, instance);
 		const client = this.instanceManager.getClient(instance);
@@ -115,7 +117,14 @@ export class ScriptService {
 					success: r.success,
 					executionTime,
 				});
-				return { success: r.success, output: r.output, error: r.error, executionTime };
+				return {
+					success: r.success,
+					output: r.output,
+					error: r.error,
+					executionTime,
+					executionPath: 'scripted-rest',
+					outcome: r.success ? 'completed' : 'script_failed',
+				};
 			} catch (error) {
 				const executionTime = Date.now() - startTime;
 				logger.error('Background script failed via Scripted REST', { error, executionTime });
@@ -307,6 +316,8 @@ export class ScriptService {
 					success: false,
 					error: `Script execution timed out after ${executionTime}ms. The sys_trigger (Run Once) was created but the ServiceNow scheduler did not execute it within the timeout. Check that the scheduler is running: System Diagnostics > Scheduler.`,
 					executionTime,
+					executionPath: 'sys_trigger',
+					outcome: 'timed_out',
 				};
 			}
 
@@ -321,6 +332,8 @@ export class ScriptService {
 				output: result.output,
 				error: result.error,
 				executionTime,
+				executionPath: 'sys_trigger',
+				outcome: result.success ? 'completed' : 'script_failed',
 			};
 		} catch (error) {
 			const executionTime = Date.now() - startTime;
