@@ -1,8 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "sn-poc",
+  "version": "1.0.0",
   "displayName": "ServiceNow PoC",
-  "description": "Discovery-to-planning workflow for ServiceNow PoCs — challenge a PoC idea, generate client meeting questions, write PoC and technical specs, and decompose into implementation-ready stories.",
+  "description": "Discovery-to-planning workflow for ServiceNow PoCs — challenge a PoC idea, generate customer meeting questions, write PoC and technical specs, and decompose into implementation-ready stories.",
   "author": {
     "name": "Owen Liang"
   },

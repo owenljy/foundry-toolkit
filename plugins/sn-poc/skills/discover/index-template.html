@@ -66,15 +66,15 @@
     /* ── Tables ── */
     table.data-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:13px; }
     table.data-table th { background:var(--table-header); text-align:left; padding:8px 10px; font-weight:600; font-size:11px; letter-spacing:.04em; text-transform:uppercase; border-bottom:2px solid var(--border); color:var(--text-muted); }
-    table.data-table td { padding:6px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    table.data-table td { padding:6px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
     table.data-table tr:nth-child(even) td { background:var(--table-stripe); }
     table.data-table tr:hover td { background:rgba(99,223,78,0.03); }
 
     /* ── Form controls ── */
-    .field-input { width:100%; background:transparent; border:none; border-bottom:1px solid transparent; color:var(--text); font:inherit; font-size:13px; padding:3px 2px; outline:none; border-radius:3px; transition:border-color .15s,background .15s; }
+    .field-input { width:100%; min-width:0; background:transparent; border:none; border-bottom:1px solid transparent; color:var(--text); font:inherit; font-size:13px; padding:3px 2px; outline:none; border-radius:3px; transition:border-color .15s,background .15s; }
     .field-input:hover { border-bottom-color:var(--border); }
     .field-input:focus { border-bottom-color:var(--edit-ring); background:rgba(99,223,78,0.04); }
-    textarea.field-input { resize:vertical; min-height:48px; line-height:1.5; }
+    textarea.field-input { resize:none; overflow:hidden; min-height:22px; line-height:1.5; display:block; word-wrap:break-word; }
 
     /* ── Tag pill ── */
     .tag-pill { display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; border:1px solid transparent; transition:opacity .15s; user-select:none; white-space:nowrap; }
@@ -94,12 +94,12 @@
     .tag-picker-popup .tp-item .tag-pill { pointer-events:none; }
     .tag-picker-popup .tp-divider { height:1px; background:var(--border); margin:4px 0; }
     .tag-picker-popup .tp-new { padding:8px 12px; }
-    .tag-picker-popup .tp-new input { width:100%; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text); font:12px inherit; padding:4px 8px; outline:none; }
+    .tag-picker-popup .tp-new input { width:100%; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text); font-family:inherit; font-size:12px; padding:4px 8px; outline:none; }
     .tag-picker-popup .tp-new input:focus { border-color:var(--edit-ring); }
     .tag-picker-popup .tp-swatches { display:flex; gap:5px; margin:6px 0; }
     .tag-picker-popup .tp-swatch { width:16px; height:16px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:border-color .1s; }
     .tag-picker-popup .tp-swatch.selected { border-color:var(--text); }
-    .tag-picker-popup .tp-add-btn { width:100%; padding:4px 8px; background:var(--accent-dim); border:1px solid rgba(99,223,78,.3); border-radius:4px; color:var(--accent); font:12px inherit; cursor:pointer; margin-top:2px; }
+    .tag-picker-popup .tp-add-btn { width:100%; padding:4px 8px; background:var(--accent-dim); border:1px solid rgba(99,223,78,.3); border-radius:4px; color:var(--accent); font-family:inherit; font-size:12px; cursor:pointer; margin-top:2px; }
     .tag-picker-popup .tp-add-btn:hover { background:rgba(99,223,78,.15); }
 
     /* ── Cards (challenges) ── */
@@ -114,43 +114,50 @@
     .card-meta { margin-top:10px; display:flex; align-items:center; gap:8px; }
 
     /* ── Collapsibles ── */
-    .collapsible-header { cursor:pointer; user-select:none; display:flex; align-items:center; gap:8px; margin:20px 0 10px; }
-    .collapsible-header .chv { display:inline-flex; width:14px; height:14px; transition:transform .2s; color:var(--text-muted); flex-shrink:0; }
+    .collapsible-header { cursor:pointer; user-select:none; display:flex; align-items:flex-start; gap:8px; margin:20px 0 10px; }
+    .collapsible-header .chv { display:inline-flex; width:14px; height:14px; margin-top:3px; transition:transform .2s; color:var(--text-muted); flex-shrink:0; }
     .collapsible-header.open .chv { transform:rotate(90deg); }
+    .collapsible-header .del-group-btn { margin-top:1px; }
     .collapsible-body { display:none; }
     .collapsible-body.open { display:block; }
     /* group header editable title */
-    .group-name-input { background:transparent; border:none; border-bottom:1px solid transparent; color:var(--accent); font:600 15px inherit; outline:none; padding:1px 2px; min-width:80px; }
+    .group-name-input { flex:1 1 auto; min-width:0; width:100%; background:transparent; border:none; border-bottom:1px solid transparent; color:var(--accent); font-family:inherit; font-weight:600; font-size:15px; outline:none; padding:1px 2px; resize:none; overflow:hidden; line-height:1.4; display:block; word-wrap:break-word; }
     .group-name-input:focus { border-bottom-color:var(--edit-ring); }
     .group-name-input:hover { border-bottom-color:rgba(99,223,78,.3); }
 
     /* ── Question list ── */
     .question-list { list-style:none; padding:0; }
-    .question-list li { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--border); }
+    .question-list li { display:flex; flex-direction:column; align-items:stretch; gap:6px; padding:10px 0; border-bottom:1px solid var(--border); }
     .question-list li:last-child { border-bottom:none; }
-    .question-list li.has-answer { flex-direction:column; align-items:stretch; gap:6px; padding:10px 0; }
-    .q-main-row { display:flex; align-items:center; gap:8px; }
-    .q-answer-row { display:flex; align-items:center; gap:8px; padding-left:22px; }
-    .q-answer-row .q-arrow { color:var(--tag-green-tx); font-size:13px; flex-shrink:0; }
-    .q-answer-row .q-source { flex:0 0 200px; color:var(--text-muted); font-size:12px; font-style:italic; }
+    .q-main-row { display:flex; align-items:flex-start; gap:8px; }
+    .q-main-row .field-input, .card-title-row .field-input { flex:1 1 auto; min-width:0; }
+    .q-main-row .tag-pill, .q-main-row .del-btn { margin-top:3px; }
+    .q-answer-row { display:flex; align-items:flex-start; gap:8px; padding-left:22px; }
+    .q-answer-row .q-arrow { color:var(--tag-teal-tx); font-size:13px; font-weight:700; flex-shrink:0; margin-top:5px; }
+    .q-answer-row .field-input.q-answer-input { flex:1 1 auto; min-width:0; background:var(--tag-teal-bg); border:1px solid rgba(20,184,166,.25); border-radius:5px; padding:5px 8px; }
+    .q-answer-row .field-input.q-answer-input:hover { border-color:rgba(20,184,166,.45); }
+    .q-answer-row .field-input.q-answer-input:focus { border-color:var(--tag-teal-tx); background:rgba(20,184,166,0.12); }
+    .q-answer-row .q-source { flex:0 0 180px; color:var(--text-muted); font-size:12px; font-style:italic; }
 
     /* ── Brief boxes ── */
     .brief-box { background:var(--card-bg); border-radius:8px; padding:20px 22px; margin:12px 0; border:1px solid var(--border); }
     .brief-box h3 { font-size:14px; font-weight:600; color:var(--accent); margin-bottom:10px; }
     .brief-list { list-style:none; padding:0; }
-    .brief-list li { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid var(--border); }
+    .brief-list li { display:flex; align-items:flex-start; gap:6px; padding:4px 0; border-bottom:1px solid var(--border); }
     .brief-list li:last-child { border-bottom:none; }
+    .brief-list li .field-input { flex:1 1 auto; min-width:0; }
+    .brief-list li .del-btn { margin-top:3px; }
 
     /* ── Utility buttons ── */
     .del-btn { flex-shrink:0; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; line-height:1; padding:2px 4px; border-radius:3px; transition:color .12s; opacity:0; }
     li:hover .del-btn, tr:hover .del-btn, .challenge-card:hover .del-btn { opacity:1; }
     .del-btn:hover { color:#ef4444; }
-    .add-row-btn { display:flex; align-items:center; gap:6px; margin-top:10px; padding:6px 12px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font:12px inherit; cursor:pointer; transition:all .15s; width:100%; justify-content:center; }
+    .add-row-btn { display:flex; align-items:center; gap:6px; margin-top:10px; padding:6px 12px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font-family:inherit; font-size:12px; cursor:pointer; transition:all .15s; width:100%; justify-content:center; }
     .add-row-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
-    .add-group-btn { display:flex; align-items:center; gap:6px; margin-top:20px; padding:8px 14px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font:12px inherit; cursor:pointer; transition:all .15s; }
+    .add-group-btn { display:flex; align-items:center; gap:6px; margin-top:20px; padding:8px 14px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font-family:inherit; font-size:12px; cursor:pointer; transition:all .15s; }
     .add-group-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
     .col-add-th { background:var(--table-header); border-bottom:2px solid var(--border); }
-    .col-add-btn { background:transparent; border:1px dashed rgba(99,223,78,.3); border-radius:4px; color:var(--text-muted); font:11px inherit; cursor:pointer; padding:2px 8px; transition:all .15s; }
+    .col-add-btn { background:transparent; border:1px dashed rgba(99,223,78,.3); border-radius:4px; color:var(--text-muted); font-family:inherit; font-size:11px; cursor:pointer; padding:2px 8px; transition:all .15s; }
     .col-add-btn:hover { border-color:var(--accent); color:var(--accent); }
     .del-col-btn { background:transparent; border:none; color:transparent; cursor:pointer; font-size:10px; padding:0 2px; transition:color .12s; }
     th:hover .del-col-btn { color:var(--text-muted); }
@@ -205,7 +212,7 @@
     ],
     "questions": {
       "User Needs":   [{"id":"def456","label":"blocker","text":"..."}],
-      "Current State":[{"id":"ghi789","label":"context","text":"..."}, {"id":"jkl456","label":"confirmed","text":"...","answer":"...","source":"..."}]
+      "Current State":[{"id":"ghi789","label":"context","text":"..."}, {"id":"jkl456","label":"confirmed","text":"...","answer":"...","source":"Zoom transcript 2026-07-15"}]
     },
     "faq": {
       "Will this change how I work?": [
@@ -219,7 +226,8 @@
 
   Priority/label/status values are tag IDs from customTags.
   Generate short random IDs (6 alphanumeric chars) for all id fields.
-  Question "answer"/"source" fields are optional — only set them when label is "confirmed".
+  Question "answer"/"source" fields are optional and independent of "label" —
+  any question can have an answer typed directly, whatever its priority tag.
 -->
 
 <script id="structured-data" type="application/json">
@@ -243,8 +251,8 @@
       <span class="status-pill" id="statusPill">{{STATUS}}</span>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-group">Client</div>
-      <a href="#brief">Client Brief</a>
+      <div class="nav-group">Customer</div>
+      <a href="#brief">Customer Brief</a>
       <div class="nav-group">Team Prep</div>
       <a href="#challenges">Challenge Points</a>
       <a href="#questions">Discovery Questions</a>
@@ -463,17 +471,17 @@ function renderBrief() {
   const b  = DOC.brief;
 
   el.innerHTML = `
-    <div class="section-label">Client</div>
-    <h2>Client Brief</h2>
+    <div class="section-label">Customer</div>
+    <h2>Customer Brief</h2>
 
     <div class="brief-box">
       <h3>What We're Proposing</h3>
-      <textarea class="field-input" rows="3" data-bf="proposing">${esc(b.proposing||'')}</textarea>
+      <textarea class="field-input auto-grow" rows="3" data-bf="proposing">${esc(b.proposing||'')}</textarea>
     </div>
 
     <div class="brief-box">
       <h3>Why This Matters</h3>
-      <textarea class="field-input" rows="3" data-bf="whyItMatters">${esc(b.whyItMatters||'')}</textarea>
+      <textarea class="field-input auto-grow" rows="3" data-bf="whyItMatters">${esc(b.whyItMatters||'')}</textarea>
     </div>
 
     <div class="brief-box">
@@ -481,7 +489,7 @@ function renderBrief() {
       <ul class="brief-list" id="brief-needs">
         ${(b.whatWeNeed||[]).map((item,i) => `
           <li>
-            <input type="text" class="field-input" value="${esc(item)}" data-ni="${i}" placeholder="Ask…">
+            <textarea rows="1" class="field-input auto-grow" data-ni="${i}" placeholder="Ask…">${esc(item)}</textarea>
             <button class="del-btn" data-del-need="${i}" title="Remove">×</button>
           </li>`).join('')}
       </ul>
@@ -495,9 +503,9 @@ function renderBrief() {
         <tbody id="brief-next">
           ${(b.nextSteps||[]).map((s,i) => `
             <tr>
-              <td><input type="text" class="field-input" value="${esc(s.step)}"  data-ns="${i}" data-nf="step"  placeholder="#"></td>
-              <td><input type="text" class="field-input" value="${esc(s.what)}"  data-ns="${i}" data-nf="what"  placeholder="What happens"></td>
-              <td><input type="text" class="field-input" value="${esc(s.when)}"  data-ns="${i}" data-nf="when"  placeholder="When"></td>
+              <td><textarea rows="1" class="field-input auto-grow" data-ns="${i}" data-nf="step"  placeholder="#">${esc(s.step)}</textarea></td>
+              <td><textarea rows="1" class="field-input auto-grow" data-ns="${i}" data-nf="what"  placeholder="What happens">${esc(s.what)}</textarea></td>
+              <td><textarea rows="1" class="field-input auto-grow" data-ns="${i}" data-nf="when"  placeholder="When">${esc(s.when)}</textarea></td>
               <td><button class="del-btn" data-del-step="${i}" title="Remove">×</button></td>
             </tr>`).join('')}
         </tbody>
@@ -530,6 +538,7 @@ function renderBrief() {
   el.querySelector('#add-step-btn').addEventListener('click', () => {
     DOC.brief.nextSteps.push({step:String(DOC.brief.nextSteps.length+1),what:'',when:''}); save(); renderBrief();
   });
+  initAutoGrow(el);
 }
 
 /* ══════════════════════════════════════════════════
@@ -546,10 +555,10 @@ function renderChallenges() {
         return `
         <div class="challenge-card" data-ch="${c.id}" data-priority-color="${t.color}">
           <div class="card-title-row">
-            <input type="text" class="field-input" style="font-weight:600;font-size:14px" value="${esc(c.title)}" data-chi="${i}" data-chf="title" placeholder="Assumption being challenged…">
+            <textarea rows="1" class="field-input auto-grow" style="font-weight:600;font-size:14px" data-chi="${i}" data-chf="title" placeholder="Assumption being challenged…">${esc(c.title)}</textarea>
             <button class="del-btn" style="opacity:0" data-del-ch="${c.id}" title="Remove challenge">×</button>
           </div>
-          <textarea class="field-input" rows="2" data-chi="${i}" data-chf="riskIfWrong" placeholder="Risk if wrong…">${esc(c.riskIfWrong)}</textarea>
+          <textarea class="field-input auto-grow" rows="2" data-chi="${i}" data-chf="riskIfWrong" placeholder="Risk if wrong…">${esc(c.riskIfWrong)}</textarea>
           <div class="card-meta">
             ${tagPillHTML(c.priority||'blocker', {onclick:`pickChTag(event,'${c.id}')`})}
           </div>
@@ -581,6 +590,7 @@ function renderChallenges() {
     card.addEventListener('mouseenter', () => { card.querySelector('.del-btn').style.opacity='1'; });
     card.addEventListener('mouseleave', () => { card.querySelector('.del-btn').style.opacity='0'; });
   });
+  initAutoGrow(el);
 }
 
 window.pickChTag = function(e, chId) {
@@ -594,38 +604,41 @@ window.pickChTag = function(e, chId) {
 /* ══════════════════════════════════════════════════
    RENDER: QUESTIONS
 ══════════════════════════════════════════════════ */
+// Which question groups are expanded — persists across re-renders (add/delete/rename)
+// so those actions don't collapse groups the user already had open.
+let openQuestionThemes = null;
+
 function renderQuestions() {
   const el = document.getElementById('questions');
   const themes = Object.keys(DOC.questions);
-  const isFirst = idx => idx === 0;
+  if (!openQuestionThemes) openQuestionThemes = new Set(themes.slice(0,1));
+  const isOpen = theme => openQuestionThemes.has(theme);
 
   el.innerHTML = `
     <h2>Discovery Questions</h2>
     <div id="q-list">
       ${themes.map((theme,ti) => `
-        <div class="collapsible-header ${isFirst(ti)?'open':''}" data-th="${ti}">
+        <div class="collapsible-header ${isOpen(theme)?'open':''}" data-th="${ti}" data-theme-name="${esc(theme)}">
           ${CHV}
-          <input type="text" class="group-name-input" value="${esc(theme)}" data-rename-q="${ti}" placeholder="Group name…"
-            onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')this.blur()">
+          <textarea rows="1" class="group-name-input auto-grow" data-rename-q="${ti}" placeholder="Group name…"
+            onclick="event.stopPropagation()">${esc(theme)}</textarea>
           <button class="del-group-btn" data-del-qg="${theme}" title="Delete group" onclick="event.stopPropagation()">×</button>
         </div>
-        <div class="collapsible-body ${isFirst(ti)?'open':''}">
+        <div class="collapsible-body ${isOpen(theme)?'open':''}">
           <ul class="question-list" data-theme="${theme}">
             ${(DOC.questions[theme]||[]).map(q => {
-              const isConfirmed = q.label === 'confirmed';
               return `
-              <li data-qid="${q.id}" class="${isConfirmed?'has-answer':''}">
+              <li data-qid="${q.id}">
                 <div class="q-main-row">
                   <button class="del-btn" data-del-q="${q.id}" data-q-theme="${theme}" title="Delete question">×</button>
                   ${tagPillHTML(q.label||'context', {onclick:`pickQTag(event,'${theme}','${q.id}')`})}
-                  <input type="text" class="field-input" value="${esc(q.text)}" data-q="${q.id}" data-q-theme="${theme}" placeholder="Question…">
+                  <textarea rows="1" class="field-input auto-grow" data-q="${q.id}" data-q-theme="${theme}" placeholder="Question…">${esc(q.text)}</textarea>
                 </div>
-                ${isConfirmed ? `
                 <div class="q-answer-row">
-                  <span class="q-arrow">→</span>
-                  <input type="text" class="field-input" value="${esc(q.answer||'')}" data-q-answer="${q.id}" data-q-theme="${theme}" placeholder="Answer…">
-                  <input type="text" class="field-input q-source" value="${esc(q.source||'')}" data-q-source="${q.id}" data-q-theme="${theme}" placeholder="Source…">
-                </div>` : ''}
+                  <span class="q-arrow">A:</span>
+                  <textarea rows="1" class="field-input auto-grow q-answer-input" data-q-answer="${q.id}" data-q-theme="${theme}" placeholder="Type an answer directly…">${esc(q.answer||'')}</textarea>
+                  <textarea rows="1" class="field-input auto-grow q-source" data-q-source="${q.id}" data-q-theme="${theme}" placeholder="Source…">${esc(q.source||'')}</textarea>
+                </div>
               </li>`;
             }).join('')}
           </ul>
@@ -635,12 +648,20 @@ function renderQuestions() {
     <button class="add-group-btn" id="add-qg-btn">+ Add Group</button>`;
 
   wireQuestions(el);
+  initAutoGrow(el);
 }
 
 function wireQuestions(el) {
   // Collapsibles
   el.querySelectorAll('.collapsible-header[data-th]').forEach(h => {
-    h.addEventListener('click', () => { h.classList.toggle('open'); h.nextElementSibling.classList.toggle('open'); });
+    h.addEventListener('click', () => {
+      h.classList.toggle('open');
+      const body = h.nextElementSibling;
+      body.classList.toggle('open');
+      const theme = h.dataset.themeName;
+      if (body.classList.contains('open')) { openQuestionThemes.add(theme); resizeAutoGrow(body); }
+      else openQuestionThemes.delete(theme);
+    });
   });
   // Question text edit
   el.querySelectorAll('[data-q]').forEach(inp => {
@@ -696,7 +717,9 @@ function wireQuestions(el) {
         const newQ = {};
         themes.forEach((t,i) => { newQ[i===idx ? nw : t] = DOC.questions[t]; });
         DOC.questions = newQ;
+        if (openQuestionThemes.has(old)) { openQuestionThemes.delete(old); openQuestionThemes.add(nw); }
         save();
+        renderQuestions();
       }
     });
   });
@@ -706,6 +729,7 @@ function wireQuestions(el) {
       e.stopPropagation();
       if (!confirm(`Delete group "${btn.dataset.delQg}" and all its questions?`)) return;
       delete DOC.questions[btn.dataset.delQg];
+      openQuestionThemes.delete(btn.dataset.delQg);
       save(); renderQuestions();
     });
   });
@@ -714,6 +738,7 @@ function wireQuestions(el) {
     const name = prompt('Group name:');
     if (!name?.trim()) return;
     DOC.questions[name.trim()] = [];
+    openQuestionThemes.add(name.trim());
     save(); renderQuestions();
   });
 }
@@ -729,11 +754,17 @@ window.pickQTag = function(e, theme, qid) {
 /* ══════════════════════════════════════════════════
    RENDER: FAQ
 ══════════════════════════════════════════════════ */
+// Which FAQ groups are expanded — persists across re-renders (add/delete/rename)
+// so those actions don't collapse groups the user already had open.
+let openFaqGroups = null;
+
 function renderFAQ() {
   const el = document.getElementById('faq');
   const groups = Object.keys(DOC.faq);
   const cols = DOC.faqColumns;
+  if (!openFaqGroups) openFaqGroups = new Set(groups.slice(0,1));
   const isFirst = idx => idx === 0;
+  const isOpen = group => openFaqGroups.has(group);
 
   function rowHTML(row, gi) {
     return `<tr data-fid="${row.id}">
@@ -743,7 +774,7 @@ function renderFAQ() {
         if (col === 'Status') {
           return `<td>${tagPillHTML(val||'tbd', {onclick:`pickFaqTag(event,'${groups[gi]}','${row.id}')`})}</td>`;
         }
-        return `<td><input type="text" class="field-input" value="${esc(val)}" data-fq="${row.id}" data-fg="${groups[gi]}" data-fc="${key}" placeholder="${esc(col)}…"></td>`;
+        return `<td><textarea rows="1" class="field-input auto-grow" data-fq="${row.id}" data-fg="${groups[gi]}" data-fc="${key}" placeholder="${esc(col)}…">${esc(val)}</textarea></td>`;
       }).join('')}
       <td style="width:24px"><button class="del-btn" data-del-fr="${row.id}" data-del-fg="${groups[gi]}" title="Delete row">×</button></td>
     </tr>`;
@@ -753,17 +784,17 @@ function renderFAQ() {
     <h2>Customer FAQ</h2>
     <div id="faq-list">
       ${groups.map((group,gi) => `
-        <div class="collapsible-header ${isFirst(gi)?'open':''}" data-fgi="${gi}">
+        <div class="collapsible-header ${isOpen(group)?'open':''}" data-fgi="${gi}" data-group-name="${esc(group)}">
           ${CHV}
-          <input type="text" class="group-name-input" value="${esc(group)}" data-rename-fg="${gi}" placeholder="Group name…"
-            onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')this.blur()">
+          <textarea rows="1" class="group-name-input auto-grow" data-rename-fg="${gi}" placeholder="Group name…"
+            onclick="event.stopPropagation()">${esc(group)}</textarea>
           <button class="del-group-btn" data-del-fg-grp="${group}" title="Delete group" onclick="event.stopPropagation()">×</button>
         </div>
-        <div class="collapsible-body ${isFirst(gi)?'open':''}">
+        <div class="collapsible-body ${isOpen(group)?'open':''}">
           <table class="data-table">
             <thead><tr>
               ${cols.map((col,ci) => `<th>${esc(col)} <button class="del-col-btn" data-del-fcol="${ci}" title="Remove column">×</button></th>`).join('')}
-              <th class="col-add-th"><button class="col-add-btn" id="add-fcol-btn">+</button></th>
+              ${isFirst(gi) ? `<th class="col-add-th"><button class="col-add-btn" id="add-fcol-btn" title="Columns apply to all FAQ groups">+</button></th>` : ''}
               <th style="width:24px"></th>
             </tr></thead>
             <tbody data-fgroup="${group}">
@@ -776,6 +807,7 @@ function renderFAQ() {
     <button class="add-group-btn" id="add-faq-group-btn">+ Add Group</button>`;
 
   wireFAQ(el, groups, cols);
+  initAutoGrow(el);
 }
 
 function colKey(colName) {
@@ -785,7 +817,14 @@ function colKey(colName) {
 
 function wireFAQ(el, groups, cols) {
   el.querySelectorAll('.collapsible-header[data-fgi]').forEach(h => {
-    h.addEventListener('click', () => { h.classList.toggle('open'); h.nextElementSibling.classList.toggle('open'); });
+    h.addEventListener('click', () => {
+      h.classList.toggle('open');
+      const body = h.nextElementSibling;
+      body.classList.toggle('open');
+      const group = h.dataset.groupName;
+      if (body.classList.contains('open')) { openFaqGroups.add(group); resizeAutoGrow(body); }
+      else openFaqGroups.delete(group);
+    });
   });
   // Cell text
   el.querySelectorAll('[data-fq]').forEach(inp => {
@@ -846,7 +885,9 @@ function wireFAQ(el, groups, cols) {
         const nf = {};
         grps.forEach((g,i) => { nf[i===idx ? nw : g] = DOC.faq[g]; });
         DOC.faq = nf;
+        if (openFaqGroups.has(old)) { openFaqGroups.delete(old); openFaqGroups.add(nw); }
         save();
+        renderFAQ();
       }
     });
   });
@@ -856,6 +897,7 @@ function wireFAQ(el, groups, cols) {
       e.stopPropagation();
       if (!confirm(`Delete FAQ group "${btn.dataset.delFgGrp}"?`)) return;
       delete DOC.faq[btn.dataset.delFgGrp];
+      openFaqGroups.delete(btn.dataset.delFgGrp);
       save(); renderFAQ();
     });
   });
@@ -864,6 +906,7 @@ function wireFAQ(el, groups, cols) {
     const name = prompt('FAQ group name:');
     if (!name?.trim()) return;
     DOC.faq[name.trim()] = [];
+    openFaqGroups.add(name.trim());
     save(); renderFAQ();
   });
 }
@@ -896,7 +939,7 @@ function renderTBD() {
           <tr data-tid="${row.id}">
             ${cols.map(col => {
               const key = colKey(col);
-              return `<td><input type="text" class="field-input" value="${esc(row[key]??'')}" data-td="${row.id}" data-tc="${key}" placeholder="${esc(col)}…"></td>`;
+              return `<td><textarea rows="1" class="field-input auto-grow" data-td="${row.id}" data-tc="${key}" placeholder="${esc(col)}…">${esc(row[key]??'')}</textarea></td>`;
             }).join('')}
             <td><button class="del-btn" data-del-tr="${row.id}" title="Delete row">×</button></td>
           </tr>`).join('')}
@@ -940,6 +983,7 @@ function renderTBD() {
     DOC.tbdSummary.forEach(r => { r[colKey(name.trim())] = ''; });
     save(); renderTBD();
   });
+  initAutoGrow(el);
 }
 
 /* ══════════════════════════════════════════════════
@@ -947,6 +991,34 @@ function renderTBD() {
 ══════════════════════════════════════════════════ */
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ══════════════════════════════════════════════════
+   AUTO-GROW TEXTAREAS
+   Single-line-looking fields are <textarea class="field-input auto-grow">
+   so long text wraps instead of being clipped, while still looking like
+   a plain inline input. Height tracks content on input/load.
+══════════════════════════════════════════════════ */
+function autoGrow(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
+// Resize only — safe to call repeatedly (e.g. when a collapsed group opens
+// and previously-hidden textareas finally have a real scrollHeight to read).
+function resizeAutoGrow(root) {
+  (root || document).querySelectorAll('textarea.auto-grow').forEach(autoGrow);
+}
+
+// Wire listeners once per render, then do the initial resize.
+function initAutoGrow(root) {
+  (root || document).querySelectorAll('textarea.auto-grow').forEach(ta => {
+    autoGrow(ta);
+    ta.addEventListener('input', () => autoGrow(ta));
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); ta.blur(); }
+    });
+  });
 }
 
 /* ══════════════════════════════════════════════════
@@ -981,10 +1053,9 @@ function buildMarkdown() {
   Object.entries(DOC.questions).forEach(([theme, qs]) => {
     lines.push(`### ${theme}`, ``);
     qs.forEach(q => {
-      if (q.label === 'confirmed' && q.answer) {
-        lines.push(`- [CONFIRMED from ${q.source||'unknown source'}] ${q.text} → ${q.answer}`);
-      } else {
-        lines.push(`- [${tagLabel(q.label)}] ${q.text}`);
+      lines.push(`- [${tagLabel(q.label)}] ${q.text}`);
+      if (q.answer) {
+        lines.push(`  - **A:** ${q.answer}${q.source ? ` _(source: ${q.source})_` : ''}`);
       }
     });
     lines.push(``);
@@ -1022,10 +1093,10 @@ function buildMarkdown() {
   });
   lines.push(``, `---`, ``);
 
-  // ── client-brief.md ──
-  lines.push(`<!-- client-brief.md -->`);
+  // ── customer-brief.md ──
+  lines.push(`<!-- customer-brief.md -->`);
   lines.push(`# ${name} — Project Brief`, ``);
-  lines.push(`**Prepared for:** [Client Name]`);
+  lines.push(`**Prepared for:** [Customer Name]`);
   lines.push(`**Date:** ${date}`, ``);
   lines.push(`---`, ``);
   lines.push(`## What We're Proposing`, ``);

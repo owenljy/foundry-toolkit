@@ -20,7 +20,7 @@
 
 ## Challenge Points
 
-> Assumptions this idea rests on that may not hold. Review these before the meeting — if the client's answers invalidate a challenge, great. If they confirm it, the scope or approach may need to change.
+> Assumptions this idea rests on that may not hold. Review these before the meeting — if the customer's answers invalidate a challenge, great. If they confirm it, the scope or approach may need to change.
 
 ### 1. <Assumption being challenged>
 
@@ -38,7 +38,7 @@
 
 ## Discovery Questions
 
-> Questions to ask in the client meeting. Grouped by theme. Marked [BLOCKER] if design cannot start without the answer, [CONTEXT] if useful but not blocking, or [CONFIRMED from <source>] if pre-existing call notes, sales discussion, or other scanned material already answers it — in that case write the answer inline instead of leaving it open.
+> Questions to ask in the customer meeting. Grouped by theme. Marked [BLOCKER] if design cannot start without the answer, [CONTEXT] if useful but not blocking, or [CONFIRMED from <source>] if pre-existing call notes, sales discussion, or other scanned material already answers it — in that case write the answer inline instead of leaving it open.
 
 ### User Needs
 
@@ -118,7 +118,7 @@
 
 ## TBD Summary
 
-> Answers that cannot be confirmed until open questions are resolved. Review after the client meeting.
+> Answers that cannot be confirmed until open questions are resolved. Review after the customer meeting.
 
 | Question | Blocked By |
 |----------|------------|
@@ -127,12 +127,12 @@
 
 ---
 
-## client-brief.md
+## customer-brief.md
 
 ```markdown
 # <PoC Name> — Project Brief
 
-**Prepared for:** <Client Name / Team>
+**Prepared for:** <Customer Name / Team>
 **Date:** <date>
 
 ---
@@ -151,7 +151,7 @@
 
 ## What We Need From You
 
-<Specific decisions or information the client must provide before design can proceed. Framed as clear asks, not vague requests.>
+<Specific decisions or information the customer must provide before design can proceed. Framed as clear asks, not vague requests.>
 
 - <Ask 1 — e.g., "Confirm whether self-check-in should be opt-in for individual employees or mandatory for everyone">
 - <Ask 2>
@@ -163,7 +163,7 @@
 
 | Step | What | When |
 |------|------|------|
-| 1 | <action — e.g., "Client meeting to align on the asks above"> | <timeframe — e.g., "This week"> |
+| 1 | <action — e.g., "Customer meeting to align on the asks above"> | <timeframe — e.g., "This week"> |
 | 2 | <action — e.g., "Full PoC and technical specification"> | <timeframe> |
 | 3 | <action — e.g., "Implementation and testing"> | <timeframe> |
 

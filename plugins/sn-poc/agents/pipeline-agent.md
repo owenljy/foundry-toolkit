@@ -20,7 +20,7 @@ ls ./intake-docs/discovery/discovery-brief.md 2>/dev/null && echo "HAS_DISCOVERY
 | State | What exists | Start from |
 |-------|------------|------------|
 | New PoC | Nothing | Phase 1 — Discovery |
-| Post-client meeting | `discovery/` | Phase 2 — Spec |
+| Post-customer meeting | `discovery/` | Phase 2 — Spec |
 | Spec approved | `discovery/` + `spec/` | Phase 3 — Planning |
 | Complete | `discovery/` + `spec/` + `planning/` | Show status, ask what to redo |
 
@@ -41,17 +41,17 @@ Do not re-derive or summarize their steps here — read and follow the reference
 Present:
 > "Discovery complete. Files saved to `./intake-docs/discovery/`.
 >
-> **Next: client meeting.** Bring `discovery-brief.md` to the room. Open `index.html` in a browser and send the Client Brief section ahead (or use the Export Markdown button to pull it out as text).
+> **Next: customer meeting.** Bring `discovery-brief.md` to the room. Open `index.html` in a browser and send the Customer Brief section ahead (or use the Export Markdown button to pull it out as text).
 >
 > When you're back from the meeting, tell me what you learned — especially the [BLOCKER] answers — and I'll move straight into the spec."
 
-Wait for the user to return with client meeting answers before starting Phase 2. Do not proceed automatically.
+Wait for the user to return with customer meeting answers before starting Phase 2. Do not proceed automatically.
 
 ---
 
 ## Phase 2: Spec
 
-> Run this phase when discovery exists but no spec yet, or when the user returns from the client meeting.
+> Run this phase when discovery exists but no spec yet, or when the user returns from the customer meeting.
 
 Read `../agents/spec-agent.md` in full and follow its workflow exactly — Phase A through Phase B9. Its hard gate between Phase A and Phase B is inviolable: do not begin Phase B until the user explicitly approves the PoC specification. Load architecture standards from `../standards-index.md` as spec-agent's own instructions direct — only what the PoC touches.
 
@@ -94,5 +94,5 @@ Present:
 - **ultrathink** — all phases require extended thinking; surface what isn't obvious
 - **One question at a time** — never ask more than one question per message
 - **Exact names** — every interface contract, method signature, and field name must be verbatim from the tech spec
-- **Never cross phase gates** — 1→2 waits for client meeting answers; spec-agent's Phase A→B waits for PoC spec approval; 2→3 waits for explicit confirmation
+- **Never cross phase gates** — 1→2 waits for customer meeting answers; spec-agent's Phase A→B waits for PoC spec approval; 2→3 waits for explicit confirmation
 - **Never write implementation code** — design, document, and plan only

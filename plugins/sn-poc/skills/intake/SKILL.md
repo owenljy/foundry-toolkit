@@ -16,8 +16,8 @@ If no input was provided above, check `./intake-docs/` for existing progress fir
 
 This skill runs the full intake flow in sequence:
 
-1. **Discovery** — challenge the idea, generate client meeting questions, produce a client-ready brief
-2. **Spec** — turn client meeting answers into a PoC spec (client-approvable) and technical spec (engineering-ready)  
+1. **Discovery** — challenge the idea, generate customer meeting questions, produce a customer-ready brief
+2. **Spec** — turn customer meeting answers into a PoC spec (customer-approvable) and technical spec (engineering-ready)  
 3. **Planning** — decompose the tech spec into self-contained implementation stories
 
 Each phase gates on the previous one. You will be prompted before crossing each boundary — nothing runs ahead of you.

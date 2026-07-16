@@ -66,7 +66,7 @@ Install from the `foundry-suite` marketplace:
    PoC idea
         │
         ▼
- 1. Discovery ──► discovery-brief.md + index.html  ──►  [client meeting]
+ 1. Discovery ──► discovery-brief.md + index.html  ──►  [customer meeting]
         │                                                      │
         ▼                                                      │
  2. Spec        ──► index.html (PoC spec  ─gate─►  tech spec) ◄┘
@@ -80,8 +80,8 @@ approval before crossing it. Nothing runs ahead of you.
 
 | Phase | Skill | What it produces | Where it's saved |
 |---|---|---|---|
-| 1. Discovery | `/sn-poc:discover` | Challenge points + client meeting questions + end-user FAQ, in one shareable page | `./intake-docs/discovery/` |
-| 2. Spec | `/sn-poc:spec` | A client-approvable PoC spec, then (after approval) a full technical spec | `./intake-docs/spec/` |
+| 1. Discovery | `/sn-poc:discover` | Challenge points + customer meeting questions + end-user FAQ, in one shareable page | `./intake-docs/discovery/` |
+| 2. Spec | `/sn-poc:spec` | A customer-approvable PoC spec, then (after approval) a full technical spec | `./intake-docs/spec/` |
 | 3. Planning | `/sn-poc:planning` | Self-contained implementation stories with interface contracts, in execution order | `./intake-docs/planning/` |
 
 ## Skills
@@ -89,8 +89,8 @@ approval before crossing it. Nothing runs ahead of you.
 | Skill | What it does |
 |---|---|
 | `intake` | **Entry point.** Runs the full pipeline above in one flow, auto-detecting and resuming from wherever the PoC currently stands. |
-| `discover` | Stress-tests the PoC idea, generates client meeting questions, anticipates end-user FAQ. Can scan the project for existing call notes/transcripts first (asks before reading anything). |
-| `spec` | Turns client meeting answers into a PoC spec the client can approve, then a technical spec (data model, security, UI, automation) the engineering team can build from. |
+| `discover` | Stress-tests the PoC idea, generates customer meeting questions, anticipates end-user FAQ. Can scan the project for existing call notes/transcripts first (asks before reading anything). |
+| `spec` | Turns customer meeting answers into a PoC spec the customer can approve, then a technical spec (data model, security, UI, automation) the engineering team can build from. |
 | `planning` | Decomposes the technical spec into numbered stories with ordered implementation steps and exact-name interface contracts between them. |
 
 ## Where to start
@@ -99,7 +99,7 @@ approval before crossing it. Nothing runs ahead of you.
 |---|---|
 | Brand new PoC, call notes / sales transcript already in the project | `/sn-poc:intake` — it scans first and offers to use them |
 | Brand new PoC, nothing written down yet | `/sn-poc:intake` — it'll ask you to describe it |
-| Just back from the client meeting, discovery already done | `/sn-poc:intake` (auto-resumes at Spec) or `/sn-poc:spec` directly |
+| Just back from the customer meeting, discovery already done | `/sn-poc:intake` (auto-resumes at Spec) or `/sn-poc:spec` directly |
 | PoC spec approved, need the tech spec | Continue in the same `/sn-poc:spec` session — Phase B follows automatically |
 | Tech spec done, need a story backlog | `/sn-poc:intake` (auto-resumes at Planning) or `/sn-poc:planning` directly |
 | Want to redo just one phase | Re-run that phase's skill directly (`/sn-poc:discover`, `/sn-poc:spec`, or `/sn-poc:planning`) |

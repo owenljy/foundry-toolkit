@@ -14,7 +14,7 @@
 
 ## Overview
 
-<2-3 sentence elevator pitch: what this PoC does and why it matters. Written so any client stakeholder would understand it — no technical terms.>
+<2-3 sentence elevator pitch: what this PoC does and why it matters. Written so any customer stakeholder would understand it — no technical terms.>
 
 ## Problem Statement
 
@@ -455,7 +455,7 @@ See `index-template.html` for the full component reference (story cards, screen 
 
 ### Two-audience behavior
 
-Technical Specification sections are collapsed by default (`.tech-collapsible`, toggled via the "Show Technical Spec" sidebar button) so the page defaults to a client-safe view of just the PoC Specification. Mermaid diagrams (existing architecture, relationships, user flows, implementation plan phases, and any extra diagrams from Phase B8) render client-side via the Mermaid CDN — the one documented exception to "no external dependencies."
+Technical Specification sections are collapsed by default (`.tech-collapsible`, toggled via the "Show Technical Spec" sidebar button) so the page defaults to a customer-safe view of just the PoC Specification. Mermaid diagrams (existing architecture, relationships, user flows, implementation plan phases, and any extra diagrams from Phase B8) render client-side via the Mermaid CDN — the one documented exception to "no external dependencies."
 
 ---
 

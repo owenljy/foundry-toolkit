@@ -69,15 +69,15 @@
     /* ── Tables ── */
     table.data-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:13px; }
     table.data-table th { background:var(--table-header); text-align:left; padding:8px 10px; font-weight:600; font-size:11px; letter-spacing:.04em; text-transform:uppercase; border-bottom:2px solid var(--border); color:var(--text-muted); }
-    table.data-table td { padding:6px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    table.data-table td { padding:6px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
     table.data-table tr:nth-child(even) td { background:var(--table-stripe); }
     table.data-table tr:hover td { background:rgba(var(--accent-rgb),0.03); }
 
     /* ── Form controls ── */
-    .field-input { width:100%; background:transparent; border:none; border-bottom:1px solid transparent; color:var(--text); font:inherit; font-size:13px; padding:3px 2px; outline:none; border-radius:3px; transition:border-color .15s,background .15s; }
+    .field-input { width:100%; min-width:0; background:transparent; border:none; border-bottom:1px solid transparent; color:var(--text); font:inherit; font-size:13px; padding:3px 2px; outline:none; border-radius:3px; transition:border-color .15s,background .15s; }
     .field-input:hover { border-bottom-color:var(--border); }
     .field-input:focus { border-bottom-color:var(--edit-ring); background:rgba(var(--accent-rgb),0.04); }
-    textarea.field-input { resize:vertical; min-height:48px; line-height:1.5; }
+    textarea.field-input { resize:none; overflow:hidden; min-height:22px; line-height:1.5; display:block; word-wrap:break-word; }
     .field-input.title-input { font-weight:600; font-size:14px; }
 
     /* ── Cards (generic) ── */
@@ -91,11 +91,13 @@
 
     /* ── User story card ── */
     .story-card { background:var(--card-bg); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:16px 20px; margin:12px 0; position:relative; }
-    .story-card .story-statement { color:var(--text-muted); font-size:13px; margin:6px 0 12px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-    .story-card .story-statement input { flex:1; min-width:140px; }
+    .story-card .story-statement { color:var(--text-muted); font-size:13px; margin:6px 0 12px; display:flex; flex-wrap:wrap; gap:6px; align-items:flex-start; }
+    .story-card .story-statement textarea.field-input { flex:1; min-width:140px; margin-top:-1px; }
     .story-card .ac-list { list-style:none; padding:0; }
-    .story-card .ac-list li { display:flex; align-items:center; gap:8px; font-size:13px; margin:4px 0; }
-    .story-card .ac-list li::before { content:'☐'; color:var(--accent); flex-shrink:0; }
+    .story-card .ac-list li { display:flex; align-items:flex-start; gap:8px; font-size:13px; margin:4px 0; }
+    .story-card .ac-list li::before { content:'☐'; color:var(--accent); flex-shrink:0; margin-top:3px; }
+    .story-card .ac-list li textarea.field-input { flex:1 1 auto; min-width:0; }
+    .story-card .ac-list li .del-btn { margin-top:2px; }
 
     /* ── Screen description card ── */
     .screen-card { background:var(--card-bg); border-radius:8px; padding:20px 24px; margin:12px 0; border:1px solid var(--border); position:relative; }
@@ -123,16 +125,18 @@
     .del-btn { flex-shrink:0; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; line-height:1; padding:2px 4px; border-radius:3px; transition:color .12s; opacity:0; }
     li:hover .del-btn, tr:hover .del-btn { opacity:1; }
     .del-btn:hover { color:#ef4444; }
-    .add-row-btn { display:flex; align-items:center; gap:6px; margin-top:10px; padding:6px 12px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font:12px inherit; cursor:pointer; transition:all .15s; width:100%; justify-content:center; }
+    .add-row-btn { display:flex; align-items:center; gap:6px; margin-top:10px; padding:6px 12px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font-family:inherit; font-size:12px; cursor:pointer; transition:all .15s; width:100%; justify-content:center; }
     .add-row-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
-    .add-group-btn { display:flex; align-items:center; gap:6px; margin-top:14px; padding:8px 14px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font:12px inherit; cursor:pointer; transition:all .15s; }
+    .add-group-btn { display:flex; align-items:center; gap:6px; margin-top:14px; padding:8px 14px; background:transparent; border:1px dashed var(--border); border-radius:6px; color:var(--text-muted); font-family:inherit; font-size:12px; cursor:pointer; transition:all .15s; }
     .add-group-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
 
     /* ── Brief boxes (prose) ── */
     .brief-box { background:var(--card-bg); border-radius:8px; padding:20px 22px; margin:12px 0; border:1px solid var(--border); }
     .brief-list { list-style:none; padding:0; }
-    .brief-list li { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid var(--border); }
+    .brief-list li { display:flex; align-items:flex-start; gap:6px; padding:4px 0; border-bottom:1px solid var(--border); }
     .brief-list li:last-child { border-bottom:none; }
+    .brief-list li textarea.field-input { flex:1 1 auto; min-width:0; }
+    .brief-list li .del-btn { margin-top:3px; }
 
     /* ── Toast / flash ── */
     .saved-flash { position:fixed; bottom:20px; right:20px; background:#042a3d; border:1px solid var(--accent); color:var(--accent); font-size:12px; font-weight:500; padding:6px 14px; border-radius:6px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:300; }
@@ -413,6 +417,40 @@ function esc(s) {
 }
 
 /* ══════════════════════════════════════════════════
+   AUTO-GROW TEXTAREAS
+   Single-line-looking fields are <textarea class="field-input auto-grow">
+   so long text wraps instead of being clipped, while still looking like
+   a plain inline input. ".multiline" fields keep normal Enter-for-newline
+   behavior; single-line ones blur on Enter instead of inserting a newline.
+   initAutoGrow is idempotent (data-ag-bound guard) so nested editors
+   (tableSection/listEditor inside a cardsEditor card) can each call it on
+   their own scope without double-binding listeners when an outer scope
+   re-scans the same nodes.
+══════════════════════════════════════════════════ */
+function autoGrow(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
+function resizeAutoGrow(root) {
+  (root || document).querySelectorAll('textarea.auto-grow').forEach(autoGrow);
+}
+
+function initAutoGrow(root) {
+  (root || document).querySelectorAll('textarea.auto-grow').forEach(ta => {
+    autoGrow(ta);
+    if (ta.dataset.agBound) return;
+    ta.dataset.agBound = '1';
+    ta.addEventListener('input', () => autoGrow(ta));
+    if (!ta.classList.contains('multiline')) {
+      ta.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); ta.blur(); }
+      });
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════
    GENERIC UI HELPERS
 ══════════════════════════════════════════════════ */
 function proseSection(id, label, heading, obj, key, placeholder, rows, isTech) {
@@ -420,8 +458,9 @@ function proseSection(id, label, heading, obj, key, placeholder, rows, isTech) {
   el.innerHTML = `
     <div class="section-label${isTech?' tech':''}">${isTech?'Technical':'PoC'}</div>
     <h2>${esc(heading)}</h2>
-    <div class="brief-box"><textarea class="field-input" rows="${rows||4}" data-field="1" placeholder="${esc(placeholder||'')}">${esc(obj[key])}</textarea></div>`;
+    <div class="brief-box"><textarea class="field-input auto-grow multiline" rows="${rows||4}" data-field="1" placeholder="${esc(placeholder||'')}">${esc(obj[key])}</textarea></div>`;
   el.querySelector('[data-field]').addEventListener('input', e => { obj[key] = e.target.value; save(); });
+  initAutoGrow(el);
 }
 
 function tableSection(el, rows, cols, opts) {
@@ -431,9 +470,7 @@ function tableSection(el, rows, cols, opts) {
       <thead><tr>${cols.map(c=>`<th>${esc(c.label)}</th>`).join('')}<th style="width:24px"></th></tr></thead>
       <tbody>
         ${rows.map((row,i)=>`<tr data-i="${i}">
-          ${cols.map(c=>`<td>${c.textarea
-            ? `<textarea class="field-input" rows="2" data-k="${c.key}" data-i="${i}" placeholder="${esc(c.label)}…">${esc(row[c.key])}</textarea>`
-            : `<input type="text" class="field-input" value="${esc(row[c.key])}" data-k="${c.key}" data-i="${i}" placeholder="${esc(c.label)}…">`}</td>`).join('')}
+          ${cols.map(c=>`<td><textarea rows="1" class="field-input auto-grow${c.textarea?' multiline':''}" data-k="${c.key}" data-i="${i}" placeholder="${esc(c.label)}…">${esc(row[c.key])}</textarea></td>`).join('')}
           <td><button class="del-btn" data-del="${i}" title="Remove row">×</button></td>
         </tr>`).join('')}
       </tbody>
@@ -449,6 +486,7 @@ function tableSection(el, rows, cols, opts) {
     el.querySelector('[data-add]').addEventListener('click', () => {
       const row = {}; cols.forEach(c => row[c.key]=''); rows.push(row); save(); paint();
     });
+    initAutoGrow(el);
   }
   paint();
 }
@@ -457,7 +495,7 @@ function listEditor(el, items, placeholder, addLabel) {
   function paint() {
     el.innerHTML = `<ul class="brief-list">
       ${items.map((v,i)=>`<li>
-        <input type="text" class="field-input" value="${esc(v)}" data-i="${i}" placeholder="${esc(placeholder||'Item…')}">
+        <textarea rows="1" class="field-input auto-grow" data-i="${i}" placeholder="${esc(placeholder||'Item…')}">${esc(v)}</textarea>
         <button class="del-btn" data-del="${i}" title="Remove">×</button>
       </li>`).join('')}
     </ul>
@@ -470,6 +508,7 @@ function listEditor(el, items, placeholder, addLabel) {
       btn.addEventListener('click', () => { items.splice(+btn.dataset.del,1); save(); paint(); });
     });
     el.querySelector('[data-add]').addEventListener('click', () => { items.push(''); save(); paint(); });
+    initAutoGrow(el);
   }
   paint();
 }
@@ -478,6 +517,7 @@ function wireFields(bodyEl, item) {
   bodyEl.querySelectorAll('[data-field]').forEach(inp => {
     inp.addEventListener('input', () => { item[inp.dataset.field] = inp.value; save(); });
   });
+  initAutoGrow(bodyEl);
 }
 
 function cardsEditor(el, items, opts) {
@@ -508,8 +548,9 @@ function cardsEditor(el, items, opts) {
 function noteOrTable(tableEl, noteEl, rows, cols, note, notePath, addLabel) {
   tableSection(tableEl, rows, cols, {addLabel});
   noteEl.innerHTML = `<div class="hint">If none apply, say so here instead of adding rows:</div>
-    <textarea class="field-input" rows="2" data-note placeholder="e.g. No notifications required — this PoC has no async events.">${esc(note)}</textarea>`;
+    <textarea class="field-input auto-grow multiline" rows="2" data-note placeholder="e.g. No notifications required — this PoC has no async events.">${esc(note)}</textarea>`;
   noteEl.querySelector('[data-note]').addEventListener('input', e => { notePath(e.target.value); save(); });
+  initAutoGrow(noteEl);
 }
 
 const _mermaidBlocks = []; // {el, getCode} — re-rendered once mermaid finishes loading
@@ -595,12 +636,12 @@ function renderPoc() {
     makeEmpty: () => ({id:uid(), name:'', who:'', caresAbout:'', interacts:''}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Persona name…">
+        <textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="Persona name…">${esc(item.name)}</textarea>
         <table class="data-table" style="margin-top:10px">
           <tbody>
-            <tr><td style="width:160px;color:var(--text-muted)">Who they are</td><td><input type="text" class="field-input" data-field="who" value="${esc(item.who)}"></td></tr>
-            <tr><td style="color:var(--text-muted)">What they care about</td><td><input type="text" class="field-input" data-field="caresAbout" value="${esc(item.caresAbout)}"></td></tr>
-            <tr><td style="color:var(--text-muted)">How they interact</td><td><input type="text" class="field-input" data-field="interacts" value="${esc(item.interacts)}"></td></tr>
+            <tr><td style="width:160px;color:var(--text-muted)">Who they are</td><td><textarea rows="1" class="field-input auto-grow" data-field="who">${esc(item.who)}</textarea></td></tr>
+            <tr><td style="color:var(--text-muted)">What they care about</td><td><textarea rows="1" class="field-input auto-grow" data-field="caresAbout">${esc(item.caresAbout)}</textarea></td></tr>
+            <tr><td style="color:var(--text-muted)">How they interact</td><td><textarea rows="1" class="field-input auto-grow" data-field="interacts">${esc(item.interacts)}</textarea></td></tr>
           </tbody>
         </table>`;
       wireFields(body, item);
@@ -621,11 +662,11 @@ function renderPoc() {
     makeEmpty: () => ({id:uid(), title:'', persona:'', capability:'', benefit:'', acceptanceCriteria:[]}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <input type="text" class="field-input title-input" data-field="title" value="${esc(item.title)}" placeholder="Story title…">
+        <textarea rows="1" class="field-input auto-grow title-input" data-field="title" placeholder="Story title…">${esc(item.title)}</textarea>
         <div class="story-statement">
-          As a <input type="text" class="field-input" data-field="persona" value="${esc(item.persona)}" placeholder="persona">,
-          I want <input type="text" class="field-input" data-field="capability" value="${esc(item.capability)}" placeholder="capability">,
-          so that <input type="text" class="field-input" data-field="benefit" value="${esc(item.benefit)}" placeholder="benefit">.
+          As a <textarea rows="1" class="field-input auto-grow" data-field="persona" placeholder="persona">${esc(item.persona)}</textarea>,
+          I want <textarea rows="1" class="field-input auto-grow" data-field="capability" placeholder="capability">${esc(item.capability)}</textarea>,
+          so that <textarea rows="1" class="field-input auto-grow" data-field="benefit" placeholder="benefit">${esc(item.benefit)}</textarea>.
         </div>
         <div class="obj-card-label">Acceptance Criteria</div>
         <div data-ac></div>`;
@@ -633,12 +674,13 @@ function renderPoc() {
       const acEl = body.querySelector('[data-ac]');
       function paintAC() {
         acEl.innerHTML = `<ul class="ac-list">${item.acceptanceCriteria.map((v,i)=>`<li>
-          <input type="text" class="field-input" data-i="${i}" value="${esc(v)}" placeholder="Specific, testable condition…">
+          <textarea rows="1" class="field-input auto-grow" data-i="${i}" placeholder="Specific, testable condition…">${esc(v)}</textarea>
           <button class="del-btn" data-del="${i}">×</button></li>`).join('')}</ul>
           <button class="add-row-btn" data-add>+ Add Criterion</button>`;
         acEl.querySelectorAll('[data-i]').forEach(inp => inp.addEventListener('input', () => { item.acceptanceCriteria[+inp.dataset.i]=inp.value; save(); }));
         acEl.querySelectorAll('[data-del]').forEach(btn => btn.addEventListener('click', () => { item.acceptanceCriteria.splice(+btn.dataset.del,1); save(); paintAC(); }));
         acEl.querySelector('[data-add]').addEventListener('click', () => { item.acceptanceCriteria.push(''); save(); paintAC(); });
+        initAutoGrow(acEl);
       }
       paintAC();
     }
@@ -651,10 +693,10 @@ function renderPoc() {
     makeEmpty: () => ({id:uid(), name:'', actor:'', trigger:'', steps:[], mermaid:'flowchart TD\n    A[Trigger] --> B[Step]'}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Flow name…">
+        <textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="Flow name…">${esc(item.name)}</textarea>
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Actor</div><input type="text" class="field-input" data-field="actor" value="${esc(item.actor)}"></div>
-          <div><div class="obj-card-label">Trigger</div><input type="text" class="field-input" data-field="trigger" value="${esc(item.trigger)}"></div>
+          <div><div class="obj-card-label">Actor</div><textarea rows="1" class="field-input auto-grow" data-field="actor">${esc(item.actor)}</textarea></div>
+          <div><div class="obj-card-label">Trigger</div><textarea rows="1" class="field-input auto-grow" data-field="trigger">${esc(item.trigger)}</textarea></div>
         </div>
         <div class="obj-card-label">Steps</div><div data-steps></div>
         <div class="obj-card-label" style="margin-top:14px">Diagram</div><div data-diagram></div>`;
@@ -671,10 +713,10 @@ function renderPoc() {
     makeEmpty: () => ({id:uid(), name:'', whoSees:'', when:'', elements:[], actions:[]}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <h4><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Screen name…"></h4>
+        <h4><textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="Screen name…">${esc(item.name)}</textarea></h4>
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Who sees it</div><input type="text" class="field-input" data-field="whoSees" value="${esc(item.whoSees)}"></div>
-          <div><div class="obj-card-label">When</div><input type="text" class="field-input" data-field="when" value="${esc(item.when)}"></div>
+          <div><div class="obj-card-label">Who sees it</div><textarea rows="1" class="field-input auto-grow" data-field="whoSees">${esc(item.whoSees)}</textarea></div>
+          <div><div class="obj-card-label">When</div><textarea rows="1" class="field-input auto-grow" data-field="when">${esc(item.when)}</textarea></div>
         </div>
         <div class="obj-card-label">What's on the screen</div><div data-elements></div>
         <div class="obj-card-label" style="margin-top:14px">What the user can do</div><div data-actions></div>`;
@@ -715,7 +757,7 @@ function renderTech() {
 
   const archEl = document.getElementById('t-existing-arch');
   archEl.innerHTML = `<div class="section-label tech">Technical</div><h2>Existing Architecture</h2>
-    <div class="brief-box"><textarea class="field-input" rows="4" data-field="1" placeholder="Current state of the system this PoC will touch or extend.">${esc(ts.existingArchitecture.description)}</textarea></div>
+    <div class="brief-box"><textarea class="field-input auto-grow multiline" rows="4" data-field="1" placeholder="Current state of the system this PoC will touch or extend.">${esc(ts.existingArchitecture.description)}</textarea></div>
     <h3 class="subhead">Current Data Model</h3><div data-diagram></div>
     <h3 class="subhead">Current Components</h3><div data-components></div>`;
   archEl.querySelector('[data-field]').addEventListener('input', e => { ts.existingArchitecture.description = e.target.value; save(); });
@@ -734,9 +776,9 @@ function renderTech() {
     buildCard: (body, item) => {
       body.innerHTML = `
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Table Name</div><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="u_scope_table_name"></div>
-          <div><div class="obj-card-label">Label</div><input type="text" class="field-input" data-field="label" value="${esc(item.label)}"></div>
-          <div><div class="obj-card-label">Extends</div><input type="text" class="field-input" data-field="extends" value="${esc(item.extends)}" placeholder="Base table"></div>
+          <div><div class="obj-card-label">Table Name</div><textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="u_scope_table_name">${esc(item.name)}</textarea></div>
+          <div><div class="obj-card-label">Label</div><textarea rows="1" class="field-input auto-grow" data-field="label">${esc(item.label)}</textarea></div>
+          <div><div class="obj-card-label">Extends</div><textarea rows="1" class="field-input auto-grow" data-field="extends" placeholder="Base table">${esc(item.extends)}</textarea></div>
         </div>
         <div class="obj-card-label" style="margin-top:10px">Fields</div><div data-fields></div>`;
       wireFields(body, item);
@@ -747,7 +789,7 @@ function renderTech() {
     addLabel:'Add Modified Table', emptyHint:'No modified tables.',
     makeEmpty: () => ({id:uid(), table:'', changes:[]}),
     buildCard: (body, item) => {
-      body.innerHTML = `<div class="obj-card-label">Table</div><input type="text" class="field-input title-input" data-field="table" value="${esc(item.table)}">
+      body.innerHTML = `<div class="obj-card-label">Table</div><textarea rows="1" class="field-input auto-grow title-input" data-field="table">${esc(item.table)}</textarea>
         <div class="obj-card-label" style="margin-top:10px">Changes</div><div data-changes></div>`;
       wireFields(body, item);
       tableSection(body.querySelector('[data-changes]'), item.changes, COLS.tableChange, {addLabel:'Add Change'});
@@ -766,10 +808,10 @@ function renderTech() {
     buildCard: (body, item) => {
       body.innerHTML = `
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Name</div><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}"></div>
-          <div><div class="obj-card-label">Client Callable</div><input type="text" class="field-input" data-field="clientCallable" value="${esc(item.clientCallable)}" placeholder="Yes / No"></div>
+          <div><div class="obj-card-label">Name</div><textarea rows="1" class="field-input auto-grow title-input" data-field="name">${esc(item.name)}</textarea></div>
+          <div><div class="obj-card-label">Client Callable</div><textarea rows="1" class="field-input auto-grow" data-field="clientCallable" placeholder="Yes / No">${esc(item.clientCallable)}</textarea></div>
         </div>
-        <div class="obj-card-label">Purpose</div><textarea class="field-input" rows="2" data-field="purpose">${esc(item.purpose)}</textarea>
+        <div class="obj-card-label">Purpose</div><textarea class="field-input auto-grow multiline" rows="2" data-field="purpose">${esc(item.purpose)}</textarea>
         <div class="obj-card-label" style="margin-top:10px">Methods</div><div data-methods></div>`;
       wireFields(body, item);
       tableSection(body.querySelector('[data-methods]'), item.methods, COLS.method, {addLabel:'Add Method'});
@@ -780,18 +822,18 @@ function renderTech() {
     makeEmpty: () => ({id:uid(), name:'', table:'', when:'before', insert:'No', update:'No', delete:'No', condition:'None', logic:''}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Business Rule name…">
+        <textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="Business Rule name…">${esc(item.name)}</textarea>
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Table</div><input type="text" class="field-input" data-field="table" value="${esc(item.table)}"></div>
-          <div><div class="obj-card-label">When</div><input type="text" class="field-input" data-field="when" value="${esc(item.when)}" placeholder="before / after / async / display"></div>
+          <div><div class="obj-card-label">Table</div><textarea rows="1" class="field-input auto-grow" data-field="table">${esc(item.table)}</textarea></div>
+          <div><div class="obj-card-label">When</div><textarea rows="1" class="field-input auto-grow" data-field="when" placeholder="before / after / async / display">${esc(item.when)}</textarea></div>
         </div>
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Insert</div><input type="text" class="field-input" data-field="insert" value="${esc(item.insert)}"></div>
-          <div><div class="obj-card-label">Update</div><input type="text" class="field-input" data-field="update" value="${esc(item.update)}"></div>
-          <div><div class="obj-card-label">Delete</div><input type="text" class="field-input" data-field="delete" value="${esc(item.delete)}"></div>
-          <div><div class="obj-card-label">Condition</div><input type="text" class="field-input" data-field="condition" value="${esc(item.condition)}"></div>
+          <div><div class="obj-card-label">Insert</div><textarea rows="1" class="field-input auto-grow" data-field="insert">${esc(item.insert)}</textarea></div>
+          <div><div class="obj-card-label">Update</div><textarea rows="1" class="field-input auto-grow" data-field="update">${esc(item.update)}</textarea></div>
+          <div><div class="obj-card-label">Delete</div><textarea rows="1" class="field-input auto-grow" data-field="delete">${esc(item.delete)}</textarea></div>
+          <div><div class="obj-card-label">Condition</div><textarea rows="1" class="field-input auto-grow" data-field="condition">${esc(item.condition)}</textarea></div>
         </div>
-        <div class="obj-card-label">Logic (plain language, not code)</div><textarea class="field-input" rows="3" data-field="logic">${esc(item.logic)}</textarea>`;
+        <div class="obj-card-label">Logic (plain language, not code)</div><textarea class="field-input auto-grow multiline" rows="3" data-field="logic">${esc(item.logic)}</textarea>`;
       wireFields(body, item);
     }
   });
@@ -806,13 +848,13 @@ function renderTech() {
     addLabel:'Add Table ACL Block', emptyHint:'No ACL blocks yet.',
     makeEmpty: newAclBlock,
     buildCard: (body, item) => {
-      body.innerHTML = `<div class="obj-card-label">Table</div><input type="text" class="field-input title-input" data-field="table" value="${esc(item.table)}">
+      body.innerHTML = `<div class="obj-card-label">Table</div><textarea rows="1" class="field-input auto-grow title-input" data-field="table">${esc(item.table)}</textarea>
         <table class="data-table" style="margin-top:10px">
           <thead><tr><th>Operation</th><th>Role Required</th><th>Condition</th></tr></thead>
           <tbody>${item.acls.map((a,i)=>`<tr>
             <td>${esc(a.operation)}</td>
-            <td><input type="text" class="field-input" data-acl-i="${i}" data-acl-k="role" value="${esc(a.role)}"></td>
-            <td><input type="text" class="field-input" data-acl-i="${i}" data-acl-k="condition" value="${esc(a.condition)}" placeholder="None"></td>
+            <td><textarea rows="1" class="field-input auto-grow" data-acl-i="${i}" data-acl-k="role">${esc(a.role)}</textarea></td>
+            <td><textarea rows="1" class="field-input auto-grow" data-acl-i="${i}" data-acl-k="condition" placeholder="None">${esc(a.condition)}</textarea></td>
           </tr>`).join('')}</tbody>
         </table>`;
       wireFields(body, item);
@@ -834,9 +876,9 @@ function renderTech() {
     buildCard: (body, item) => {
       body.innerHTML = `
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Page Name</div><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}"></div>
-          <div><div class="obj-card-label">URL</div><input type="text" class="field-input" data-field="url" value="${esc(item.url)}" placeholder="/portal/page"></div>
-          <div><div class="obj-card-label">Who sees it</div><input type="text" class="field-input" data-field="whoSees" value="${esc(item.whoSees)}"></div>
+          <div><div class="obj-card-label">Page Name</div><textarea rows="1" class="field-input auto-grow title-input" data-field="name">${esc(item.name)}</textarea></div>
+          <div><div class="obj-card-label">URL</div><textarea rows="1" class="field-input auto-grow" data-field="url" placeholder="/portal/page">${esc(item.url)}</textarea></div>
+          <div><div class="obj-card-label">Who sees it</div><textarea rows="1" class="field-input auto-grow" data-field="whoSees">${esc(item.whoSees)}</textarea></div>
         </div>
         <div class="obj-card-label" style="margin-top:10px">Widgets</div><div data-widgetrefs></div>`;
       wireFields(body, item);
@@ -848,10 +890,10 @@ function renderTech() {
     makeEmpty: () => ({id:uid(), name:'', serverScript:'', clientScript:'', dependencies:''}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Widget name…">
-        <div class="obj-card-label">Server Script</div><textarea class="field-input" rows="2" data-field="serverScript" placeholder="Plain language description of data logic">${esc(item.serverScript)}</textarea>
-        <div class="obj-card-label">Client Script</div><textarea class="field-input" rows="2" data-field="clientScript" placeholder="Plain language description of client behavior">${esc(item.clientScript)}</textarea>
-        <div class="obj-card-label">Dependencies</div><input type="text" class="field-input" data-field="dependencies" value="${esc(item.dependencies)}">`;
+        <textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="Widget name…">${esc(item.name)}</textarea>
+        <div class="obj-card-label">Server Script</div><textarea class="field-input auto-grow multiline" rows="2" data-field="serverScript" placeholder="Plain language description of data logic">${esc(item.serverScript)}</textarea>
+        <div class="obj-card-label">Client Script</div><textarea class="field-input auto-grow multiline" rows="2" data-field="clientScript" placeholder="Plain language description of client behavior">${esc(item.clientScript)}</textarea>
+        <div class="obj-card-label">Dependencies</div><textarea rows="1" class="field-input auto-grow" data-field="dependencies">${esc(item.dependencies)}</textarea>`;
       wireFields(body, item);
     }
   });
@@ -860,13 +902,13 @@ function renderTech() {
     makeEmpty: () => ({id:uid(), name:'', table:'', type:'onChange', field:'', logic:''}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Client Script name…">
+        <textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="Client Script name…">${esc(item.name)}</textarea>
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Table</div><input type="text" class="field-input" data-field="table" value="${esc(item.table)}"></div>
-          <div><div class="obj-card-label">Type</div><input type="text" class="field-input" data-field="type" value="${esc(item.type)}" placeholder="onChange / onLoad / onSubmit"></div>
-          <div><div class="obj-card-label">Field</div><input type="text" class="field-input" data-field="field" value="${esc(item.field)}"></div>
+          <div><div class="obj-card-label">Table</div><textarea rows="1" class="field-input auto-grow" data-field="table">${esc(item.table)}</textarea></div>
+          <div><div class="obj-card-label">Type</div><textarea rows="1" class="field-input auto-grow" data-field="type" placeholder="onChange / onLoad / onSubmit">${esc(item.type)}</textarea></div>
+          <div><div class="obj-card-label">Field</div><textarea rows="1" class="field-input auto-grow" data-field="field">${esc(item.field)}</textarea></div>
         </div>
-        <div class="obj-card-label">Logic (from the user's perspective)</div><textarea class="field-input" rows="2" data-field="logic">${esc(item.logic)}</textarea>`;
+        <div class="obj-card-label">Logic (from the user's perspective)</div><textarea class="field-input auto-grow multiline" rows="2" data-field="logic">${esc(item.logic)}</textarea>`;
       wireFields(body, item);
     }
   });
@@ -880,10 +922,10 @@ function renderTech() {
     makeEmpty: () => ({id:uid(), name:'', trigger:'', runAs:'System', steps:[]}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Flow name…">
+        <textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="Flow name…">${esc(item.name)}</textarea>
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Trigger</div><input type="text" class="field-input" data-field="trigger" value="${esc(item.trigger)}"></div>
-          <div><div class="obj-card-label">Run As</div><input type="text" class="field-input" data-field="runAs" value="${esc(item.runAs)}" placeholder="System / Current User"></div>
+          <div><div class="obj-card-label">Trigger</div><textarea rows="1" class="field-input auto-grow" data-field="trigger">${esc(item.trigger)}</textarea></div>
+          <div><div class="obj-card-label">Run As</div><textarea rows="1" class="field-input auto-grow" data-field="runAs" placeholder="System / Current User">${esc(item.runAs)}</textarea></div>
         </div>
         <div class="obj-card-label">Steps</div><div data-steps></div>`;
       wireFields(body, item);
@@ -902,15 +944,15 @@ function renderTech() {
     makeEmpty: () => ({id:uid(), name:'', event:'', recipients:'', channel:'Email', condition:'None', subject:'', bodySummary:''}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Notification name…">
+        <textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="Notification name…">${esc(item.name)}</textarea>
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Event</div><input type="text" class="field-input" data-field="event" value="${esc(item.event)}"></div>
-          <div><div class="obj-card-label">Recipients</div><input type="text" class="field-input" data-field="recipients" value="${esc(item.recipients)}"></div>
-          <div><div class="obj-card-label">Channel</div><input type="text" class="field-input" data-field="channel" value="${esc(item.channel)}"></div>
-          <div><div class="obj-card-label">Condition</div><input type="text" class="field-input" data-field="condition" value="${esc(item.condition)}"></div>
+          <div><div class="obj-card-label">Event</div><textarea rows="1" class="field-input auto-grow" data-field="event">${esc(item.event)}</textarea></div>
+          <div><div class="obj-card-label">Recipients</div><textarea rows="1" class="field-input auto-grow" data-field="recipients">${esc(item.recipients)}</textarea></div>
+          <div><div class="obj-card-label">Channel</div><textarea rows="1" class="field-input auto-grow" data-field="channel">${esc(item.channel)}</textarea></div>
+          <div><div class="obj-card-label">Condition</div><textarea rows="1" class="field-input auto-grow" data-field="condition">${esc(item.condition)}</textarea></div>
         </div>
-        <div class="obj-card-label">Subject</div><input type="text" class="field-input" data-field="subject" value="${esc(item.subject)}">
-        <div class="obj-card-label">Body Summary</div><textarea class="field-input" rows="2" data-field="bodySummary">${esc(item.bodySummary)}</textarea>`;
+        <div class="obj-card-label">Subject</div><textarea rows="1" class="field-input auto-grow" data-field="subject">${esc(item.subject)}</textarea>
+        <div class="obj-card-label">Body Summary</div><textarea class="field-input auto-grow multiline" rows="2" data-field="bodySummary">${esc(item.bodySummary)}</textarea>`;
       wireFields(body, item);
     }
   });
@@ -929,8 +971,8 @@ function renderTech() {
     buildCard: (body, item) => {
       body.innerHTML = `
         <div class="obj-card-row">
-          <div><div class="obj-card-label">API Name</div><input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}"></div>
-          <div><div class="obj-card-label">Base Path</div><input type="text" class="field-input" data-field="basePath" value="${esc(item.basePath)}" placeholder="/api/scope/resource"></div>
+          <div><div class="obj-card-label">API Name</div><textarea rows="1" class="field-input auto-grow title-input" data-field="name">${esc(item.name)}</textarea></div>
+          <div><div class="obj-card-label">Base Path</div><textarea rows="1" class="field-input auto-grow" data-field="basePath" placeholder="/api/scope/resource">${esc(item.basePath)}</textarea></div>
         </div>
         <div class="obj-card-label" style="margin-top:10px">Endpoints</div><div data-endpoints></div>`;
       wireFields(body, item);
@@ -961,13 +1003,13 @@ function renderTech() {
     buildCard: (body, item) => {
       body.innerHTML = `
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Decision Title</div><input type="text" class="field-input title-input" data-field="title" value="${esc(item.title)}"></div>
-          <div style="flex:0 0 140px"><div class="obj-card-label">Status</div><input type="text" class="field-input" data-field="status" value="${esc(item.status)}"></div>
+          <div><div class="obj-card-label">Decision Title</div><textarea rows="1" class="field-input auto-grow title-input" data-field="title">${esc(item.title)}</textarea></div>
+          <div style="flex:0 0 140px"><div class="obj-card-label">Status</div><textarea rows="1" class="field-input auto-grow" data-field="status">${esc(item.status)}</textarea></div>
         </div>
-        <div class="obj-card-label">Context</div><textarea class="field-input" rows="2" data-field="context" placeholder="What is the technical question?">${esc(item.context)}</textarea>
-        <div class="obj-card-label">Decision</div><textarea class="field-input" rows="2" data-field="decision" placeholder="What was chosen?">${esc(item.decision)}</textarea>
+        <div class="obj-card-label">Context</div><textarea class="field-input auto-grow multiline" rows="2" data-field="context" placeholder="What is the technical question?">${esc(item.context)}</textarea>
+        <div class="obj-card-label">Decision</div><textarea class="field-input auto-grow multiline" rows="2" data-field="decision" placeholder="What was chosen?">${esc(item.decision)}</textarea>
         <div class="obj-card-label" style="margin-top:10px">Alternatives Considered</div><div data-alts></div>
-        <div class="obj-card-label" style="margin-top:10px">Consequences</div><textarea class="field-input" rows="2" data-field="consequences">${esc(item.consequences)}</textarea>`;
+        <div class="obj-card-label" style="margin-top:10px">Consequences</div><textarea class="field-input auto-grow multiline" rows="2" data-field="consequences">${esc(item.consequences)}</textarea>`;
       wireFields(body, item);
       tableSection(body.querySelector('[data-alts]'), item.alternatives, COLS.alternative, {addLabel:'Add Alternative'});
     }
@@ -982,10 +1024,10 @@ function renderTech() {
     makeEmpty: () => ({id:uid(), name:'', dependsOn:'Nothing — can start immediately', delivers:'', components:[]}),
     buildCard: (body, item) => {
       body.innerHTML = `
-        <input type="text" class="field-input title-input" data-field="name" value="${esc(item.name)}" placeholder="Phase name…">
+        <textarea rows="1" class="field-input auto-grow title-input" data-field="name" placeholder="Phase name…">${esc(item.name)}</textarea>
         <div class="obj-card-row">
-          <div><div class="obj-card-label">Depends On</div><input type="text" class="field-input" data-field="dependsOn" value="${esc(item.dependsOn)}"></div>
-          <div><div class="obj-card-label">Delivers</div><input type="text" class="field-input" data-field="delivers" value="${esc(item.delivers)}"></div>
+          <div><div class="obj-card-label">Depends On</div><textarea rows="1" class="field-input auto-grow" data-field="dependsOn">${esc(item.dependsOn)}</textarea></div>
+          <div><div class="obj-card-label">Delivers</div><textarea rows="1" class="field-input auto-grow" data-field="delivers">${esc(item.delivers)}</textarea></div>
         </div>
         <div class="obj-card-label" style="margin-top:10px">Components</div><div data-comp></div>`;
       wireFields(body, item);
@@ -1000,7 +1042,7 @@ function renderTech() {
     addLabel:'Add Diagram', emptyHint:'No additional diagrams yet.',
     makeEmpty: () => ({id:uid(), title:'', mermaid:'graph TD\n    A --> B'}),
     buildCard: (body, item) => {
-      body.innerHTML = `<input type="text" class="field-input title-input" data-field="title" value="${esc(item.title)}" placeholder="Diagram title…">
+      body.innerHTML = `<textarea rows="1" class="field-input auto-grow title-input" data-field="title" placeholder="Diagram title…">${esc(item.title)}</textarea>
         <div style="margin-top:10px" data-diagram></div>`;
       wireFields(body, item);
       mermaidBlock(body.querySelector('[data-diagram]'), () => item.mermaid, v => item.mermaid = v);
@@ -1020,7 +1062,12 @@ function setTechExpanded(on) {
   document.querySelectorAll('.tech-collapsible').forEach(el => el.classList.toggle('expanded', on));
   document.getElementById('toggleTechBtn').classList.toggle('on', on);
   document.getElementById('toggleTechLabel').textContent = on ? 'Hide Technical Spec' : 'Show Technical Spec';
-  if (on) window.__renderAllMermaid();
+  if (on) {
+    window.__renderAllMermaid();
+    // Tech sections were display:none — any auto-grow textarea rendered while
+    // hidden measured scrollHeight 0. Recompute now that they're visible.
+    resizeAutoGrow(document.getElementById('mainScroll'));
+  }
 }
 function toggleTech() { setTechExpanded(!isTechExpanded()); }
 
