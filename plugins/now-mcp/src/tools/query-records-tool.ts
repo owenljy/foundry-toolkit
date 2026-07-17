@@ -227,7 +227,12 @@ export function createQueryRecordsTool(tableService: TableService, schemaService
 			} catch (error) {
 				logger.error('Error querying records', error);
 				const wsAccess = await probeWebServiceAccess(error, tableName, instance, schemaService);
-				return toolError(error, { table: tableName, query: undefined, operation: 'query', wsAccess });
+				return toolError(error, {
+					table: tableName,
+					query: undefined,
+					operation: 'query',
+					wsAccess,
+				});
 			}
 		},
 	};
@@ -254,7 +259,7 @@ async function probeWebServiceAccess(
 
 	try {
 		const result = await schemaService.checkWebServiceAccess(tableName, instance);
-		if (!result || !result.exists) return 'unknown';
+		if (!result?.exists) return 'unknown';
 		return result.wsAccess ? 'enabled' : 'disabled';
 	} catch {
 		return 'unknown';

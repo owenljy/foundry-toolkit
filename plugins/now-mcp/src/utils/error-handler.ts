@@ -135,7 +135,8 @@ export function toolError(error: unknown, ctx: FailureContext = {}) {
 	// Prefer the structured status code over text matching — ServiceNow's own
 	// error.message (e.g. "User Not Authorized") doesn't reliably contain the
 	// status code or a recognizable keyword.
-	const statusCode = ctx.statusCode ?? (error instanceof ServiceNowError ? error.statusCode : undefined);
+	const statusCode =
+		ctx.statusCode ?? (error instanceof ServiceNowError ? error.statusCode : undefined);
 	const hints = renderHints(failureHints(String(error), { ...ctx, statusCode }));
 	return {
 		content: [
