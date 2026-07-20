@@ -50,9 +50,23 @@ const BreakerStatusSchema = z.object({
 	retryAfterMs: z.number(),
 });
 
+const BackgroundScriptTransportStatusSchema = z.object({
+	transport: z.enum(['scripted_rest', 'sys_trigger']),
+	configuredPath: z.string().nullable(),
+	usesCompanionEndpoint: z.boolean(),
+	fallbackOnFailure: z.literal(false),
+	privilegeModel: z.enum(['configured_endpoint_context', 'scheduled_job_context']),
+	diagnostic: z.string(),
+});
+
 export const ConnectionStatusOutputSchema = z.object({
 	success: z.literal(true),
-	instances: z.array(BreakerStatusSchema.extend({ isDefault: z.boolean() })),
+	instances: z.array(
+		BreakerStatusSchema.extend({
+			isDefault: z.boolean(),
+			backgroundScriptTransport: BackgroundScriptTransportStatusSchema,
+		}),
+	),
 });
 
 export const ResetConnectionOutputSchema = z.object({

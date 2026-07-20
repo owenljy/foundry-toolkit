@@ -153,6 +153,13 @@ call, so you can fix it without a crash loop.
 | `sn_get_security_info` | Consolidated table security posture — ACLs (table + field), role requirements, data policies, security business rules |
 | `sn_diagnose_mutation` | Read-only mutation preflight: record/field capabilities, before BR abort risks, ACLs, and reference dependencies |
 
+`sn_get_security_info` includes `aclRoleGroups`. Roles attached to one ACL are
+reported as `requiredRolesAnyOf`; they are alternatives, not an all-of list.
+The flattened `rolesByOperation` field is only an inventory: matching table and
+field ACLs plus each ACL's role, condition, and script checks still participate
+in access evaluation. `adminOverrides: false` means `admin` does not
+automatically bypass that ACL.
+
 ### Execution & files
 | Tool | What it does |
 |---|---|
@@ -252,6 +259,8 @@ Read schema with the MCP → write `*.now.ts` → `now-sdk deploy` (Bash) →
 1. **Scripted REST (recommended):** set `scriptApiPath` on the instance to an installed,
    active resource. It must accept `POST { "script": "..." }` and return
    `{ "result": { "success": true|false, "output"?: string, "error"?: string } }`.
+   `/api/x_custom/script_runner/execute` is only an example convention; now-mcp does
+   not install that route. It must exist on every instance whose config selects it.
 2. **`sys_trigger` fallback:** when `scriptApiPath` is omitted, now-mcp creates a temporary
    `sys_properties` mailbox through the Table API, creates a Run Once `sys_trigger`, polls
    the mailbox, and deletes it. The integration user needs create/read/delete access to
@@ -261,8 +270,12 @@ If ServiceNow reports **“Requested URI does not represent any resource”**, u
 endpoint in the now-mcp error:
 
 - `POST <scriptApiPath>`: the Scripted REST API is missing, inactive, scoped under another
-  path, or unavailable to the user. Correct the path/install/ACL; now-mcp does not silently
-  fall back because doing so could bypass the intended execution boundary.
+  path, or unavailable to the user. Correct the path/install/activation/ACL; now-mcp
+  does not silently switch transports. Remove `scriptApiPath` only when you intentionally
+  want the `sys_trigger` implementation and its prerequisites. `allowWrites` cannot fix
+  this transport error: it is an MCP acknowledgement, not a role grant or ACL bypass.
+  Use `sn_connection_status` to see the selected transport without making an API call;
+  use `sn_diagnose_mutation` before retrying a failed/aborted write.
 - `POST /api/now/table/sys_properties` or `sys_trigger`: the fallback's protected system
   table is not exposed through the Table API or the user lacks access. Install/configure a
   Scripted REST runner instead, or explicitly grant the required least-privilege access.
@@ -271,6 +284,13 @@ endpoint in the now-mcp error:
 
 Validate setup first with a harmless script such as `gs.info('hello world')`; only then run
 scripts that mutate data.
+
+On the `sys_trigger` path, completed calls include
+`runtimeContext.observedIdentity`, captured inside the scheduled job (bounded
+user name/id, role list, and interactive flag). This is diagnostic evidence,
+not proof that ACLs were bypassed or a write persisted. Scripted REST calls
+report an observed identity only when the companion endpoint returns a
+`runtimeIdentity` object.
 
 **3. Reverse-engineer legacy config into source control.**
 `now-sdk transform --table <t>` to capture to Fluent → MCP reads to verify

@@ -217,6 +217,26 @@ export class InstanceManager {
 				url: config.url,
 				isDefault: name === this.defaultInstance,
 				authType: client.getAuthType(),
+				backgroundScriptTransport: config.scriptApiPath
+					? {
+							transport: 'scripted_rest' as const,
+							configuredPath: config.scriptApiPath,
+							usesCompanionEndpoint: true,
+							fallbackOnFailure: false,
+							privilegeModel: 'configured_endpoint_context' as const,
+							diagnostic:
+								`Background scripts POST to ${config.scriptApiPath}. The resource must be installed, active, reachable, and permitted for the integration user. ` +
+								'The MCP does not elevate roles or fall back to sys_trigger when this configured endpoint fails.',
+						}
+					: {
+							transport: 'sys_trigger' as const,
+							configuredPath: null,
+							usesCompanionEndpoint: false,
+							fallbackOnFailure: false,
+							privilegeModel: 'scheduled_job_context' as const,
+							diagnostic:
+								'Background scripts use a sys_properties mailbox and sys_trigger. The integration user needs access to those records; ServiceNow determines runtime context, so this is not an MCP role-escalation mechanism.',
+						},
 				...client.getConnectionStatus(),
 			};
 		});

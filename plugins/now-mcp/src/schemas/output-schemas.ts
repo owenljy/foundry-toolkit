@@ -172,12 +172,31 @@ export const ExecuteScriptOutputSchema = z.object({
 	outputTruncated: z.boolean().optional(),
 	error: z.string().nullable().optional(),
 	instance: z.string(),
+	transportConfiguration: z
+		.object({
+			transport: z.enum(['scripted_rest', 'sys_trigger']),
+			configuredPath: z.string().nullable(),
+			usesCompanionEndpoint: z.boolean(),
+			fallbackOnFailure: z.literal(false),
+			privilegeModel: z.enum(['configured_endpoint_context', 'scheduled_job_context']),
+			diagnostic: z.string(),
+		})
+		.optional(),
 	executionPath: z.enum(['scripted-rest', 'sys_trigger']).optional(),
 	outcome: z.enum(['completed', 'script_failed', 'timed_out']).optional(),
 	runtimeContext: z
 		.object({
 			serverRuntime: z.literal('ServiceNow Rhino'),
 			transport: z.string(),
+			observedIdentity: z
+				.object({
+					userName: z.string().optional(),
+					userId: z.string().optional(),
+					roles: z.string().optional(),
+					isInteractive: z.boolean().optional(),
+				})
+				.optional(),
+			identityNote: z.string(),
 			writeResultContract: z.string(),
 		})
 		.optional(),

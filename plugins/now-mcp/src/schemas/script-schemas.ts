@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { instanceField } from './common.js';
 
 /**
- * Schema for executing arbitrary background scripts via sys_trigger
+ * Schema for executing arbitrary background scripts via the configured transport.
  */
 export const ExecuteBackgroundScriptSchema = z.object({
 	instance: instanceField,

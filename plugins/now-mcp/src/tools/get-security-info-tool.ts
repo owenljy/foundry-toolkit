@@ -19,10 +19,10 @@ import { toolResult } from '../utils/tool-response.js';
 export const GET_SECURITY_INFO_TOOL = {
 	name: 'sn_get_security_info',
 	title: 'Get security info',
-	description: `What: A consolidated view of what protects a table — ACLs (access controls), the roles they require, active data policies, and security-related business rules.
+	description: `What: A consolidated view of what protects a table — ACLs (access controls), per-ACL role alternatives, active data policies, and security-related business rules.
 When to use: To understand why access to a table/field is granted or denied, or to audit a table's security posture, without querying each security table separately.
 Preconditions: The table should exist. Read access to the security metadata tables (sys_security_acl, sys_data_policy2, sys_script) — a section you cannot read is returned empty with a note in warnings, the call still succeeds.
-Produces (default, includeDetails=false): acls {total, byOperation, tableLevel, fieldLevel}, rolesByOperation (role names required per operation), dataPolicies, securityBusinessRules, warnings. Pass includeDetails=true to also get the raw per-ACL detail array and per-ACL role list — much larger, only ask for it when you need the individual ACL rows.`,
+Produces (default, includeDetails=false): acls {total, byOperation, tableLevel, fieldLevel}, aclRoleGroups (the roles attached to each ACL are any-of alternatives), rolesByOperation (a lossy inventory only—not a combined requirement), dataPolicies, securityBusinessRules, warnings. ACL role, condition, and script checks on one ACL are conjunctive; admin only bypasses an ACL when adminOverrides is true. Pass includeDetails=true to also get the raw ACL and ACL-role rows.`,
 	inputSchema: GetSecurityInfoSchema,
 	outputSchema: GetSecurityInfoOutputSchema,
 };
@@ -77,7 +77,16 @@ export function createGetSecurityInfoTool(tableService: TableService) {
 						safeQuery(
 							'sys_security_acl',
 							`name=${t}^ORnameLIKE${t}.`,
-							['sys_id', 'name', 'operation', 'type', 'active'],
+							[
+								'sys_id',
+								'name',
+								'operation',
+								'type',
+								'active',
+								'admin_overrides',
+								'condition',
+								'script',
+							],
 							100,
 						),
 						safeQuery(
@@ -171,6 +180,14 @@ export function createGetSecurityInfoTool(tableService: TableService) {
 					typeof field === 'object' && field !== null && 'display_value' in field
 						? String((field as { display_value: unknown }).display_value)
 						: undefined;
+				const booleanValue = (field: unknown): boolean => {
+					const value = refValue(field) ?? String(field ?? '');
+					return value === 'true' || value === '1';
+				};
+				const hasValue = (field: unknown): boolean => {
+					const value = refValue(field) ?? String(field ?? '');
+					return value.trim().length > 0;
+				};
 
 				// Summarize ACLs: counts per operation, table-level vs field-level, and
 				// which role names are required per operation.
@@ -207,6 +224,37 @@ export function createGetSecurityInfoTool(tableService: TableService) {
 					rolesByOperation[operation] = Array.from(names).sort();
 				}
 
+				// A single ACL's Requires role list is an any-of list. Do not flatten
+				// roles across ACLs and present that union as one authorization rule:
+				// ACL evaluation also depends on matching table/field ACLs and each
+				// ACL's condition/script. Keep the legacy operation inventory above,
+				// but expose the semantically useful grouping explicitly.
+				const roleNamesByAcl = new Map<string, Set<string>>();
+				for (const role of roleRecords) {
+					const aclId = refValue(role.sys_security_acl);
+					const roleName = refDisplay(role.sys_user_role) ?? refValue(role.sys_user_role);
+					if (!aclId || !roleName) continue;
+					const names = roleNamesByAcl.get(aclId) ?? new Set<string>();
+					names.add(roleName);
+					roleNamesByAcl.set(aclId, names);
+				}
+				const aclRoleGroups = aclRecords.map((acl) => {
+					const aclSysId = String(acl.sys_id ?? '');
+					const requiredRolesAnyOf = Array.from(roleNamesByAcl.get(aclSysId) ?? []).sort();
+					return {
+						aclSysId,
+						name: String(acl.name ?? ''),
+						operation: String(acl.operation ?? ''),
+						active: booleanValue(acl.active),
+						adminOverrides: booleanValue(acl.admin_overrides),
+						roleRequirement:
+							requiredRolesAnyOf.length > 0 ? ('any_of' as const) : ('none' as const),
+						requiredRolesAnyOf,
+						hasCondition: hasValue(acl.condition),
+						hasScript: hasValue(acl.script),
+					};
+				});
+
 				const acls: Record<string, unknown> = {
 					total: aclRecords.length,
 					byOperation,
@@ -217,6 +265,7 @@ export function createGetSecurityInfoTool(tableService: TableService) {
 					success: true,
 					table: t,
 					acls,
+					aclRoleGroups,
 					rolesByOperation,
 					dataPolicies: dataPolicyResult.records,
 					securityBusinessRules: businessRuleResult.records,

@@ -11,9 +11,9 @@ import { toolResult } from '../utils/tool-response.js';
 export const CONNECTION_STATUS_TOOL = {
 	name: 'sn_connection_status',
 	title: 'ServiceNow connection status',
-	description: `What: Inspect local authentication/backoff state for configured ServiceNow instances without sending an API request.
+	description: `What: Inspect local authentication/backoff state and the configured background-script transport for ServiceNow instances without sending an API request.
 When to use: After a 401, timeout, rate limit, or CIRCUIT_OPEN response to see whether requests are paused and when a trial is allowed.
-Produces: Per-instance auth type, breaker state, failure counters, open reason, and retry delay. Never exposes credentials or tokens.`,
+Produces: Per-instance auth type, breaker state, failure counters, retry delay, and whether scripts select a configured Scripted REST path or sys_trigger. Never exposes credentials or tokens.`,
 	inputSchema: ConnectionStatusSchema,
 	outputSchema: ConnectionStatusOutputSchema,
 };
@@ -35,9 +35,12 @@ export function createConnectionStatusTool(instanceManager: InstanceManager) {
 			try {
 				const { instance } = ConnectionStatusSchema.parse(params);
 				const instances = instanceManager.getConnectionStatuses(instance);
+				const scriptedRest = instances.filter(
+					(item) => item.backgroundScriptTransport.transport === 'scripted_rest',
+				).length;
 				return toolResult(
 					{ success: true, instances },
-					`connection status: ${instances.length} instance(s)`,
+					`connection status: ${instances.length} instance(s); background scripts: ${scriptedRest} scripted_rest, ${instances.length - scriptedRest} sys_trigger`,
 				);
 			} catch (error) {
 				return toolError(error, { operation: 'inspect connection status' });

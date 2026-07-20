@@ -69,10 +69,11 @@ export interface InstanceConfig {
 
 	/**
 	 * Optional path to a custom Scripted REST API that executes background scripts
-	 * synchronously (e.g. /api/x_custom/script_runner/execute). When set, the
+	 * synchronously (e.g. /api/x_custom/script_runner/execute). This is an example
+	 * path, not a built-in ServiceNow route. When set, the
 	 * execute_background_script tool POSTs directly here instead of relying on the
-	 * ServiceNow scheduler via sys_trigger. Install the companion Scripted REST API
-	 * on the instance to enable this fast path.
+	 * ServiceNow scheduler via sys_trigger. The route must already be installed and
+	 * active on that specific instance. A failure does not silently fall back.
 	 */
 	scriptApiPath?: string;
 }

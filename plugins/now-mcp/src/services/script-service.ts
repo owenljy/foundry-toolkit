@@ -11,6 +11,25 @@ interface ScriptExecutionResult {
 	success: boolean;
 	output?: string;
 	error?: string;
+	runtimeIdentity?: ScriptRuntimeIdentity;
+}
+
+export interface ScriptRuntimeIdentity {
+	userName?: string;
+	userId?: string;
+	roles?: string;
+	isInteractive?: boolean;
+}
+
+export type ScriptExecutionTransport = 'scripted_rest' | 'sys_trigger';
+
+export interface ScriptExecutionTransportStatus {
+	transport: ScriptExecutionTransport;
+	configuredPath: string | null;
+	usesCompanionEndpoint: boolean;
+	fallbackOnFailure: false;
+	privilegeModel: 'configured_endpoint_context' | 'scheduled_job_context';
+	diagnostic: string;
 }
 
 function errorMessage(error: unknown): string {
@@ -65,16 +84,54 @@ function parseScriptApiResponse(value: unknown, endpoint: string): ScriptExecuti
 			'BACKGROUND_SCRIPT_INVALID_RESPONSE',
 		);
 	}
+	if (
+		typed.runtimeIdentity !== undefined &&
+		(typeof typed.runtimeIdentity !== 'object' || typed.runtimeIdentity === null)
+	) {
+		throw new ServiceNowError(
+			`Background-script Scripted REST API returned an invalid runtimeIdentity from POST ${endpoint}`,
+			undefined,
+			undefined,
+			'BACKGROUND_SCRIPT_INVALID_RESPONSE',
+		);
+	}
 	return typed;
 }
 
 export class ScriptService {
 	constructor(private instanceManager: InstanceManager) {}
 
+	/** Describe the selected transport without making a ServiceNow request. */
+	getExecutionTransportStatus(instanceName?: string): ScriptExecutionTransportStatus {
+		const config = this.instanceManager.getConfig(instanceName);
+		if (config.scriptApiPath) {
+			return {
+				transport: 'scripted_rest',
+				configuredPath: config.scriptApiPath,
+				usesCompanionEndpoint: true,
+				fallbackOnFailure: false,
+				privilegeModel: 'configured_endpoint_context',
+				diagnostic:
+					`Background scripts POST to ${config.scriptApiPath}. The resource must be installed, active, reachable, and permitted for the integration user. ` +
+					'The MCP does not elevate roles or fall back to sys_trigger when this configured endpoint fails.',
+			};
+		}
+		return {
+			transport: 'sys_trigger',
+			configuredPath: null,
+			usesCompanionEndpoint: false,
+			fallbackOnFailure: false,
+			privilegeModel: 'scheduled_job_context',
+			diagnostic:
+				'Background scripts use a sys_properties mailbox and sys_trigger. The integration user needs access to those records; ServiceNow determines runtime context, so this is not an MCP role-escalation mechanism.',
+		};
+	}
+
 	/**
-	 * Execute arbitrary server-side JavaScript using sys_trigger
-	 * WARNING: Requires elevated permissions (admin role)
-	 * This method creates a temporary sys_trigger, executes it, retrieves output, and cleans up
+	 * Execute arbitrary server-side JavaScript using the configured Scripted REST
+	 * resource, or sys_trigger when scriptApiPath is omitted.
+	 * The selected ServiceNow transport determines runtime privileges; allowWrites
+	 * and this service do not grant roles or bypass ACLs.
 	 *
 	 * @param script JavaScript code to execute
 	 * @param timeout Maximum execution time in milliseconds (default: 60000)
@@ -92,6 +149,7 @@ export class ScriptService {
 		executionTime: number;
 		executionPath: 'scripted-rest' | 'sys_trigger';
 		outcome: 'completed' | 'script_failed' | 'timed_out';
+		runtimeIdentity?: ScriptRuntimeIdentity;
 	}> {
 		validateWriteAccess(this.instanceManager, instance);
 		const client = this.instanceManager.getClient(instance);
@@ -121,6 +179,7 @@ export class ScriptService {
 					success: r.success,
 					output: r.output,
 					error: r.error,
+					runtimeIdentity: r.runtimeIdentity,
 					executionTime,
 					executionPath: 'scripted-rest',
 					outcome: r.success ? 'completed' : 'script_failed',
@@ -134,12 +193,22 @@ export class ScriptService {
 				) {
 					throw error;
 				}
-				throw phaseError(
-					'Scripted REST execution',
-					'POST',
-					config.scriptApiPath,
+				const detail = errorMessage(error);
+				const statusCode = error instanceof ServiceNowError ? error.statusCode : undefined;
+				const endpointUnavailable =
+					statusCode === 404 || /Requested URI does not represent any resource/i.test(detail);
+				throw new ServiceNowError(
+					`Background-script Scripted REST execution transport failed: POST ${config.scriptApiPath}: ${detail}. ` +
+						(endpointUnavailable
+							? 'The configured route is unavailable on this instance (missing, inactive, or its namespace/resource path does not match). '
+							: 'The configured route did not complete the request. ') +
+						'This endpoint/configuration failure occurred before the submitted script ran; allowWrites does not affect it or elevate the integration user. ' +
+						'now-mcp will not silently switch transports. Verify/install/activate the resource and its execute ACL, or remove scriptApiPath to intentionally select sys_trigger and satisfy its sys_properties/sys_trigger prerequisites.',
+					statusCode,
 					error,
-					'Verify that scriptApiPath matches an installed, active Scripted REST resource and that this user can execute it.',
+					endpointUnavailable
+						? 'BACKGROUND_SCRIPT_ENDPOINT_UNAVAILABLE'
+						: 'BACKGROUND_SCRIPT_TRANSPORT_ERROR',
 				);
 			}
 		}
@@ -207,6 +276,11 @@ export class ScriptService {
         (function() {
           var __key = '${propKey}';
           var __output = [];
+		  var __runtimeIdentity = {};
+		  try { __runtimeIdentity.userName = String(gs.getUserName()).substring(0, 160); } catch (ignore) {}
+		  try { __runtimeIdentity.userId = String(gs.getUserID()).substring(0, 64); } catch (ignore) {}
+		  try { __runtimeIdentity.roles = String(gs.getUser().getRoles()).substring(0, 800); } catch (ignore) {}
+		  try { __runtimeIdentity.isInteractive = !!gs.getSession().isInteractive(); } catch (ignore) {}
           // log() is the output capture helper. gs.log/gs.info in the user script
           // have been rewritten to call this automatically.
           var log = function(msg) { var s = String(msg); __output.push(s); gs.log(s); };
@@ -215,8 +289,8 @@ export class ScriptService {
             var __gr = new GlideRecord('sys_properties');
             if (__gr.get('name', __key)) {
               __gr.setValue('value', JSON.stringify({
-                status: 'done', success: true,
-                output: (function(){ var s = __output.join('\\n'); return s.length > 3900 ? s.substring(0, 3900) + '\\u2026[output truncated at 3900 chars]' : s; })()
+				status: 'done', success: true, runtimeIdentity: __runtimeIdentity,
+				output: (function(){ var s = __output.join('\\n'); return s.length > 2700 ? s.substring(0, 2700) + '\\u2026[output truncated at 2700 chars]' : s; })()
               }));
               __gr.update();
             }
@@ -224,8 +298,8 @@ export class ScriptService {
             var __gr = new GlideRecord('sys_properties');
             if (__gr.get('name', __key)) {
               __gr.setValue('value', JSON.stringify({
-                status: 'done', success: false,
-                error: String(e).substring(0, 3900)
+				status: 'done', success: false, runtimeIdentity: __runtimeIdentity,
+				error: String(e).substring(0, 2700)
               }));
               __gr.update();
             }
@@ -266,7 +340,7 @@ export class ScriptService {
 			// Step 3: Poll sys_properties until status=done or timeout.
 			const pollInterval = 500;
 			const deadline = startTime + timeout;
-			let result: { success: boolean; output?: string; error?: string } | null = null;
+			let result: ScriptExecutionResult | null = null;
 
 			while (Date.now() < deadline) {
 				await new Promise((resolve) => setTimeout(resolve, pollInterval));
@@ -334,6 +408,7 @@ export class ScriptService {
 				executionTime,
 				executionPath: 'sys_trigger',
 				outcome: result.success ? 'completed' : 'script_failed',
+				runtimeIdentity: result.runtimeIdentity,
 			};
 		} catch (error) {
 			const executionTime = Date.now() - startTime;

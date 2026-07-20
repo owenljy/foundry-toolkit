@@ -24,11 +24,11 @@ const MAX_OUTPUT_CHARS = 8000;
 export const EXECUTE_BACKGROUND_SCRIPT_TOOL = {
 	name: 'sn_execute_background_script',
 	title: 'Execute background script',
-	description: `What: Run server-side JavaScript in ServiceNow via a temporary sys_trigger, then return its logged output.
-When to use: Only for logic the dedicated Table/Stats tools can't express. Prefer query_records / aggregate_records for plain reads and the create/update/delete record tools for ordinary CRUD. In particular, to remove one known record, call sn_delete_record FIRST; do not substitute GlideRecord.deleteRecord() merely because this tool is more general or runs with elevated privileges.
-Preconditions: A WRITE-ENABLED instance (the tool creates a temporary sys_trigger — itself a write — so it won't run on a read-only instance even for a read-only script) and an admin/elevated role (the script runs with full system privileges). Timeout default 60s, max 2m.
+	description: `What: Run server-side JavaScript in ServiceNow using the instance's configured execution transport: scriptApiPath when set, otherwise a temporary sys_trigger, then return logged output.
+When to use: Only for logic the dedicated Table/Stats tools can't express. Prefer query_records / aggregate_records for plain reads and the create/update/delete record tools for ordinary CRUD. In particular, to remove one known record, call sn_delete_record FIRST; do not substitute GlideRecord.deleteRecord() merely because this tool is more general.
+Preconditions: A WRITE-ENABLED instance. For scriptApiPath, the configured Scripted REST resource must be installed, active, and executable by the integration user. Without scriptApiPath, the integration user must be able to create/read/delete the temporary sys_properties and sys_trigger records. Timeout default 60s, max 2m.
 
-WARNING: executes arbitrary code with full privileges; all executions are logged.
+WARNING: executes arbitrary server-side code; all executions are logged. allowWrites is an MCP safety acknowledgement only: it does not grant roles, bypass ACLs, or repair a missing Scripted REST endpoint. Runtime identity/privileges are determined by the configured ServiceNow endpoint or scheduled-job context.
 
 Write policy (governs writes INSIDE the script body): writes require allowWrites:true. Metadata/security/config writes require BOTH allowWrites:true and allowMetadataWrites:true; prefer Fluent source control. Detection is heuristic; unresolved targets yield lowConfidenceWarning.
 
@@ -172,11 +172,17 @@ export function createExecuteBackgroundScriptTool(
 					...(outputTruncated ? { outputTruncated: true } : {}),
 					error: result.error ?? null,
 					instance: validated.instance || 'default',
+					transportConfiguration: scriptService.getExecutionTransportStatus(validated.instance),
 					executionPath: result.executionPath,
 					outcome: result.outcome,
 					runtimeContext: {
 						serverRuntime: 'ServiceNow Rhino' as const,
 						transport: result.executionPath,
+						...(result.runtimeIdentity ? { observedIdentity: result.runtimeIdentity } : {}),
+						identityNote:
+							result.executionPath === 'sys_trigger'
+								? 'Observed inside the scheduled job. This identity and its listed roles do not imply ACL bypass or unrestricted access.'
+								: 'The configured Scripted REST endpoint controls execution identity; now-mcp cannot infer it unless the endpoint returns it.',
 						writeResultContract:
 							'GlideRecord insert/update normally returns a sys_id; deleteRecord returns boolean. A null/false result is not proof of persistence—verify by rereading the record.',
 					},
@@ -222,7 +228,6 @@ export function createExecuteBackgroundScriptTool(
 				logger.error('Error executing background script', error);
 				return toolError(error, {
 					operation: 'execute background script',
-					requiredRoles: ['admin'],
 				});
 			}
 		},

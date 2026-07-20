@@ -76,3 +76,53 @@ test('get-security-info includeDetails:true returns the raw arrays too', async (
   assert.equal(data.roleRequirements.length, 1);
   assert.deepEqual(data.rolesByOperation, { read: ['itil'] });
 });
+
+test('get-security-info preserves per-ACL any-of role semantics', async () => {
+  const calls = [];
+  const tableService = {
+    calls,
+    async queryRecords(table, options) {
+      calls.push({ table, options });
+      if (table === 'sys_security_acl') {
+        return [{
+          sys_id: ACL_ID,
+          name: 'incident',
+          operation: 'delete',
+          active: 'true',
+          admin_overrides: 'false',
+          condition: 'active=true',
+          script: 'answer = current.canDelete();',
+        }];
+      }
+      if (table === 'sys_security_acl_role') {
+        return [
+          {
+            sys_security_acl: { value: ACL_ID, display_value: 'incident' },
+            sys_user_role: { value: 'b'.repeat(32), display_value: 'admin' },
+          },
+          {
+            sys_security_acl: { value: ACL_ID, display_value: 'incident' },
+            sys_user_role: { value: 'c'.repeat(32), display_value: 'maint' },
+          },
+        ];
+      }
+      return [];
+    },
+  };
+
+  const result = await createGetSecurityInfoTool(tableService).handler({ tableName: 'incident' });
+  const data = result.structuredContent;
+
+  assert.deepEqual(data.rolesByOperation, { delete: ['admin', 'maint'] });
+  assert.deepEqual(data.aclRoleGroups, [{
+    aclSysId: ACL_ID,
+    name: 'incident',
+    operation: 'delete',
+    active: true,
+    adminOverrides: false,
+    roleRequirement: 'any_of',
+    requiredRolesAnyOf: ['admin', 'maint'],
+    hasCondition: true,
+    hasScript: true,
+  }]);
+});
