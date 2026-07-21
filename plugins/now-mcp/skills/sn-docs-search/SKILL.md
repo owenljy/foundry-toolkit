@@ -2,6 +2,7 @@
 name: sn-docs-search
 description: Retrieve live ServiceNow product/admin and release documentation from ServiceNow/ServiceNowDocs. Use for documented platform behavior, administration/configuration, release-specific behavior, cross-release differences, or explicit requests to search official product docs. Do NOT use for Fluent SDK authoring or `*.now.ts` API questions (imports, types, constructors, signatures, fields, or code examples); in a Fluent app, run `now-sdk explain` for those instead. Also do not trigger when the answer is already in the conversation.
 user-invocable: true
+disable-model-invocation: true
 allowed-tools: Bash(gh:*), Bash(curl:*), Bash(jq:*), Bash(pandoc:*), Read, Write
 context: fork
 ---
@@ -10,15 +11,6 @@ context: fork
 
 Retrieve official ServiceNow product documentation from **`github.com/ServiceNow/ServiceNowDocs`** — a public, LLM-optimized markdown mirror of `docs.servicenow.com` that ServiceNow publishes for exactly this purpose. The repo is the source of truth for this skill. **Do not** drive the SPA at `docs.servicenow.com`; it returns empty shells to non-browser fetchers and has been formally deprecated as an LLM target by ServiceNow themselves (see `llms.txt` in the repo).
 
-## Why this works
-
-- **~46,000 markdown files**, ~200 MB total, organized by publication then by topic
-- **Release = branch**: `australia` (latest, default), `zurich`, `yokohama`, `xanadu`. ServiceNow keeps a rolling window of ~3–4 branches; the oldest is dropped when a new release GAs
-- **YAML frontmatter** on every file: `title`, `description`, `release`, `product`, `classification`, `topic_type`, `last_updated`, `breadcrumb`, and `canonical_url` — citation-grade metadata. `canonical_url` is reliably present (a clean human URL of the form `https://www.servicenow.com/docs/r/<publication>/<file>.html`). There is **no** `keywords` field
-- **Per-publication `index.md`** lists every file in that publication with one-line descriptions — a ready-made TOC
-- **GitHub code search** indexes the whole corpus and returns matches in <1s
-
-This is much faster and more accurate than the old browser-driven flow: no SPA waits, no shadow DOM, no snapshot/ref churn, parallel fetches, structured metadata.
 
 ## When to use
 
