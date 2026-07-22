@@ -21,6 +21,16 @@ test('classifyFailure recognizes the common ServiceNow failure shapes', () => {
   );
 });
 
+test('Table API ACL validation message is classified and recommends mutation diagnostics', () => {
+	assert.equal(classifyFailure('ACCESS_DENIED: Failed API level ACL Validation'), '403');
+	const hints = failureHints('ACCESS_DENIED: Failed API level ACL Validation', {
+		table: 'x_scope_custom',
+		operation: 'update',
+	});
+	assert.match(hints.join('\n'), /sn_diagnose_mutation/);
+	assert.match(hints.join('\n'), /secure record access defaults to deny/i);
+});
+
 test('403 hints point at ACLs/roles (not read-only, which is a separate class)', () => {
   const hints = failureHints('403 Access denied', { table: 'incident', operation: 'create' });
   const text = hints.join(' ');

@@ -63,7 +63,14 @@ export function classifyFailure(text: string, statusCode?: number): FailureType 
 	if (statusCode === 400) return '400';
 
 	if (t.includes('401') || t.includes('authentication') || t.includes('unauthorized')) return '401';
-	if (t.includes('403') || t.includes('access denied') || t.includes('forbidden')) return '403';
+	if (
+		t.includes('403') ||
+		t.includes('access denied') ||
+		t.includes('access_denied') ||
+		t.includes('forbidden') ||
+		t.includes('failed api level acl validation')
+	)
+		return '403';
 	if (t.includes('404') || t.includes('not found') || t.includes('does not exist')) return '404';
 	if (t.includes('400') || t.includes('bad request')) return '400';
 	return 'unknown';
@@ -105,7 +112,12 @@ export function failureHints(text: string, ctx: FailureContext = {}): string[] {
 			const hints = [
 				`Access denied on ${table}. Likely an ACL — the account may lack the required role, or the field/record is restricted.${roleNote}${aclNote}`,
 			];
-			if (ctx.operation === 'delete') {
+			if (ctx.operation === 'update') {
+				hints.push(
+					'Use sn_diagnose_mutation to distinguish missing effective write ACL coverage from an existing ACL whose role, condition, script, or field rule denied the caller.',
+					'If diagnostics find no effective table, field, inherited, or wildcard write ACL, secure record access defaults to deny. Add the intended ACL through the application definition/Fluent source control; do not bypass it with an unsecured script.',
+				);
+			} else if (ctx.operation === 'delete') {
 				hints.push(
 					'If deletion works in the UI, compare the authenticated API user with the UI user, including roles, domain/scope, ACL evaluation, and transaction-specific logic. Browser and API sessions are different execution paths; that alone does not prove an undocumented UI-only restriction.',
 					'Use sn_diagnose_mutation for evidence before falling back to sn_execute_background_script.',

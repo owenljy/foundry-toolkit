@@ -60,7 +60,7 @@ export function createUpdateRecordTool(tableService: TableService, schemaService
 					const reread = await tableService.getRecord(
 						validated.tableName,
 						validated.sysId,
-						['sys_id', ...Object.keys(validated.fields)],
+						['sys_id', 'sys_updated_on', 'sys_mod_count', ...Object.keys(validated.fields)],
 						validated.instance,
 					);
 					const normalize = (v: unknown): unknown => {
@@ -93,6 +93,9 @@ export function createUpdateRecordTool(tableService: TableService, schemaService
 								sys_id: validated.sysId,
 								updateType: validated.updateType,
 								record: reread,
+								failureType: 'mutation_not_persisted',
+								likelyCauses: ['table_or_field_acl', 'business_rule_abort'],
+								recommendedTool: 'sn_diagnose_mutation',
 								verification,
 							},
 							isError: true as const,

@@ -47,6 +47,16 @@ test('query_records leaves small payloads untouched', async () => {
 test('execute_background_script truncates output on the scripted-REST fast path (no other cap exists there)', async () => {
 	const hugeOutput = 'line\n'.repeat(5000);
 	const scriptService = {
+		getExecutionTransportStatus() {
+			return {
+				transport: 'scripted_rest',
+				configuredPath: '/api/x_test/script',
+				usesCompanionEndpoint: true,
+				fallbackOnFailure: false,
+				privilegeModel: 'configured_endpoint_context',
+				diagnostic: 'test',
+			};
+		},
 		async executeBackgroundScript() {
 			return { success: true, output: hugeOutput, executionTime: 42 };
 		},
@@ -62,6 +72,16 @@ test('execute_background_script truncates output on the scripted-REST fast path 
 
 test('execute_background_script leaves small output untouched', async () => {
 	const scriptService = {
+		getExecutionTransportStatus() {
+			return {
+				transport: 'scripted_rest',
+				configuredPath: '/api/x_test/script',
+				usesCompanionEndpoint: true,
+				fallbackOnFailure: false,
+				privilegeModel: 'configured_endpoint_context',
+				diagnostic: 'test',
+			};
+		},
 		async executeBackgroundScript() {
 			return { success: true, output: 'ok', executionTime: 1 };
 		},

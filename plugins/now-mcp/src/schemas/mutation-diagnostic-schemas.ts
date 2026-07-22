@@ -24,6 +24,8 @@ export const DiagnoseMutationOutputSchema = z.object({
 	fieldCapabilities: z.array(OpenRecord),
 	activeBusinessRules: z.array(OpenRecord),
 	applicableAcls: z.array(OpenRecord),
+	aclCoverage: OpenRecord,
+	probableBlocker: z.string().optional(),
 	referenceDependencies: z.array(OpenRecord),
 	limitations: z.array(z.string()),
 });

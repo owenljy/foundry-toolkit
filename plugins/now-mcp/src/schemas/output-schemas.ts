@@ -78,6 +78,9 @@ export const UpdateRecordOutputSchema = z.object({
 	sys_id: z.string().optional(),
 	updateType: z.string().optional(),
 	record: OpenRecord,
+	failureType: z.string().optional(),
+	likelyCauses: z.array(z.string()).optional(),
+	recommendedTool: z.string().optional(),
 	verification: z
 		.object({
 			performed: z.boolean(),
